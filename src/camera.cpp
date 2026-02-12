@@ -1,27 +1,13 @@
-#pragma once
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "../include/camera.h"
 
-class Camera {
-private:
-  glm::vec3 position;
-  glm::vec3 front;
-  glm::vec3 frontHorizontal;
-  glm::vec3 up;
-  glm::vec3 right;
-  glm::vec3 worldUp;
-  float yaw;
-  float pitch;
-
-public:
-  Camera(glm::vec3 startPosition = glm::vec3(0.0f, 0.0f, 3.0f)) {
-    position = startPosition;
+Camera::Camera() {
+    position = vec3(0.0f, 0.0f, 3.0f);
     worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     yaw = 0.0f;
     pitch = 0.0f;
     updateCameraVectors();
-  }
-  void updateCameraVectors() {
+}
+void Camera::updateCameraVectors() {
     // esta funcion no la entiendo mucho
     // copi pastee de internet
     // calcula el nuevo vector front
@@ -38,19 +24,30 @@ public:
     // Recalcular right y up
     right = glm::normalize(glm::cross(front, worldUp));
     up = glm::normalize(glm::cross(right, front));
-  }
-  void moveForward(float amount) { position += frontHorizontal * amount; }
+}
+void Camera::moveForward(float amount) {
+    position += frontHorizontal * amount;
+}
+void Camera::moveBackward(float amount) {
+    position -= frontHorizontal * amount;
+}
+void Camera::moveLeft(float amount) {
+    position -= right * amount;
+}
 
-  void moveBackward(float amount) { position -= frontHorizontal * amount; }
+void Camera::moveRight(float amount) {
+    position += right * amount;
+}
 
-  void moveLeft(float amount) { position -= right * amount; }
+void Camera::moveUp(float amount) {
+    position += worldUp * amount;
+}
 
-  void moveRight(float amount) { position += right * amount; }
-
-  void moveUp(float amount) { position += worldUp * amount; }
-
-  void moveDown(float amount) { position -= worldUp * amount; }
-  void processMouse(float xoffset, float yoffset, bool constrainPitch = true) {
+void Camera::moveDown(float amount) {
+    position -= worldUp * amount;
+}
+void Camera::processMouse(float xoffset, float yoffset) {
+    bool constrainPitch = true;
     float sensitivity = 0.1f;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
@@ -61,20 +58,20 @@ public:
 
     // Evitar que la cámara se voltee
     if (constrainPitch) {
-      if (pitch > 89.0f)
-        pitch = 89.0f;
-      if (pitch < -89.0f)
-        pitch = -89.0f;
+        if (pitch > 89.0f)
+            pitch = 89.0f;
+        if (pitch < -89.0f)
+            pitch = -89.0f;
     }
 
     // Actualizar vectores con los nuevos ángulos
     updateCameraVectors();
-  }
-  // Getter para la matriz de vista
-  glm::mat4 getViewMatrix() {
+}
+glm::mat4 Camera::getViewMatrix() {
     return glm::lookAt(position, position + front, up);
-  }
+}
 
-  // Getter para depuración
-  glm::vec3 getPosition() { return position; }
-};
+// Getter para depuración
+glm::vec3 Camera::getPosition() {
+    return position;
+}
