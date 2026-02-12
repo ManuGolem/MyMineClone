@@ -7,30 +7,29 @@ int main() {
   Config config;
   // VÉRTICES DEL CUBO (8 vértices únicos)
   float vertices[] = {
-      // Posiciones
-      -0.5f, -0.5f, 0.5f,  // 0
-      0.5f,  -0.5f, 0.5f,  // 1
-      0.5f,  0.5f,  0.5f,  // 2
-      -0.5f, 0.5f,  0.5f,  // 3
-      -0.5f, -0.5f, -0.5f, // 4
-      0.5f,  -0.5f, -0.5f, // 5
-      0.5f,  0.5f,  -0.5f, // 6
-      -0.5f, 0.5f,  -0.5f  // 7
-  };
+      0.0f, 0.0f, 0.0f, // 0
+      0.5,  0.0f, 0.0f, // 1
+      0.5f, 0.5f, 0.0f, // 2
+      0.0f, 0.5f, 0.0f, // 3
+      0.0f, 0.0f, 0.5f, // 4
+      0.5f, 0.0f, 0.5f, // 5
+      0.5f, 0.5f, 0.5f, // 6
+      0.0f, 0.5f, 0.5f, // 7
 
+  };
   // ÍNDICES (36 para 12 triángulos)
   unsigned int indices[] = {
-      0, 1, 2, 0, 2, 3, // frontal
-      4, 6, 5, 4, 7, 6, // trasera
-      4, 0, 3, 4, 3, 7, // izquierda
-      1, 5, 6, 1, 6, 2, // derecha
-      3, 2, 6, 3, 6, 7, // superior
-      4, 5, 1, 4, 1, 0  // inferior
+      4, 5, 6, 4, 6, 7, // Cara frontal
+      0, 4, 7, 0, 7, 3, // Cara izquierda
+      1, 2, 6, 1, 6, 5, // Cara derecha
+      0, 1, 2, 0, 2, 3, // Cara de atras
+      0, 1, 5, 0, 5, 4, // Cara de abajo
+      3, 2, 6, 3, 6, 7  // Cara de arriba
+
   };
 
   config.cargarVertices(vertices, sizeof(vertices));
-  config.cargarIndices(indices,
-                       sizeof(indices)); // Necesitas agregar este método
+  config.cargarIndices(indices, sizeof(indices));
 
   // MATRIZ DE PROYECCIÓN (perspectiva)
   glm::mat4 projection = glm::perspective(glm::radians(45.0f), // FOV
