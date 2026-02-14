@@ -1,10 +1,10 @@
 #include "../include/camera.h"
 
 Camera::Camera() {
-    position = vec3(0.0f, 0.0f, 3.0f);
+    position = vec3(1.0f, 1.0f, 3.0f);
     worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    yaw = 0.0f;
-    pitch = 0.0f;
+    yaw = -90.0f;
+    pitch = -30.0f;
     updateCameraVectors();
 }
 void Camera::updateCameraVectors() {
@@ -71,7 +71,6 @@ glm::mat4 Camera::getViewMatrix() {
     return glm::lookAt(position, position + front, up);
 }
 
-// Getter para depuración
 glm::vec3 Camera::getPosition() {
     return position;
 }

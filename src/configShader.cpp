@@ -1,5 +1,6 @@
 #include "../include/configShader.h"
-
+#include <iostream>
+using namespace std;
 Config::Config() {
     // VAO
     glGenVertexArrays(1, &VAO);
@@ -34,6 +35,15 @@ Config::Config() {
     projLoc = glGetUniformLocation(shader, "projection");
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    // MATRIZ DE PROYECCIÓN (perspectiva)
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), // FOV
+                                            640.0f / 480.0f,     // Aspect ratio
+                                            0.1f,                // Near plane
+                                            100.0f               // Far plane
+    );
+    setProjectionMatrix(glm::value_ptr(projection));
+    glm::mat4 model = glm::mat4(1.0f);
+    setModelMatrix(glm::value_ptr(model));
 }
 Config::~Config() {
     glDeleteVertexArrays(1, &VAO);
@@ -55,17 +65,17 @@ void Config::dibujarBack() {
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, cantIndex, GL_UNSIGNED_INT, 0);
 }
-void Config::setModelMatrix(float* matrix) {
+void Config::setModelMatrix(const float* matrix) {
     glUseProgram(shader);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
 }
 
-void Config::setViewMatrix(float* matrix) {
+void Config::setViewMatrix(const float* matrix) {
     glUseProgram(shader);
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, matrix);
 }
 
-void Config::setProjectionMatrix(float* matrix) {
+void Config::setProjectionMatrix(const float* matrix) {
     glUseProgram(shader);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix);
 }

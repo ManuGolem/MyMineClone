@@ -37,8 +37,8 @@ class Config {
     void cargarIndices(unsigned int*, int);
     void cargarVertices(float*, int);
     void dibujarBack();
-    void setModelMatrix(float*);
-    void setViewMatrix(float*);
-    void setProjectionMatrix(float*);
+    void setModelMatrix(const float*);
+    void setViewMatrix(const float*);
+    void setProjectionMatrix(const float*);
     ~Config();
 };
