@@ -5,6 +5,7 @@ Shader::Shader() {
     unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &vertexShaderSrc, NULL);
     glCompileShader(vs);
+    //LOGS idk
     int success;
     char infoLog[512];
     glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
@@ -12,6 +13,7 @@ Shader::Shader() {
         glGetShaderInfoLog(vs, 512, NULL, infoLog);
         cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
     }
+    // El otro shader
     unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fs, 1, &fragmentShaderSrc, NULL);
     glCompileShader(fs);
