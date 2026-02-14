@@ -13,12 +13,14 @@ class Chunk {
     vector<float> vertexData;
     vector<unsigned int> indexData;
     bool needsUpdate;
-    Config miShader;
     int nroChunkX;
     int nroChunkZ;
     void generateMesh();
 
+    ChunkBuffer chunkBuffer;
+
   public:
+    static Shader* sharedShader;
     Chunk();
     void setBlock(int x, int y, int z, const Block& block);
     Block getBlock(int x, int y, int z) const;

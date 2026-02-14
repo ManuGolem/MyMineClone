@@ -1,81 +1,108 @@
 #include "../include/configShader.h"
 #include <iostream>
 using namespace std;
-Config::Config() {
-    // VAO
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    // VBO
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Configurar shaders
-    //  shaders
+Shader::Shader() {
     unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &vertexShaderSrc, NULL);
     glCompileShader(vs);
-
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vs, 512, NULL, infoLog);
+        cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
+    }
     unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fs, 1, &fragmentShaderSrc, NULL);
     glCompileShader(fs);
 
-    // Crea el shader
-    shader = glCreateProgram();
-    glAttachShader(shader, vs);
-    glAttachShader(shader, fs);
-    glLinkProgram(shader);
+    glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fs, 512, NULL, infoLog);
+        cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << endl;
+    }
+    // Crear programa
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vs);
+    glAttachShader(shaderProgram, fs);
+    glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << endl;
+    }
 
     glDeleteShader(vs);
     glDeleteShader(fs);
-    modelLoc = glGetUniformLocation(shader, "model");
-    viewLoc = glGetUniformLocation(shader, "view");
-    projLoc = glGetUniformLocation(shader, "projection");
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    // MATRIZ DE PROYECCIÓN (perspectiva)
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), // FOV
-                                            640.0f / 480.0f,     // Aspect ratio
-                                            0.1f,                // Near plane
-                                            100.0f               // Far plane
-    );
+
+    // Obtener ubicaciones de uniforms
+    modelLoc = glGetUniformLocation(shaderProgram, "model");
+    viewLoc = glGetUniformLocation(shaderProgram, "view");
+    projLoc = glGetUniformLocation(shaderProgram, "projection");
+
+    // Configurar matriz de proyección (se hace una sola vez)
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 640.0f / 480.0f, 0.1f, 100.0f);
     setProjectionMatrix(glm::value_ptr(projection));
+
+    // Configurar matriz model por defecto
     glm::mat4 model = glm::mat4(1.0f);
     setModelMatrix(glm::value_ptr(model));
 }
-Config::~Config() {
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shader);
-    glDeleteBuffers(1, &EBO);
+Shader::~Shader() {
+    glDeleteProgram(shaderProgram);
 }
-void Config::cargarIndices(unsigned int* indices, int size) {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);
-    cantIndex = size / sizeof(unsigned int);
+void Shader::use() {
+    glUseProgram(shaderProgram);
 }
-void Config::cargarVertices(float* vertices, int size) {
-    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
-    cantVertex = size / (3 * sizeof(float));
-}
-void Config::dibujarBack() {
-    glUseProgram(shader);
-    glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, cantIndex, GL_UNSIGNED_INT, 0);
-}
-void Config::setModelMatrix(const float* matrix) {
-    glUseProgram(shader);
+void Shader::setModelMatrix(const float* matrix) {
+    glUseProgram(shaderProgram);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
 }
 
-void Config::setViewMatrix(const float* matrix) {
-    glUseProgram(shader);
+void Shader::setViewMatrix(const float* matrix) {
+    glUseProgram(shaderProgram);
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, matrix);
 }
 
-void Config::setProjectionMatrix(const float* matrix) {
-    glUseProgram(shader);
+void Shader::setProjectionMatrix(const float* matrix) {
+    glUseProgram(shaderProgram);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix);
+}
+
+// Implementacion de la clase chunkBuffer
+ChunkBuffer::ChunkBuffer() : indexCount(0) {
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+}
+ChunkBuffer::~ChunkBuffer() {
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+}
+void ChunkBuffer::uploadData(const std::vector<float>& vertices, const std::vector<unsigned int>& indices) {
+    indexCount = indices.size();
+
+    glBindVertexArray(VAO);
+
+    // VBO - datos de vértices
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    // EBO - índices
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    // Configurar atributo de posición (location = 0)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // Desenlazar (opcional)
+    glBindVertexArray(0);
+}
+
+void ChunkBuffer::render() {
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }

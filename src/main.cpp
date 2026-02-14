@@ -5,10 +5,9 @@
 
 int main() {
     Screen screen;
-    Config shader;
     World world;
 
-    world.generateFlatWorld(32, 1);
+    world.generateFlatWorld(160, 160);
 
     Uint32 lastFrame = SDL_GetTicks();
 
@@ -31,11 +30,14 @@ int main() {
         }
         screen.poll(deltaTime);
         screen.clear();
+
         world.update();
+
         // Matriz de la camara
         glm::mat4 view = screen.getCamera().getViewMatrix();
-        shader.setViewMatrix(glm::value_ptr(view));
+
         world.render(screen.getCamera().getPosition(), view);
+
         screen.swap();
     }
     return 0;

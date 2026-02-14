@@ -1,6 +1,8 @@
 #include "../include/world.h"
 #include <glm/ext/vector_int2.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+Shader* Chunk::sharedShader = nullptr;
 using namespace std;
 Chunk::Chunk() {
     for (int x = 0; x < 16; x++) {
@@ -10,6 +12,9 @@ Chunk::Chunk() {
                 blocks[x][y][z].type = 0;
             }
         }
+    }
+    if (sharedShader == nullptr) {
+        sharedShader = new Shader();
     }
 }
 void Chunk::generateMesh() {
@@ -97,9 +102,9 @@ void Chunk::generateMesh() {
                     vertexData.push_back(cordz + 0.5f);
 
                     // v2: (x+0.5, y+0.5, z+0.5)
-                    vertexData.push_back(x + 0.5f);
+                    vertexData.push_back(cordx + 0.5f);
                     vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(z + 0.5f);
+                    vertexData.push_back(cordz + 0.5f);
 
                     // v3: (x+0.5, y+0.5, z-0.5)
                     vertexData.push_back(cordx + 0.5f);
@@ -130,9 +135,9 @@ void Chunk::generateMesh() {
                     vertexData.push_back(cordz - 0.5f);
 
                     // v2: (x-0.5, y+0.5, z-0.5)
-                    vertexData.push_back(x - 0.5f);
+                    vertexData.push_back(cordx - 0.5f);
                     vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(z - 0.5f);
+                    vertexData.push_back(cordz - 0.5f);
 
                     // v3: (x-0.5, y+0.5, z+0.5)
                     vertexData.push_back(cordx - 0.5f);
@@ -237,13 +242,16 @@ void Chunk::setNroChunk(int chunkx, int chunkz) {
 void Chunk::render(const mat4& view) {
     if (needsUpdate) {
         generateMesh();
-        miShader.cargarVertices(vertexData.data(), vertexData.size() * sizeof(float));
-        miShader.cargarIndices(indexData.data(), indexData.size() * sizeof(unsigned int));
+        if (!vertexData.empty()) {
+            chunkBuffer.uploadData(vertexData, indexData);
+        }
+        needsUpdate = false;
     }
     if (vertexData.empty())
         return;
-    miShader.setViewMatrix(glm::value_ptr(view));
-    miShader.dibujarBack();
+    sharedShader->use();
+    sharedShader->setViewMatrix(glm::value_ptr(view));
+    chunkBuffer.render();
 }
 World::World() {
 }
@@ -286,9 +294,9 @@ ivec2 World::getChunkPos(vec3 worldPos) {
 void World::render(vec3 cameraPos, mat4 view) {
 
     ivec2 centerChunk = getChunkPos(cameraPos);
-
-    for (int dx = -10; dx <= 10; dx++) {
-        for (int dz = -10; dz <= 10; dz++) {
+    int renderDist = 32;
+    for (int dx = -renderDist; dx <= renderDist; dx++) {
+        for (int dz = -renderDist; dz <= renderDist; dz++) {
             Chunk* chunk = getChunk(centerChunk.x + dx, centerChunk.y + dz);
             if (chunk) {
                 chunk->render(view);

@@ -4,13 +4,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-class Config {
+class Shader {
   private:
-    unsigned int VAO, VBO, shader;
     unsigned int modelLoc, viewLoc, projLoc;
-    unsigned int EBO;
-    int cantIndex = 0;
-    int cantVertex = 0;
+    unsigned int shaderProgram;
     // Shaders como strings privados (noentendi esto)
     const char* vertexShaderSrc = R"(
         #version 330 core
@@ -33,12 +30,21 @@ class Config {
     )";
 
   public:
-    Config();
-    void cargarIndices(unsigned int*, int);
-    void cargarVertices(float*, int);
-    void dibujarBack();
+    Shader();
+    ~Shader();
+    void use();
     void setModelMatrix(const float*);
     void setViewMatrix(const float*);
     void setProjectionMatrix(const float*);
-    ~Config();
+};
+class ChunkBuffer {
+  private:
+    unsigned int VAO, VBO, EBO;
+    int indexCount;
+
+  public:
+    ChunkBuffer();
+    ~ChunkBuffer();
+    void render();
+    void uploadData(const std::vector<float>& vertices, const std::vector<unsigned int>& indices);
 };
