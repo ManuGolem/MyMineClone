@@ -6,6 +6,7 @@ MineClone: \
   CMakeFiles/MineClone.dir/src/configShader.cpp.o \
   CMakeFiles/MineClone.dir/src/main.cpp.o \
   CMakeFiles/MineClone.dir/src/screen.cpp.o \
+  CMakeFiles/MineClone.dir/src/world.cpp.o \
   libglad.a \
   /usr/lib/libSDL2-2.0.so.0.3200.64 \
   /usr/lib/libGLX.so \
@@ -61,6 +62,8 @@ CMakeFiles/MineClone.dir/src/configShader.cpp.o:
 CMakeFiles/MineClone.dir/src/main.cpp.o:
 
 CMakeFiles/MineClone.dir/src/screen.cpp.o:
+
+CMakeFiles/MineClone.dir/src/world.cpp.o:
 
 libglad.a:
 

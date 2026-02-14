@@ -8,6 +8,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/MineClone.dir/src/main.cpp.o.d"
   "CMakeFiles/MineClone.dir/src/screen.cpp.o"
   "CMakeFiles/MineClone.dir/src/screen.cpp.o.d"
+  "CMakeFiles/MineClone.dir/src/world.cpp.o"
+  "CMakeFiles/MineClone.dir/src/world.cpp.o.d"
   "MineClone"
   "MineClone.pdb"
 )

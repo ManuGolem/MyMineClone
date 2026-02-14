@@ -12,6 +12,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/manugolem/Repositorios/mymineclone/src/configShader.cpp" "CMakeFiles/MineClone.dir/src/configShader.cpp.o" "gcc" "CMakeFiles/MineClone.dir/src/configShader.cpp.o.d"
   "/home/manugolem/Repositorios/mymineclone/src/main.cpp" "CMakeFiles/MineClone.dir/src/main.cpp.o" "gcc" "CMakeFiles/MineClone.dir/src/main.cpp.o.d"
   "/home/manugolem/Repositorios/mymineclone/src/screen.cpp" "CMakeFiles/MineClone.dir/src/screen.cpp.o" "gcc" "CMakeFiles/MineClone.dir/src/screen.cpp.o.d"
+  "/home/manugolem/Repositorios/mymineclone/src/world.cpp" "CMakeFiles/MineClone.dir/src/world.cpp.o" "gcc" "CMakeFiles/MineClone.dir/src/world.cpp.o.d"
   "" "MineClone" "gcc" "CMakeFiles/MineClone.dir/link.d"
   )
 

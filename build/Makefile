@@ -238,6 +238,30 @@ src/screen.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MineClone.dir/build.make CMakeFiles/MineClone.dir/src/screen.cpp.s
 .PHONY : src/screen.cpp.s
 
+src/world.o: src/world.cpp.o
+.PHONY : src/world.o
+
+# target to build an object file
+src/world.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MineClone.dir/build.make CMakeFiles/MineClone.dir/src/world.cpp.o
+.PHONY : src/world.cpp.o
+
+src/world.i: src/world.cpp.i
+.PHONY : src/world.i
+
+# target to preprocess a source file
+src/world.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MineClone.dir/build.make CMakeFiles/MineClone.dir/src/world.cpp.i
+.PHONY : src/world.cpp.i
+
+src/world.s: src/world.cpp.s
+.PHONY : src/world.s
+
+# target to generate assembly for a file
+src/world.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MineClone.dir/build.make CMakeFiles/MineClone.dir/src/world.cpp.s
+.PHONY : src/world.cpp.s
+
 src_glad/glad.o: src_glad/glad.c.o
 .PHONY : src_glad/glad.o
 
@@ -284,6 +308,9 @@ help:
 	@echo "... src/screen.o"
 	@echo "... src/screen.i"
 	@echo "... src/screen.s"
+	@echo "... src/world.o"
+	@echo "... src/world.i"
+	@echo "... src/world.s"
 	@echo "... src_glad/glad.o"
 	@echo "... src_glad/glad.i"
 	@echo "... src_glad/glad.s"
