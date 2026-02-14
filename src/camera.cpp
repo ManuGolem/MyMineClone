@@ -18,7 +18,7 @@ void Camera::updateCameraVectors() {
     front = glm::normalize(newFront);
     glm::vec3 newFrontH;
     newFrontH.x = cos(glm::radians(yaw));
-    newFrontH.y = 0.0f; // <-- ¡QUITAMOS LA Y!
+    newFrontH.y = 0.0f;
     newFrontH.z = sin(glm::radians(yaw));
     frontHorizontal = glm::normalize(newFrontH);
     // Recalcular right y up
