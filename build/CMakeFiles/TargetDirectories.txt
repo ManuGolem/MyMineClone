@@ -1,4 +1,0 @@
-/home/manugolem/Repositorios/mymineclone/build/CMakeFiles/glad.dir
-/home/manugolem/Repositorios/mymineclone/build/CMakeFiles/MineClone.dir
-/home/manugolem/Repositorios/mymineclone/build/CMakeFiles/edit_cache.dir
-/home/manugolem/Repositorios/mymineclone/build/CMakeFiles/rebuild_cache.dir
