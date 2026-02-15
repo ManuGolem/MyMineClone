@@ -3,7 +3,14 @@
 #include "configShader.h"
 using namespace std;
 using namespace glm;
-struct Block {
+struct MeshFace {
+    int x, y, z;        // Posición inicial
+    int w, h;           // Ancho y alto
+    int axis;           // 0=X, 1=Y, 2=Z (eje perpendicular a la cara)
+    int dir;            // -1 o +1 (dirección de la cara)
+    int type;           // Tipo de bloque (para texturas después)
+};
+struct Block {  
     bool active;
     int type;
 };
@@ -16,7 +23,6 @@ class Chunk {
     int nroChunkX;
     int nroChunkZ;
     void generateMesh();
-
     ChunkBuffer chunkBuffer;
 
   public:
