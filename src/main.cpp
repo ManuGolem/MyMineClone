@@ -7,7 +7,7 @@ int main() {
     Screen screen;
     World world;
 
-    world.generateFlatWorld(16,17);
+    world.generateFlatWorld(160, 160);
 
     Uint32 lastFrame = SDL_GetTicks();
 
@@ -22,8 +22,8 @@ int main() {
         fpsTimer += deltaTime;
         if (fpsTimer >= 1.0f) {
             float FPS = frameCount / fpsTimer;
-            std::cout << "FPS: " << FPS <<endl;
-
+            std::cout << "FPS: " << FPS << "\r";
+            std::cout.flush();
             frameCount = 0;
             fpsTimer = 0;
         }
