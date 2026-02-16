@@ -3,16 +3,12 @@
 #include "configShader.h"
 using namespace std;
 using namespace glm;
-struct MeshFace {
-    int x, y, z;        // Posición inicial
-    int w, h;           // Ancho y alto
-    int axis;           // 0=X, 1=Y, 2=Z (eje perpendicular a la cara)
-    int dir;            // -1 o +1 (dirección de la cara)
-    int type;           // Tipo de bloque (para texturas después)
-};
-struct Block {  
+struct Block {
     bool active;
     int type;
+};
+struct Rectangulo {
+    int x1, x2, y1, y2;
 };
 class Chunk {
   private:
@@ -22,8 +18,12 @@ class Chunk {
     bool needsUpdate;
     int nroChunkX;
     int nroChunkZ;
+    int caras;
+    int vertexCount;
     void generateMesh();
+    void generateMeshBlock();
     ChunkBuffer chunkBuffer;
+    void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo);
 
   public:
     static Shader* sharedShader;
@@ -33,6 +33,9 @@ class Chunk {
     void render(const mat4& view);
     bool isEmpty() const;
     void setNroChunk(int, int);
+    int getCaras() const {
+        return caras;
+    }
 };
 class World {
   private:
