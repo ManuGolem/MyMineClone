@@ -1,7 +1,7 @@
 #include "../include/camera.h"
 
 Camera::Camera() {
-    position = vec3(1.0f, 1.0f, 3.0f);
+    position = vec3(1.0f, 70.0f, 3.0f);
     worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     yaw = -90.0f;
     pitch = -30.0f;
