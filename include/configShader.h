@@ -4,14 +4,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-class Shader
-{
-private:
-  unsigned int modelLoc, viewLoc, projLoc;
-  unsigned int shaderProgram;
-  unsigned int textureID;
-  // Shaders como strings privados (noentendi esto)
-  const char *vertexShaderSrc = R"(
+class Shader {
+  private:
+    unsigned int modelLoc, viewLoc, projLoc;
+    unsigned int shaderProgram;
+    unsigned int textureID;
+    unsigned int useTextureLoc;
+    // Shaders como strings privados (noentendi esto)
+    const char* vertexShaderSrc = R"(
         #version 330 core
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aColor;        
@@ -33,7 +33,7 @@ private:
             textureCoordOffset = aTexCoordOffset;
         }
     )";
-  const char *fragmentShaderSrc = R"(
+    const char* fragmentShaderSrc = R"(
         #version 330 core
         out vec4 FragColor;
 
@@ -43,38 +43,50 @@ private:
 
         uniform sampler2D textureBlock;
         uniform float textureSize;
+        uniform bool useTexture;
 
         void main() {
-            vec2 tiledCoord = fract(textureCoord);
-            vec2 scaledCoord = tiledCoord * textureSize;
-            vec2 finalCoord = scaledCoord + textureCoordOffset;
+            if(useTexture){
+                vec2 tiledCoord = fract(textureCoord);
+                vec2 scaledCoord = tiledCoord * textureSize;
+                vec2 finalCoord = scaledCoord + textureCoordOffset;
+
+                vec4 texColor = texture(textureBlock, finalCoord);
+                FragColor = texColor * vec4(vertexColor, 1.0);  // <-- Multiplicar por texColor
+            }else{
+                FragColor=vec4(vertexColor,1.0);
+            }
             
-            vec4 texColor = texture(textureBlock, finalCoord);
-            FragColor = texColor * vec4(vertexColor, 1.0);  // <-- Multiplicar por color
         }
     )";
 
-public:
-  Shader();
-  ~Shader();
-  void use();
-  void setModelMatrix(const float *);
-  void setViewMatrix(const float *);
-  void setProjectionMatrix(const float *);
-  unsigned int getTextureID() const
-  {
-    return textureID;
-  }
+  public:
+    Shader();
+    ~Shader();
+    void use();
+    void setModelMatrix(const float*);
+    void setViewMatrix(const float*);
+    void setProjectionMatrix(const float*);
+    void setUseTexture(bool use) {
+        glUniform1i(useTextureLoc, use ? 1 : 0);
+    }
+    unsigned int getTextureID() const {
+        return textureID;
+    }
 };
-class ChunkBuffer
-{
-private:
-  unsigned int VAO, VBO, EBO;
-  int indexCount;
+class ChunkBuffer {
+  private:
+    unsigned int VAO, VBO, EBO;
+    int indexCount;
 
-public:
-  ChunkBuffer();
-  ~ChunkBuffer();
-  void render();
-  void uploadData(const std::vector<float> &vertices, const std::vector<unsigned int> &indices);
+  public:
+    ChunkBuffer();
+    ~ChunkBuffer();
+    void render();
+    void uploadData(const std::vector<float>& vertices, const std::vector<unsigned int>& indices);
+    void renderLines(int count) {
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_LINES, 0, count);
+        glBindVertexArray(0);
+    }
 };
