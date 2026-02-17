@@ -9,6 +9,7 @@ struct Block {
 };
 struct Rectangulo {
     int x1, x2, y1, y2;
+    int tipoBloque;
 };
 class Chunk {
   private:
@@ -23,7 +24,7 @@ class Chunk {
     void generateMesh();
     void generateMeshBlock();
     ChunkBuffer chunkBuffer;
-    void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo);
+    void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int tipoBloque);
 
   public:
     static Shader* sharedShader;
