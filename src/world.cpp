@@ -5,36 +5,58 @@
 
 #include <iostream>
 
-template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(bool (&mascara)[FILAS][COLUMNAS]) {
+template <size_t FILAS, size_t COLUMNAS>
+vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS])
+{
     vector<Rectangulo> rectangulos;
     bool procesado[FILAS][COLUMNAS] = {false};
-    for (int i = 0; i < FILAS; i++) {
-        for (int j = 0; j < COLUMNAS; j++) {
-            if (mascara[i][j] && !procesado[i][j]) {
+
+    for (int i = 0; i < FILAS; i++)
+    {
+        for (int j = 0; j < COLUMNAS; j++)
+        {
+            if (tipos[i][j] != 0 && !procesado[i][j])
+            {
+                int tipo_actual = tipos[i][j];
                 int ancho = 1;
-                while (j + ancho < COLUMNAS && mascara[i][j + ancho] && !procesado[i][j + ancho]) {
+
+                // Expandir ancho mientras sea el MISMO tipo
+                while (j + ancho < COLUMNAS && tipos[i][j + ancho] == tipo_actual && !procesado[i][j + ancho])
+                {
                     procesado[i][j + ancho] = true;
                     ancho++;
                 }
+
                 int alto = 1;
                 bool expandible = true;
-                while (i + alto < FILAS && expandible) {
-                    for (int dj = 0; dj < ancho; dj++) {
-                        if (!mascara[i + alto][j + dj] || procesado[i + alto][j + dj]) {
+
+                // Expandir alto mientras TODA la fila sea del MISMO tipo
+                while (i + alto < FILAS && expandible)
+                {
+                    for (int dj = 0; dj < ancho; dj++)
+                    {
+                        if (tipos[i + alto][j + dj] != tipo_actual || procesado[i + alto][j + dj])
+                        {
                             expandible = false;
                             break;
-                        } else {
+                        }
+                        else
+                        {
                             procesado[i + alto][j + dj] = true;
                         }
                     }
                     if (expandible)
+                    {
                         alto++;
+                    }
                 }
+
                 Rectangulo r;
                 r.y1 = i;
                 r.x1 = j;
                 r.y2 = i + alto - 1;
                 r.x2 = j + ancho - 1;
+                r.tipoBloque = tipo_actual;
                 rectangulos.push_back(r);
             }
         }
@@ -42,126 +64,144 @@ template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(bo
     return rectangulos;
 }
 
-Shader* Chunk::sharedShader = nullptr;
+Shader *Chunk::sharedShader = nullptr;
 using namespace std;
-Chunk::Chunk() {
-    for (int x = 0; x < 16; x++) {
-        for (int y = 0; y < 256; y++) {
-            for (int z = 0; z < 16; z++) {
+Chunk::Chunk()
+{
+    for (int x = 0; x < 16; x++)
+    {
+        for (int y = 0; y < 256; y++)
+        {
+            for (int z = 0; z < 16; z++)
+            {
                 blocks[x][y][z].active = false;
                 blocks[x][y][z].type = 0;
             }
         }
     }
-    if (sharedShader == nullptr) {
+    if (sharedShader == nullptr)
+    {
         sharedShader = new Shader();
     }
 }
-void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo) {
+void Chunk::cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo, int tipo_bloque)
+{
     float base = vertexCount;
-    float offsetX = nroChunkX * 16;
-    float offsetZ = nroChunkZ * 16;
-    // Los vertices son
-    //(y2,z2)------(y2,z1)
-    //     |
-    //     |
-    //     |
-    //     |
-    //     |
-    //(y1,z2)------(y1,z1)
-    // Hay que generarlos antihorarios
+    float offsetX = nroChunkX * 16.0f;
+    float offsetZ = nroChunkZ * 16.0f;
 
-    if (eje == 0) {
+    // Calculo uv para el atlas (0,0) es abajo a la izquierda
+    float u_min, u_max, v_min, v_max;
+    float ancho = r.x2 - r.x1 + 1;
+    float alto = r.y2 - r.y1 + 1;
+    int columna = (tipo_bloque - 1) % 16;
+    int fila = (tipo_bloque - 1) / 16;
+    float tileSize = 1.0f / 16.0f;
+    float offsetU = columna * tileSize;
+    float offsetV = 1.0f - (fila + 1) * tileSize;
+    if (eje == 0)
+    {
         float xPos = offsetX + fijo + (direccion == 1 ? 0.5f : -0.5f);
+        float rcolor = 1.0f;
+        float gcolor = 1.0f;
+        float bcolor = 1.0f;
 
-        float y1 = r.y1 - 1.0f; // Base
-        float y2 = r.y2;        // Techo
+        float y1 = r.y1 - 1.0f;
+        float y2 = r.y2;
+
         float z1 = offsetZ + r.x1 - 0.5f;
         float z2 = offsetZ + r.x2 + 0.5f;
 
-        // vértices en orden: inferior-izquierdo, inferior-derecho,
-        // superior-derecho, superior-izquierdo
-        vertexData.push_back(xPos);
-        vertexData.push_back(y1);
-        vertexData.push_back(z1); // v0
-        vertexData.push_back(xPos);
-        vertexData.push_back(y1);
-        vertexData.push_back(z2); // v1
-        vertexData.push_back(xPos);
-        vertexData.push_back(y2);
-        vertexData.push_back(z2); // v2
-        vertexData.push_back(xPos);
-        vertexData.push_back(y2);
-        vertexData.push_back(z1); // v3
+        float vertex[40] = {
+            // VERTEX 1
+            xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+            // VERTEX 2
+            xPos, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+            // VERTEX 3
+            xPos, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+            // VERTEX 4
+            xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
+        vertexData.insert(vertexData.end(), std::begin(vertex), std::end(vertex));
 
-        // índices: dos triángulos (v0-v1-v2 y v0-v2-v3)
         indexData.push_back(base);
         indexData.push_back(base + 1);
         indexData.push_back(base + 2);
-
         indexData.push_back(base);
         indexData.push_back(base + 2);
         indexData.push_back(base + 3);
-    } else if (eje == 1) {
+    }
+    else if (eje == 1)
+    { // CARAS EN Y
+        float rcolor = 1.0f;
+        float gcolor = 1.0f;
+        float bcolor = 1.0f;
+        if (tipo_bloque == 4)
+        {
+            if (direccion == 1)
+            {
+                rcolor = 0.3f;
+                gcolor = 0.8f;
+                bcolor = 0.3f;
+                columna = 8;
+                fila = 2.0f;
+            }
+            else
+            {
+                columna = 2;
+                fila = 0.0f;
+            }
+            offsetU = columna * tileSize;
+            offsetV = 1.0f - (fila + 1) * tileSize;
+        }
         float yPos = fijo + (direccion == 1 ? 0.0f : -1.0f);
-
-        // r.x1, r.x2 son X
-        // r.y1, r.y2 son Z
         float x1 = offsetX + r.y1 - 0.5f;
         float x2 = offsetX + r.y2 + 0.5f;
         float z1 = offsetZ + r.x1 - 0.5f;
         float z2 = offsetZ + r.x2 + 0.5f;
+        float vertex[40] = {
+            // VERTEX 1
+            x1, yPos, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+            // VERTEX 2
+            x2, yPos, z1, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+            // VERTEX 3
+            x2, yPos, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+            // VERTEX 4
+            x1, yPos, z2, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
 
-        // vértices en orden: (x1,z1), (x2,z1), (x2,z2), (x1,z2)
-        vertexData.push_back(x1);
-        vertexData.push_back(yPos);
-        vertexData.push_back(z1); // v0
-        vertexData.push_back(x2);
-        vertexData.push_back(yPos);
-        vertexData.push_back(z1); // v1
-        vertexData.push_back(x2);
-        vertexData.push_back(yPos);
-        vertexData.push_back(z2); // v2
-        vertexData.push_back(x1);
-        vertexData.push_back(yPos);
-        vertexData.push_back(z2); // v3
+        vertexData.insert(vertexData.end(), std::begin(vertex), std::end(vertex));
 
-        // índices (dos triángulos: v0-v1-v2 y v0-v2-v3)
         indexData.push_back(base);
         indexData.push_back(base + 1);
         indexData.push_back(base + 2);
-
         indexData.push_back(base);
         indexData.push_back(base + 2);
         indexData.push_back(base + 3);
-    } else {
+    }
+    else if (eje == 2)
+    { // CARAS EN Z
+        float rcolor = 1.0f;
+        float gcolor = 1.0f;
+        float bcolor = 1.0f;
         float zPos = offsetZ + fijo + (direccion == 1 ? 0.5f : -0.5f);
-
-        float y1 = r.x1 - 1.0f; // Base
-        float y2 = r.x2;        // Techo
+        float y1 = r.x1 - 1.0f;
+        float y2 = r.x2;
         float x1 = offsetX + r.y1 - 0.5f;
         float x2 = offsetX + r.y2 + 0.5f;
+        float vertex[40] = {
+            // VERTEX 1
+            x1, y1, zPos, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+            // VERTEX 2
+            x2, y1, zPos, rcolor, gcolor, bcolor, alto, 0.0f, offsetU, offsetV,
+            // VERTEX 3
+            x2, y2, zPos, rcolor, gcolor, bcolor, alto, ancho, offsetU, offsetV,
+            // VERTEX 4
+            x1, y2, zPos, rcolor, gcolor, bcolor, 0.0f, ancho, offsetU, offsetV};
 
-        // vértices en orden: inferior-izquierdo, inferior-derecho,
-        // superior-derecho, superior-izquierdo
-        vertexData.push_back(x1);
-        vertexData.push_back(y1);
-        vertexData.push_back(zPos); // v0
-        vertexData.push_back(x2);
-        vertexData.push_back(y1);
-        vertexData.push_back(zPos); // v1
-        vertexData.push_back(x2);
-        vertexData.push_back(y2);
-        vertexData.push_back(zPos); // v2
-        vertexData.push_back(x1);
-        vertexData.push_back(y2);
-        vertexData.push_back(zPos); // v3
+        vertexData.insert(vertexData.end(), std::begin(vertex), std::end(vertex));
 
-        // índices: dos triángulos (v0-v1-v2 y v0-v2-v3)
         indexData.push_back(base);
         indexData.push_back(base + 1);
         indexData.push_back(base + 2);
-
         indexData.push_back(base);
         indexData.push_back(base + 2);
         indexData.push_back(base + 3);
@@ -169,342 +209,197 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
 
     vertexCount += 4;
 }
-void Chunk::generateMesh() {
+void Chunk::generateMesh()
+{
     if (!needsUpdate)
         return;
     vertexData.clear();
     indexData.clear();
     vertexCount = 0;
 
-    for (int x = 0; x < 16; x++) {
-        bool capasIzquierdas[256][16];
-        bool capasDerechas[256][16];
-        for (int i = 0; i < 256; i++) {
-            for (int j = 0; j < 16; j++) {
-                if (blocks[x][i][j].active && blocks[x][i][j].type != 0) {
-                    capasDerechas[i][j] = (x == 15) || !blocks[x + 1][i][j].active;
-                    capasIzquierdas[i][j] = (x == 0) || !blocks[x - 1][i][j].active;
-                } else {
-                    capasDerechas[i][j] = false;
-                    capasIzquierdas[i][j] = false;
+    // CARAS EN X
+    for (int x = 0; x < 16; x++)
+    {
+        int capasIzquierdas[256][16] = {0};
+        int capasDerechas[256][16] = {0};
+        for (int i = 0; i < 256; i++)
+        {
+            for (int j = 0; j < 16; j++)
+            {
+                if (blocks[x][i][j].active && blocks[x][i][j].type != 0)
+                {
+                    // Cara derecha (x+)
+                    if ((x == 15) || !blocks[x + 1][i][j].active)
+                    {
+                        capasDerechas[i][j] = blocks[x][i][j].type;
+                    }
+                    // Cara izquierda (x-)
+                    if ((x == 0) || !blocks[x - 1][i][j].active)
+                    {
+                        capasIzquierdas[i][j] = blocks[x][i][j].type;
+                    }
                 }
             }
         }
         vector<Rectangulo> rectsDer = formarRectangulos(capasDerechas);
-        for (const Rectangulo& r : rectsDer) {
-            cargarVertices(r, 0, 1, x);
+        for (const Rectangulo &r : rectsDer)
+        {
+            cargarVertices(r, 0, 1, x, r.tipoBloque);
         }
         vector<Rectangulo> rectsIzq = formarRectangulos(capasIzquierdas);
 
-        for (const Rectangulo& r : rectsIzq) {
-            cargarVertices(r, 0, -1, x);
+        for (const Rectangulo &r : rectsIzq)
+        {
+            cargarVertices(r, 0, -1, x, r.tipoBloque);
         }
     }
-    for (int y = 0; y < 256; y++) {
-        bool capasSuperiores[16][16];
-        bool capasInferiores[16][16];
-        for (int i = 0; i < 16; i++) {
-            for (int j = 0; j < 16; j++) {
-                if (blocks[i][y][j].active && blocks[i][y][j].type != 0) {
-                    capasInferiores[i][j] = (y == 0) || !blocks[i][y - 1][j].active;
-                    capasSuperiores[i][j] = (y == 255) || !blocks[i][y + 1][j].active;
-                } else {
-                    capasInferiores[i][j] = false;
-                    capasSuperiores[i][j] = false;
+    for (int y = 0; y < 256; y++)
+    {
+        int capasSuperiores[16][16] = {0};
+        int capasInferiores[16][16] = {0};
+        for (int i = 0; i < 16; i++)
+        {
+            for (int j = 0; j < 16; j++)
+            {
+                if (blocks[i][y][j].active && blocks[i][y][j].type != 0)
+                {
+                    // Cara inferior (y-)
+                    if ((y == 0) || !blocks[i][y - 1][j].active)
+                    {
+                        capasInferiores[i][j] = blocks[i][y][j].type;
+                    }
+                    // Cara superior (y+)
+                    if ((y == 255) || !blocks[i][y + 1][j].active)
+                    {
+                        capasSuperiores[i][j] = blocks[i][y][j].type;
+                    }
                 }
             }
         }
         vector<Rectangulo> rectsInf = formarRectangulos(capasInferiores);
-        for (const Rectangulo& r : rectsInf) {
-            cargarVertices(r, 1, -1, y);
+        for (const Rectangulo &r : rectsInf)
+        {
+            cargarVertices(r, 1, -1, y, r.tipoBloque);
         }
         vector<Rectangulo> rectsSup = formarRectangulos(capasSuperiores);
 
-        for (const Rectangulo& r : rectsSup) {
-            cargarVertices(r, 1, 1, y);
+        for (const Rectangulo &r : rectsSup)
+        {
+            cargarVertices(r, 1, 1, y, r.tipoBloque);
         }
     }
-    for (int z = 0; z < 16; z++) {
-        bool capasFrontal[16][256] = {false};
-        bool capasTrasera[16][256] = {false};
+    for (int z = 0; z < 16; z++)
+    {
+        int capasFrontal[16][256] = {0};
+        int capasTrasera[16][256] = {0};
 
-        for (int i = 0; i < 16; i++) {
-            for (int j = 0; j < 256; j++) {
-                if (blocks[i][j][z].active) {
-                    capasFrontal[i][j] = (z == 15) || !blocks[i][j][z + 1].active;
-                    capasTrasera[i][j] = (z == 0) || !blocks[i][j][z - 1].active;
+        for (int i = 0; i < 16; i++)
+        {
+            for (int j = 0; j < 256; j++)
+            {
+                if (blocks[i][j][z].active)
+                {
+                    // Cara frontal (z+)
+                    if ((z == 15) || !blocks[i][j][z + 1].active)
+                    {
+                        capasFrontal[i][j] = blocks[i][j][z].type;
+                    }
+                    // Cara trasera (z-)
+                    if ((z == 0) || !blocks[i][j][z - 1].active)
+                    {
+                        capasTrasera[i][j] = blocks[i][j][z].type;
+                    }
                 }
             }
         }
 
         vector<Rectangulo> rectsFrontal = formarRectangulos(capasFrontal);
-        for (const Rectangulo& r : rectsFrontal) {
-            cargarVertices(r, 2, 1, z);
+        for (const Rectangulo &r : rectsFrontal)
+        {
+            cargarVertices(r, 2, 1, z, r.tipoBloque);
         }
 
         vector<Rectangulo> rectsTrasera = formarRectangulos(capasTrasera);
-        for (const Rectangulo& r : rectsTrasera) {
-            cargarVertices(r, 2, -1, z);
+        for (const Rectangulo &r : rectsTrasera)
+        {
+            cargarVertices(r, 2, -1, z, r.tipoBloque);
         }
     }
 
     needsUpdate = false;
 }
-void Chunk::generateMeshBlock() {
-    if (!needsUpdate)
-        return;
-    vertexData.clear();
-    indexData.clear();
-    int vertexCount = 0;
-    for (int x = 0; x < 16; x++) {
-        for (int y = 0; y < 256; y++) {
-            for (int z = 0; z < 16; z++) {
-                if (!blocks[x][y][z].active)
-                    continue;
-                int cordx = x + nroChunkX * 16;
-                int cordz = z + nroChunkZ * 16;
-                // Verificar las 6 caras
-                // Cara frontal
-                if (z == 15 || blocks[x][y][z + 1].type == 0) {
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-                    int base = vertexCount;
-                    indexData.push_back(base);
-                    indexData.push_back(base + 1);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base + 3);
-
-                    vertexCount += 4;
-                }
-                // Cara trasera
-                if (z == 0 || blocks[x][y][z - 1].type == 0) {
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    // v1: (x+0.5, y-0.5, z-0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    // v2: (x+0.5, y+0.5, z-0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    // v3: (x-0.5, y+0.5, z-0.5)
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    int base = vertexCount;
-                    indexData.push_back(base);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base + 1);
-                    indexData.push_back(base);
-                    indexData.push_back(base + 3);
-                    indexData.push_back(base + 2);
-
-                    vertexCount += 4;
-                }
-                // Cara derecha
-                if (x == 15 || blocks[x + 1][y][z].type == 0) {
-                    // v0: (x+0.5, y-0.5, z-0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    // v1: (x+0.5, y-0.5, z+0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    // v2: (x+0.5, y+0.5, z+0.5)
-                    vertexData.push_back(x + 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(z + 0.5f);
-
-                    // v3: (x+0.5, y+0.5, z-0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    int base = vertexCount;
-                    indexData.push_back(base);
-                    indexData.push_back(base + 1);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base + 3);
-
-                    vertexCount += 4;
-                }
-
-                // Cara izquierda
-                if (x == 0 || blocks[x - 1][y][z].type == 0) {
-                    // v0: (x-0.5, y-0.5, z+0.5)
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    // v1: (x-0.5, y-0.5, z-0.5)
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    // v2: (x-0.5, y+0.5, z-0.5)
-                    vertexData.push_back(x - 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(z - 0.5f);
-
-                    // v3: (x-0.5, y+0.5, z+0.5)
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    int base = vertexCount;
-                    indexData.push_back(base);
-                    indexData.push_back(base + 1);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base + 3);
-
-                    vertexCount += 4;
-                }
-
-                // Cara superior
-                if (y == 255 || blocks[x][y + 1][z].type == 0) {
-                    // v0: (x-0.5, y+0.5, z+0.5)
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    // v1: (x+0.5, y+0.5, z+0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    // v2: (x+0.5, y+0.5, z-0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    // v3: (x-0.5, y+0.5, z-0.5)
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y + 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    int base = vertexCount;
-                    indexData.push_back(base);
-                    indexData.push_back(base + 1);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base + 3);
-
-                    vertexCount += 4;
-                }
-
-                // Cara inferior
-                if (y == 0 || blocks[x][y - 1][z].type == 0) {
-                    // v0: (x-0.5, y-0.5, z-0.5)
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    // v1: (x+0.5, y-0.5, z-0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz - 0.5f);
-
-                    // v2: (x+0.5, y-0.5, z+0.5)
-                    vertexData.push_back(cordx + 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    // v3: (x-0.5, y-0.5, z+0.5)
-                    vertexData.push_back(cordx - 0.5f);
-                    vertexData.push_back(y - 0.5f);
-                    vertexData.push_back(cordz + 0.5f);
-
-                    int base = vertexCount;
-                    indexData.push_back(base);
-                    indexData.push_back(base + 2);
-                    indexData.push_back(base + 1);
-                    indexData.push_back(base);
-                    indexData.push_back(base + 3);
-                    indexData.push_back(base + 2);
-
-                    vertexCount += 4;
-                }
-            }
-        }
-    }
-    needsUpdate = false;
-}
-
-void Chunk::setBlock(int x, int y, int z, const Block& block) {
-    if (x < 0 || x >= 16 || y < 0 || y >= 256 || z < 0 || z >= 16) {
+void Chunk::setBlock(int x, int y, int z, const Block &block)
+{
+    if (x < 0 || x >= 16 || y < 0 || y >= 256 || z < 0 || z >= 16)
+    {
         return;
     }
     blocks[x][y][z] = block;
     needsUpdate = true;
 }
-bool Chunk::isEmpty() const {
+bool Chunk::isEmpty() const
+{
     return vertexData.empty();
 }
-void Chunk::setNroChunk(int chunkx, int chunkz) {
+void Chunk::setNroChunk(int chunkx, int chunkz)
+{
     nroChunkX = chunkx;
     nroChunkZ = chunkz;
 }
-void Chunk::render(const mat4& view) {
-    if (needsUpdate) {
+void Chunk::render(const mat4 &view)
+{
+    if (needsUpdate)
+    {
         generateMesh();
-        if (!vertexData.empty()) {
+        if (!vertexData.empty())
+        {
             chunkBuffer.uploadData(vertexData, indexData);
         }
         needsUpdate = false;
     }
     if (vertexData.empty())
         return;
-    sharedShader->use();
     sharedShader->setViewMatrix(glm::value_ptr(view));
     chunkBuffer.render();
 }
-World::World() {
+World::World()
+{
 }
-void World::generateFlatWorld(int width, int depth) {
+void World::generateFlatWorld(int width, int depth)
+{
     int chunksInX = (width + 15) / 16;
     int chunksInZ = (depth + 15) / 16;
-    for (int cx = 0; cx < chunksInX; cx++) {
-        for (int cz = 0; cz < chunksInZ; cz++) {
-            Chunk& chunk = chunks[cx][cz];
+    for (int cx = 0; cx < chunksInX; cx++)
+    {
+        for (int cz = 0; cz < chunksInZ; cz++)
+        {
+            Chunk &chunk = chunks[cx][cz];
             chunk.setNroChunk(cx, cz);
-            for (int x = 0; x < 16; x++) {
-                for (int z = 0; z < 16; z++) {
-                    for (int y = 0; y < 255; y++) {
+            for (int x = 0; x < 16; x++)
+            {
+                for (int z = 0; z < 16; z++)
+                {
+                    for (int y = 0; y < 255; y++)
+                    {
                         int wordlX = cx * 16 + x;
                         int wordlZ = cz * 16 + z;
-                        if (wordlX < width && wordlZ < depth) {
+                        if (wordlX < width && wordlZ < depth)
+                        {
                             Block block;
                             block.active = true;
-                            block.type = 1;
+                            if (y < 64)
+                            {
+                                block.type = 2;
+                            }
+                            else if (y == 64)
+                            {
+                                block.type = 4;
+                            }
+                            else
+                            {
+                                block.type = 0;
+                                block.active = false;
+                            }
                             chunk.setBlock(x, y, z, block);
                         }
                     }
@@ -513,7 +408,8 @@ void World::generateFlatWorld(int width, int depth) {
         }
     }
 }
-Chunk* World::getChunk(int x, int z) {
+Chunk *World::getChunk(int x, int z)
+{
     auto itX = chunks.find(x);
     if (itX == chunks.end())
         return nullptr;
@@ -522,22 +418,28 @@ Chunk* World::getChunk(int x, int z) {
         return nullptr;
     return &itZ->second;
 }
-ivec2 World::getChunkPos(vec3 worldPos) {
+ivec2 World::getChunkPos(vec3 worldPos)
+{
     int chunkX = (int)floor(worldPos.x / 16.0f);
     int chunkZ = (int)floor(worldPos.z / 16.0f);
     return ivec2(chunkX, chunkZ);
 }
-void World::render(vec3 cameraPos, mat4 view) {
+void World::render(vec3 cameraPos, mat4 view)
+{
     ivec2 centerChunk = getChunkPos(cameraPos);
-    int renderDist = 8;
-    for (int dx = -renderDist; dx <= renderDist; dx++) {
-        for (int dz = -renderDist; dz <= renderDist; dz++) {
-            Chunk* chunk = getChunk(centerChunk.x + dx, centerChunk.y + dz);
-            if (chunk) {
+    int renderDist = 32;
+    for (int dx = -renderDist; dx <= renderDist; dx++)
+    {
+        for (int dz = -renderDist; dz <= renderDist; dz++)
+        {
+            Chunk *chunk = getChunk(centerChunk.x + dx, centerChunk.y + dz);
+            if (chunk)
+            {
                 chunk->render(view);
             }
         }
     }
 }
-void World::update() {
+void World::update()
+{
 }
