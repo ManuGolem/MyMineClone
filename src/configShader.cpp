@@ -86,8 +86,12 @@ Shader::Shader() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
                     GL_NEAREST); //
     glUniform1i(glGetUniformLocation(shaderProgram, "textureBlock"), 0);
-    float textureSize = 1/16.0f;
+    float textureSize = 1 / 16.0f;
     glUniform1f(glGetUniformLocation(shaderProgram, "textureSize"), textureSize);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
 }
 Shader::~Shader() {
     glDeleteProgram(shaderProgram);
