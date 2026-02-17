@@ -5,25 +5,18 @@
 
 #include <iostream>
 
-template <size_t FILAS, size_t COLUMNAS>
-vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS])
-{
+template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS]) {
     vector<Rectangulo> rectangulos;
     bool procesado[FILAS][COLUMNAS] = {false};
 
-    for (int i = 0; i < FILAS; i++)
-    {
-        for (int j = 0; j < COLUMNAS; j++)
-        {
-            if (tipos[i][j] != 0 && !procesado[i][j])
-            {
+    for (int i = 0; i < FILAS; i++) {
+        for (int j = 0; j < COLUMNAS; j++) {
+            if (tipos[i][j] != 0 && !procesado[i][j]) {
                 int tipo_actual = tipos[i][j];
                 int ancho = 1;
 
                 // Expandir ancho mientras sea el MISMO tipo
-                while (j + ancho < COLUMNAS && tipos[i][j + ancho] == tipo_actual && !procesado[i][j + ancho])
-                {
-                    procesado[i][j + ancho] = true;
+                while (i + ancho < FILAS && tipos[i + ancho][j] == tipo_actual && !procesado[i + ancho][j]) {
                     ancho++;
                 }
 
@@ -31,31 +24,27 @@ vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS])
                 bool expandible = true;
 
                 // Expandir alto mientras TODA la fila sea del MISMO tipo
-                while (i + alto < FILAS && expandible)
-                {
-                    for (int dj = 0; dj < ancho; dj++)
-                    {
-                        if (tipos[i + alto][j + dj] != tipo_actual || procesado[i + alto][j + dj])
-                        {
+                while (j + alto < COLUMNAS && expandible) {
+                    for (int dj = 0; dj < ancho; dj++) {
+                        if (tipos[i + dj][j + alto] != tipo_actual || procesado[i + dj][j + alto]) {
                             expandible = false;
                             break;
                         }
-                        else
-                        {
-                            procesado[i + alto][j + dj] = true;
-                        }
                     }
-                    if (expandible)
-                    {
+                    if (expandible) {
                         alto++;
                     }
                 }
-
+                for (int k = i; k < i + ancho; k++) {
+                    for (int l = j; l < j + alto; l++) {
+                        procesado[k][l] = true;
+                    }
+                }
                 Rectangulo r;
                 r.y1 = i;
                 r.x1 = j;
-                r.y2 = i + alto - 1;
-                r.x2 = j + ancho - 1;
+                r.y2 = i + ancho - 1;
+                r.x2 = j + alto - 1;
                 r.tipoBloque = tipo_actual;
                 rectangulos.push_back(r);
             }
@@ -63,29 +52,22 @@ vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS])
     }
     return rectangulos;
 }
-
-Shader *Chunk::sharedShader = nullptr;
+Shader* Chunk::sharedShader = nullptr;
 using namespace std;
-Chunk::Chunk()
-{
-    for (int x = 0; x < 16; x++)
-    {
-        for (int y = 0; y < 256; y++)
-        {
-            for (int z = 0; z < 16; z++)
-            {
+Chunk::Chunk() {
+    for (int x = 0; x < 16; x++) {
+        for (int y = 0; y < 256; y++) {
+            for (int z = 0; z < 16; z++) {
                 blocks[x][y][z].active = false;
                 blocks[x][y][z].type = 0;
             }
         }
     }
-    if (sharedShader == nullptr)
-    {
+    if (sharedShader == nullptr) {
         sharedShader = new Shader();
     }
 }
-void Chunk::cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo, int tipo_bloque)
-{
+void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int tipo_bloque) {
     float base = vertexCount;
     float offsetX = nroChunkX * 16.0f;
     float offsetZ = nroChunkZ * 16.0f;
@@ -99,8 +81,7 @@ void Chunk::cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo
     float tileSize = 1.0f / 16.0f;
     float offsetU = columna * tileSize;
     float offsetV = 1.0f - (fila + 1) * tileSize;
-    if (eje == 0)
-    {
+    if (eje == 0) {
         float xPos = offsetX + fijo + (direccion == 1 ? 0.5f : -0.5f);
         float rcolor = 1.0f;
         float gcolor = 1.0f;
@@ -112,41 +93,46 @@ void Chunk::cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo
         float z1 = offsetZ + r.x1 - 0.5f;
         float z2 = offsetZ + r.x2 + 0.5f;
 
-        float vertex[40] = {
-            // VERTEX 1
-            xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
-            // VERTEX 2
-            xPos, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
-            // VERTEX 3
-            xPos, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
-            // VERTEX 4
-            xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
+        float vertex[40] = {// VERTEX 1
+                            xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+                            // VERTEX 2
+                            xPos, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+                            // VERTEX 3
+                            xPos, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+                            // VERTEX 4
+                            xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
         vertexData.insert(vertexData.end(), std::begin(vertex), std::end(vertex));
-
-        indexData.push_back(base);
-        indexData.push_back(base + 1);
-        indexData.push_back(base + 2);
-        indexData.push_back(base);
-        indexData.push_back(base + 2);
-        indexData.push_back(base + 3);
-    }
-    else if (eje == 1)
-    { // CARAS EN Y
+        if (direccion == 1) {
+            // Cara mirando hacia +X
+            indexData.push_back(base);     // 0: Inf izq
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base);     // 0: Inf izq
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base + 1); // 1: Inf der
+        } else {
+            // Cara mirando hacia -X
+            indexData.push_back(base + 1); // 1: Inf der
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base + 1); // 1: Inf der
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base);     // 0: Inf izq
+        }
+    } else if (eje == 1) { // CARAS EN Y
+        alto = r.x2 - r.x1 + 1;
+        ancho = r.y2 - r.y1 + 1;
         float rcolor = 1.0f;
         float gcolor = 1.0f;
         float bcolor = 1.0f;
-        if (tipo_bloque == 4)
-        {
-            if (direccion == 1)
-            {
+        if (tipo_bloque == 4) {
+            if (direccion == 1) {
                 rcolor = 0.3f;
                 gcolor = 0.8f;
                 bcolor = 0.3f;
                 columna = 8;
                 fila = 2.0f;
-            }
-            else
-            {
+            } else {
                 columna = 2;
                 fila = 0.0f;
             }
@@ -158,27 +144,35 @@ void Chunk::cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo
         float x2 = offsetX + r.y2 + 0.5f;
         float z1 = offsetZ + r.x1 - 0.5f;
         float z2 = offsetZ + r.x2 + 0.5f;
-        float vertex[40] = {
-            // VERTEX 1
-            x1, yPos, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
-            // VERTEX 2
-            x2, yPos, z1, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
-            // VERTEX 3
-            x2, yPos, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
-            // VERTEX 4
-            x1, yPos, z2, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
+        float vertex[40] = {// VERTEX 1
+                            x1, yPos, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+                            // VERTEX 2
+                            x2, yPos, z1, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+                            // VERTEX 3
+                            x2, yPos, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+                            // VERTEX 4
+                            x1, yPos, z2, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
 
         vertexData.insert(vertexData.end(), std::begin(vertex), std::end(vertex));
 
-        indexData.push_back(base);
-        indexData.push_back(base + 1);
-        indexData.push_back(base + 2);
-        indexData.push_back(base);
-        indexData.push_back(base + 2);
-        indexData.push_back(base + 3);
-    }
-    else if (eje == 2)
-    { // CARAS EN Z
+        if (direccion == 1) {
+            // Cara mirando hacia +Y
+            indexData.push_back(base);     // 0: Inf izq
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base);     // 0: Inf izq
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base + 1); // 1: Inf der
+        } else {
+            // Cara mirando hacia -Y
+            indexData.push_back(base + 1); // 1: Inf der
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base + 1); // 1: Inf der
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base);     // 0: Inf izq
+        }
+    } else if (eje == 2) { // CARAS EN Z
         float rcolor = 1.0f;
         float gcolor = 1.0f;
         float bcolor = 1.0f;
@@ -187,30 +181,39 @@ void Chunk::cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo
         float y2 = r.x2;
         float x1 = offsetX + r.y1 - 0.5f;
         float x2 = offsetX + r.y2 + 0.5f;
-        float vertex[40] = {
-            // VERTEX 1
-            x1, y1, zPos, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
-            // VERTEX 2
-            x2, y1, zPos, rcolor, gcolor, bcolor, alto, 0.0f, offsetU, offsetV,
-            // VERTEX 3
-            x2, y2, zPos, rcolor, gcolor, bcolor, alto, ancho, offsetU, offsetV,
-            // VERTEX 4
-            x1, y2, zPos, rcolor, gcolor, bcolor, 0.0f, ancho, offsetU, offsetV};
+        float vertex[40] = {// VERTEX 1
+                            x1, y1, zPos, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+                            // VERTEX 2
+                            x2, y1, zPos, rcolor, gcolor, bcolor, alto, 0.0f, offsetU, offsetV,
+                            // VERTEX 3
+                            x2, y2, zPos, rcolor, gcolor, bcolor, alto, ancho, offsetU, offsetV,
+                            // VERTEX 4
+                            x1, y2, zPos, rcolor, gcolor, bcolor, 0.0f, ancho, offsetU, offsetV};
 
         vertexData.insert(vertexData.end(), std::begin(vertex), std::end(vertex));
 
-        indexData.push_back(base);
-        indexData.push_back(base + 1);
-        indexData.push_back(base + 2);
-        indexData.push_back(base);
-        indexData.push_back(base + 2);
-        indexData.push_back(base + 3);
+        if (direccion == -1) {
+            // Cara mirando hacia -Z
+            indexData.push_back(base);     // 0: Inf izq
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base);     // 0: Inf izq
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base + 1); // 1: Inf der
+        } else {
+            // Cara mirando hacia +Z
+            indexData.push_back(base + 1); // 1: Inf der
+            indexData.push_back(base + 2); // 2: Sup der
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base + 1); // 1: Inf der
+            indexData.push_back(base + 3); // 3: Sup izq
+            indexData.push_back(base);     // 0: Inf izq
+        }
     }
-
+    caras++;
     vertexCount += 4;
 }
-void Chunk::generateMesh()
-{
+void Chunk::generateMesh() {
     if (!needsUpdate)
         return;
     vertexData.clear();
@@ -218,95 +221,73 @@ void Chunk::generateMesh()
     vertexCount = 0;
 
     // CARAS EN X
-    for (int x = 0; x < 16; x++)
-    {
+    for (int x = 0; x < 16; x++) {
         int capasIzquierdas[256][16] = {0};
         int capasDerechas[256][16] = {0};
-        for (int i = 0; i < 256; i++)
-        {
-            for (int j = 0; j < 16; j++)
-            {
-                if (blocks[x][i][j].active && blocks[x][i][j].type != 0)
-                {
+        for (int i = 0; i < 256; i++) {
+            for (int j = 0; j < 16; j++) {
+                if (blocks[x][i][j].active && blocks[x][i][j].type != 0) {
                     // Cara derecha (x+)
-                    if ((x == 15) || !blocks[x + 1][i][j].active)
-                    {
+                    if ((x == 15) || !blocks[x + 1][i][j].active) {
                         capasDerechas[i][j] = blocks[x][i][j].type;
                     }
                     // Cara izquierda (x-)
-                    if ((x == 0) || !blocks[x - 1][i][j].active)
-                    {
+                    if ((x == 0) || !blocks[x - 1][i][j].active) {
                         capasIzquierdas[i][j] = blocks[x][i][j].type;
                     }
                 }
             }
         }
         vector<Rectangulo> rectsDer = formarRectangulos(capasDerechas);
-        for (const Rectangulo &r : rectsDer)
-        {
+        for (const Rectangulo& r : rectsDer) {
             cargarVertices(r, 0, 1, x, r.tipoBloque);
         }
         vector<Rectangulo> rectsIzq = formarRectangulos(capasIzquierdas);
 
-        for (const Rectangulo &r : rectsIzq)
-        {
+        for (const Rectangulo& r : rectsIzq) {
             cargarVertices(r, 0, -1, x, r.tipoBloque);
         }
     }
-    for (int y = 0; y < 256; y++)
-    {
+    for (int y = 0; y < 256; y++) {
         int capasSuperiores[16][16] = {0};
         int capasInferiores[16][16] = {0};
-        for (int i = 0; i < 16; i++)
-        {
-            for (int j = 0; j < 16; j++)
-            {
-                if (blocks[i][y][j].active && blocks[i][y][j].type != 0)
-                {
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
+                if (blocks[i][y][j].active && blocks[i][y][j].type != 0) {
                     // Cara inferior (y-)
-                    if ((y == 0) || !blocks[i][y - 1][j].active)
-                    {
+                    if ((y == 0) || !blocks[i][y - 1][j].active) {
                         capasInferiores[i][j] = blocks[i][y][j].type;
                     }
                     // Cara superior (y+)
-                    if ((y == 255) || !blocks[i][y + 1][j].active)
-                    {
+                    if ((y == 255) || !blocks[i][y + 1][j].active) {
                         capasSuperiores[i][j] = blocks[i][y][j].type;
                     }
                 }
             }
         }
         vector<Rectangulo> rectsInf = formarRectangulos(capasInferiores);
-        for (const Rectangulo &r : rectsInf)
-        {
+        for (const Rectangulo& r : rectsInf) {
             cargarVertices(r, 1, -1, y, r.tipoBloque);
         }
         vector<Rectangulo> rectsSup = formarRectangulos(capasSuperiores);
 
-        for (const Rectangulo &r : rectsSup)
-        {
+        for (const Rectangulo& r : rectsSup) {
             cargarVertices(r, 1, 1, y, r.tipoBloque);
         }
     }
-    for (int z = 0; z < 16; z++)
-    {
+    for (int z = 0; z < 16; z++) {
         int capasFrontal[16][256] = {0};
         int capasTrasera[16][256] = {0};
 
-        for (int i = 0; i < 16; i++)
-        {
-            for (int j = 0; j < 256; j++)
-            {
-                if (blocks[i][j][z].active)
-                {
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 256; j++) {
+                if (blocks[i][j][z].active) {
                     // Cara frontal (z+)
-                    if ((z == 15) || !blocks[i][j][z + 1].active)
-                    {
+                    if ((z == 15) || !blocks[i][j][z + 1].active) {
                         capasFrontal[i][j] = blocks[i][j][z].type;
                     }
                     // Cara trasera (z-)
-                    if ((z == 0) || !blocks[i][j][z - 1].active)
-                    {
+                    if ((z == 0) || !blocks[i][j][z - 1].active) {
                         capasTrasera[i][j] = blocks[i][j][z].type;
                     }
                 }
@@ -314,45 +295,36 @@ void Chunk::generateMesh()
         }
 
         vector<Rectangulo> rectsFrontal = formarRectangulos(capasFrontal);
-        for (const Rectangulo &r : rectsFrontal)
-        {
+        for (const Rectangulo& r : rectsFrontal) {
             cargarVertices(r, 2, 1, z, r.tipoBloque);
         }
 
         vector<Rectangulo> rectsTrasera = formarRectangulos(capasTrasera);
-        for (const Rectangulo &r : rectsTrasera)
-        {
+        for (const Rectangulo& r : rectsTrasera) {
             cargarVertices(r, 2, -1, z, r.tipoBloque);
         }
     }
 
     needsUpdate = false;
 }
-void Chunk::setBlock(int x, int y, int z, const Block &block)
-{
-    if (x < 0 || x >= 16 || y < 0 || y >= 256 || z < 0 || z >= 16)
-    {
+void Chunk::setBlock(int x, int y, int z, const Block& block) {
+    if (x < 0 || x >= 16 || y < 0 || y >= 256 || z < 0 || z >= 16) {
         return;
     }
     blocks[x][y][z] = block;
     needsUpdate = true;
 }
-bool Chunk::isEmpty() const
-{
+bool Chunk::isEmpty() const {
     return vertexData.empty();
 }
-void Chunk::setNroChunk(int chunkx, int chunkz)
-{
+void Chunk::setNroChunk(int chunkx, int chunkz) {
     nroChunkX = chunkx;
     nroChunkZ = chunkz;
 }
-void Chunk::render(const mat4 &view)
-{
-    if (needsUpdate)
-    {
+void Chunk::render(const mat4& view) {
+    if (needsUpdate) {
         generateMesh();
-        if (!vertexData.empty())
-        {
+        if (!vertexData.empty()) {
             chunkBuffer.uploadData(vertexData, indexData);
         }
         needsUpdate = false;
@@ -362,41 +334,28 @@ void Chunk::render(const mat4 &view)
     sharedShader->setViewMatrix(glm::value_ptr(view));
     chunkBuffer.render();
 }
-World::World()
-{
+World::World() {
 }
-void World::generateFlatWorld(int width, int depth)
-{
+void World::generateFlatWorld(int width, int depth) {
     int chunksInX = (width + 15) / 16;
     int chunksInZ = (depth + 15) / 16;
-    for (int cx = 0; cx < chunksInX; cx++)
-    {
-        for (int cz = 0; cz < chunksInZ; cz++)
-        {
-            Chunk &chunk = chunks[cx][cz];
+    for (int cx = 0; cx < chunksInX; cx++) {
+        for (int cz = 0; cz < chunksInZ; cz++) {
+            Chunk& chunk = chunks[cx][cz];
             chunk.setNroChunk(cx, cz);
-            for (int x = 0; x < 16; x++)
-            {
-                for (int z = 0; z < 16; z++)
-                {
-                    for (int y = 0; y < 255; y++)
-                    {
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int y = 0; y < 255; y++) {
                         int wordlX = cx * 16 + x;
                         int wordlZ = cz * 16 + z;
-                        if (wordlX < width && wordlZ < depth)
-                        {
+                        if (wordlX < width && wordlZ < depth) {
                             Block block;
                             block.active = true;
-                            if (y < 64)
-                            {
+                            if (y < 64) {
                                 block.type = 2;
-                            }
-                            else if (y == 64)
-                            {
+                            } else if (y == 64) {
                                 block.type = 4;
-                            }
-                            else
-                            {
+                            } else {
                                 block.type = 0;
                                 block.active = false;
                             }
@@ -408,8 +367,7 @@ void World::generateFlatWorld(int width, int depth)
         }
     }
 }
-Chunk *World::getChunk(int x, int z)
-{
+Chunk* World::getChunk(int x, int z) {
     auto itX = chunks.find(x);
     if (itX == chunks.end())
         return nullptr;
@@ -418,28 +376,25 @@ Chunk *World::getChunk(int x, int z)
         return nullptr;
     return &itZ->second;
 }
-ivec2 World::getChunkPos(vec3 worldPos)
-{
+ivec2 World::getChunkPos(vec3 worldPos) {
     int chunkX = (int)floor(worldPos.x / 16.0f);
     int chunkZ = (int)floor(worldPos.z / 16.0f);
     return ivec2(chunkX, chunkZ);
 }
-void World::render(vec3 cameraPos, mat4 view)
-{
+void World::render(vec3 cameraPos, mat4 view) {
     ivec2 centerChunk = getChunkPos(cameraPos);
+    int cantRect = 0;
     int renderDist = 32;
-    for (int dx = -renderDist; dx <= renderDist; dx++)
-    {
-        for (int dz = -renderDist; dz <= renderDist; dz++)
-        {
-            Chunk *chunk = getChunk(centerChunk.x + dx, centerChunk.y + dz);
-            if (chunk)
-            {
+    for (int dx = -renderDist; dx <= renderDist; dx++) {
+        for (int dz = -renderDist; dz <= renderDist; dz++) {
+            Chunk* chunk = getChunk(centerChunk.x + dx, centerChunk.y + dz);
+            if (chunk) {
                 chunk->render(view);
+                cantRect += chunk->getCaras();
             }
         }
     }
+    cout << "Cantidad de rectangulos generados: " << cantRect << endl;
 }
-void World::update()
-{
+void World::update() {
 }

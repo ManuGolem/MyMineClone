@@ -52,3 +52,40 @@ class World {
     void render(vec3 cameraPos, mat4 view);
     void update();
 };
+class DebugAxes {
+  private:
+    ChunkBuffer buffer;
+    bool inicializado;
+
+  public:
+    DebugAxes() : inicializado(false) {
+    }
+
+    void inicializar() {
+        if (inicializado)
+            return;
+
+        // 6 vértices (3 líneas) con formato: posición(3) + color(3) + texCoord(2) +
+        // texOffset(2) Para debug, texCoord y texOffset los dejamos en 0
+        std::vector<float> vertices = {// Eje X rojo
+                                       0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+
+                                       // Eje Y verde
+                                       0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+
+                                       // Eje Z azul
+                                       0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+                                       0.0f};
+
+        std::vector<unsigned int> indices = {0, 1, 2, 3, 4, 5}; // Líneas independientes
+
+        buffer.uploadData(vertices, indices);
+        inicializado = true;
+    }
+
+    void renderizar() {
+        if (inicializado) {
+            buffer.renderLines(6);
+        }
+    }
+};
