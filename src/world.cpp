@@ -2,7 +2,6 @@
 #include <cmath>
 #include <glm/ext/vector_int2.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 #include <iostream>
 
 template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS]) {
