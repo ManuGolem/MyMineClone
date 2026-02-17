@@ -71,7 +71,7 @@ void Screen::poll(float deltaTime) {
         lastMouseY = mouseY;
     }
 
-    float velocidad = 5.0f * deltaTime;
+    float velocidad = 10.0f * deltaTime;
     if (teclado[SDL_SCANCODE_W])
         camera.moveForward(velocidad);
     if (teclado[SDL_SCANCODE_S])
@@ -82,7 +82,7 @@ void Screen::poll(float deltaTime) {
         camera.moveRight(velocidad);
     if (teclado[SDL_SCANCODE_SPACE])
         camera.moveUp(velocidad);
-    if (teclado[SDL_SCANCODE_LCTRL])
+    if (teclado[SDL_SCANCODE_LSHIFT])
         camera.moveDown(velocidad);
 }
 
