@@ -4,7 +4,7 @@ Camera::Camera() {
     position = vec3(1.0f, 70.0f, 3.0f);
     worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     yaw = -90.0f;
-    pitch = -30.0f;
+    pitch = 45.0f;
     updateCameraVectors();
 }
 void Camera::updateCameraVectors() {
