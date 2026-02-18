@@ -313,6 +313,9 @@ void Chunk::setBlock(int x, int y, int z, const Block& block) {
     blocks[x][y][z] = block;
     needsUpdate = true;
 }
+Block Chunk::getBlock(int x, int y, int z) const {
+    return blocks[x][y][z];
+}
 bool Chunk::isEmpty() const {
     return vertexData.empty();
 }
@@ -380,6 +383,15 @@ ivec2 World::getChunkPos(vec3 worldPos) {
     int chunkZ = (int)floor(worldPos.z / 16.0f);
     return ivec2(chunkX, chunkZ);
 }
+Block World::getBlock(int x, int y, int z) {
+    vec3 pos = {x, y, z};
+    ivec2 posChunk = getChunkPos(pos);
+    Chunk* chunk = getChunk(posChunk.x, posChunk.y);
+    int offsetX = chunk->getNroChunkX() * 16;
+    int offsetZ = chunk->getNroChunkZ() * 16;
+    Block copia = chunk->getBlock(x - offsetX, y, z - offsetZ);
+    return copia;
+}
 void World::render(vec3 cameraPos, mat4 view) {
     ivec2 centerChunk = getChunkPos(cameraPos);
     int cantRect = 0;
@@ -393,7 +405,7 @@ void World::render(vec3 cameraPos, mat4 view) {
             }
         }
     }
-    cout << "Cantidad de rectangulos generados: " << cantRect << endl;
+    // cout << "Cantidad de rectangulos generados: " << cantRect << endl;
 }
 void World::update() {
 }
