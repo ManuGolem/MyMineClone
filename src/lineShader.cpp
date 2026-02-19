@@ -78,16 +78,14 @@ LineShader::LineShader() {
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    
-    //Crosshair
+
+    // Crosshair
     glGenVertexArrays(1, &crosshairVAO);
     glGenBuffers(1, &crosshairVBO);
     glBindVertexArray(crosshairVAO);
     glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
@@ -117,7 +115,15 @@ void LineShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projectio
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
 }
-void LineShader::drawOutline(int x, int y, int z) {
+void LineShader::drawOutline(int x, int y, int z, const glm::mat4& view, const glm::mat4& projection) {
+    GLint previousProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
+    use();
+    setViewMatrix(glm::value_ptr(view));
+    setProjectionMatrix(glm::value_ptr(projection));
+
+    glm::mat4 model(1.0f);
+    setModelMatrix(glm::value_ptr(model));
     // 12 aristas del cubo (24 vértices)
     float vertices[] = {// Cara inferior
                         x - 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f,
@@ -131,61 +137,56 @@ void LineShader::drawOutline(int x, int y, int z) {
                         x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f,
                         y - 1.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f};
 
-
     glBindVertexArray(outlinesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     // Dibujar con depth test NORMAL (no modificamos nada)
-    glLineWidth(3.0f);
-    setColor(0.0f, 0.0f, 0.0f); // Negro
+    glLineWidth(1.0f);
+    setColor(0.0f, 0.0f, 0.0f);    // Negro
     glDrawArrays(GL_LINES, 0, 24); // 12 líneas * 2 vértices
+
+    // Restaurar shader anterior si es necesario
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    if (previousProgram != 0 && previousProgram != (GLint)shaderProgram) {
+        glBindVertexArray(0);
+        glUseProgram(previousProgram);
+    }
 }
 void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size, float r, float g, float b) {
-        // Guardar shader activo
+    // Guardar shader activo
     GLint previousProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
-        // Configurar proyección ortográfica para 2D
+    // Configurar proyección ortográfica para 2D
     glm::mat4 ortho = glm::ortho(0.0f, (float)screenWidth, (float)screenHeight, 0.0f);
-    
+
     // Usar este shader
     use();
     setProjectionMatrix(glm::value_ptr(ortho));
     setViewMatrix(glm::value_ptr(glm::mat4(1.0f)));
     setModelMatrix(glm::value_ptr(glm::mat4(1.0f)));
-    
+
     int centerX = screenWidth / 2;
     int centerY = screenHeight / 2;
-    
-    float vertices[] = {
-        // Línea horizontal
-        (float)centerX - size, (float)centerY, 0.0f,
-        (float)centerX + size, (float)centerY, 0.0f,
-        
-        // Línea vertical
-        (float)centerX, (float)centerY - size, 0.0f,
-        (float)centerX, (float)centerY + size, 0.0f,
-        
-        // Punto central
-        (float)centerX, (float)centerY, 0.0f
-    };
-    
-    
+
+    float vertices[] = {// Línea horizontal
+                        (float)centerX - size, (float)centerY, 0.0f, (float)centerX + size, (float)centerY, 0.0f,
+
+                        // Línea vertical
+                        (float)centerX, (float)centerY - size, 0.0f, (float)centerX, (float)centerY + size, 0.0f,
+
+                        // Punto central
+                        (float)centerX, (float)centerY, 0.0f};
+
     glBindVertexArray(crosshairVAO);
     glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-    
+
     // Dibujar líneas
     setColor(r, g, b);
     glLineWidth(2.0f);
     glDrawArrays(GL_LINES, 0, 4);
-    
-    // Dibujar punto central (negro para contraste)
-    glPointSize(4.0f);
-    setColor(0.0f, 0.0f, 0.0f);
-    glDrawArrays(GL_POINTS, 4, 1);
-    
-    
+
     // Restaurar shader anterior si es necesario
     if (previousProgram != 0 && previousProgram != (GLint)shaderProgram) {
         glUseProgram(previousProgram);
@@ -195,8 +196,8 @@ LineShader::~LineShader() {
     glDeleteProgram(shaderProgram);
     glDeleteVertexArrays(1, &axesVAO);
     glDeleteBuffers(1, &axesVBO);
-    glDeleteVertexArrays(1, &outlinesVAO);  
-    glDeleteBuffers(1, &outlinesVBO);       
+    glDeleteVertexArrays(1, &outlinesVAO);
+    glDeleteBuffers(1, &outlinesVBO);
     glDeleteVertexArrays(1, &crosshairVAO);
-    glDeleteBuffers(1, &crosshairVBO);  
+    glDeleteBuffers(1, &crosshairVBO);
 }
