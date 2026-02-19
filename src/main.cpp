@@ -5,11 +5,9 @@
 int main() {
     Screen screen;
     World world;
-    world.generateFlatWorld(160, 160);
+    world.generateFlatWorld(16, 16);
 
     Uint32 lastFrame = SDL_GetTicks();
-    DebugAxes debugAxes;
-    debugAxes.inicializar();
     int frameCount = 0;
     float fpsTimer = 0.0f;
     while (screen.isRunning()) {
@@ -60,19 +58,9 @@ int main() {
         glm::mat4 view = screen.getCamera().getViewMatrix();
         // Dibujar mundo
         world.render(screen.getCamera().getPosition(), view);
-
-        // Renderiuzar ejes de debug (Provisorio)
-        Chunk::sharedShader->use();
-        Chunk::sharedShader->setUseTexture(false);
-        glm::mat4 model = glm::mat4(1.0f);
-        Chunk::sharedShader->setModelMatrix(glm::value_ptr(model));
-        Chunk::sharedShader->setViewMatrix(glm::value_ptr(view));
-        glDisable(GL_CULL_FACE);
-        debugAxes.renderizar();
-        glEnable(GL_CULL_FACE);
-        Chunk::sharedShader->setUseTexture(true);
         // Renderizar menu
         screen.renderMenu();
+        screen.renderCrosshair();
         // Cambiar los back/front frames
         screen.swap();
     }
