@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 class LineShader {
   private:
     unsigned int shaderProgram;
@@ -34,12 +35,13 @@ class LineShader {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix);
     }
     void drawDebugAxes(const glm::mat4& view, const glm::mat4& projection);
-    void drawOutline(int x, int y, int z);
-    void drawCrosshair(int screenWidth, int screenHeight, int size = 10, 
-                       float r = 1.0f, float g = 1.0f, float b = 1.0f);
+    void drawOutline(int x, int y, int z, const glm::mat4& view, const glm::mat4& projection);
+    void drawCrosshair(int screenWidth, int screenHeight, int size = 10, float r = 1.0f, float g = 1.0f, float b = 1.0f);
     void setColor(float r, float g, float b) {
         glUniform3f(colorLoc, r, g, b);
     }
-    unsigned int getProgram() const { return shaderProgram; }
+    unsigned int getProgram() const {
+        return shaderProgram;
+    }
     ~LineShader();
 };
