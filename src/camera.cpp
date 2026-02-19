@@ -1,4 +1,5 @@
 #include "../include/camera.h"
+#include <glm/ext/matrix_clip_space.hpp>
 
 Camera::Camera() {
     position = vec3(1.0f, 70.0f, 3.0f);
@@ -67,10 +68,16 @@ void Camera::processMouse(float xoffset, float yoffset) {
     // Actualizar vectores con los nuevos ángulos
     updateCameraVectors();
 }
-glm::mat4 Camera::getViewMatrix() {
+mat4 Camera::getViewMatrix() {
     return glm::lookAt(position, position + front, up);
 }
 
-glm::vec3 Camera::getPosition() {
+vec3 Camera::getPosition() {
     return position;
+}
+mat4 Camera::getProjectionMatrix() {
+    return perspective(radians(fov), aspect, nearPlane, farPlane);
+}
+void Camera::setAspectRatio(float width, float height) {
+    aspect = width / height;
 }
