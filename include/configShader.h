@@ -84,9 +84,4 @@ class ChunkBuffer {
     ~ChunkBuffer();
     void render();
     void uploadData(const std::vector<float>& vertices, const std::vector<unsigned int>& indices);
-    void renderLines(int count) {
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_LINES, 0, count);
-        glBindVertexArray(0);
-    }
 };
