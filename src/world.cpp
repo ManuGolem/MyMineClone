@@ -56,12 +56,13 @@ Block World::getBlock(int x, int y, int z) {
     Block copia = chunk->getBlock(x - offsetX, y, z - offsetZ);
     return copia;
 }
-void World::render(vec3 cameraPos, mat4 view) {
+void World::render(vec3 cameraPos, mat4 view, mat4 projection) {
     ivec2 centerChunk = getChunkPos(cameraPos);
     int cantRect = 0;
     int renderDist = 32;
     Chunk::sharedShader->use();
     Chunk::sharedShader->setUseTexture(true);
+    Chunk::sharedShader->setProjectionMatrix(value_ptr(projection));
     Chunk::sharedShader->setViewMatrix(glm::value_ptr(view));
     for (int dx = -renderDist; dx <= renderDist; dx++) {
         for (int dz = -renderDist; dz <= renderDist; dz++) {
