@@ -8,12 +8,13 @@ Screen::Screen() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    window = SDL_CreateWindow("Prueba", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Prueba", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     context = SDL_GL_CreateContext(window);
 
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         std::cout << "GLAD failed\n";
     }
+    lineShader = new LineShader();
     // ===== INICIALIZAR IMGUI =====
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -117,7 +118,52 @@ void Screen::clear() {
 void Screen::swap() {
     SDL_GL_SwapWindow(window);
 }
+void Screen::renderCrosshair() {
+    if (!crosshairVisible){
+        return;
 
+    }
+        // Guardar estado del depth test
+    GLboolean depthTest;
+    glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+    glDisable(GL_DEPTH_TEST);
+    // Dibujar crosshair usando lineShader
+    lineShader->drawCrosshair(windowWidth, windowHeight, 
+                             crosshairSize, 
+                             crosshairColor[0], 
+                             crosshairColor[1], 
+                             crosshairColor[2]);
+    
+    // Restaurar depth test
+    if (depthTest) glEnable(GL_DEPTH_TEST);
+    
+}
+void Screen::renderDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
+    // Guardar shader activo
+    GLint previousProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
+    
+    // Dibujar ejes usando lineShader
+    lineShader->drawDebugAxes(view, projection);
+    
+    // Restaurar shader anterior
+    if (previousProgram != 0 && previousProgram != (GLint)lineShader->getProgram()) {
+        glUseProgram(previousProgram);
+    }
+}
+void Screen::renderBlockOutline(int x, int y, int z) {
+    // Guardar shader activo
+    GLint previousProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
+    
+    // Dibujar outline usando lineShader
+    lineShader->drawOutline(x, y, z);
+    
+    // Restaurar shader anterior
+    if (previousProgram != 0 && previousProgram != (GLint)lineShader->getProgram()) {
+        glUseProgram(previousProgram);
+    }
+}
 void Screen::renderMenu() {
     if (!openMenu)
         return;
