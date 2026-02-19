@@ -1,6 +1,10 @@
 #include "../include/lineShader.h"
 unsigned int LineShader::axesVAO = 0;
 unsigned int LineShader::axesVBO = 0;
+unsigned int LineShader::outlinesVAO = 0;
+unsigned int LineShader::outlinesVBO = 0;
+unsigned int LineShader::crosshairVAO = 0;
+unsigned int LineShader::crosshairVBO = 0;
 LineShader::LineShader() {
     const char* vertexSrc = R"(
             #version 330 core
@@ -67,6 +71,23 @@ LineShader::LineShader() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    // Outlines
+    glGenVertexArrays(1, &outlinesVAO);
+    glGenBuffers(1, &outlinesVBO);
+    glBindVertexArray(outlinesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    //Crosshair
+    glGenVertexArrays(1, &crosshairVAO);
+    glGenBuffers(1, &crosshairVBO);
+    glBindVertexArray(crosshairVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
@@ -110,25 +131,15 @@ void LineShader::drawOutline(int x, int y, int z) {
                         x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f,
                         y - 1.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f};
 
-    // Crear VAO temporal
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
 
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindVertexArray(outlinesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
 
     // Dibujar con depth test NORMAL (no modificamos nada)
     glLineWidth(3.0f);
     setColor(0.0f, 0.0f, 0.0f); // Negro
-
     glDrawArrays(GL_LINES, 0, 24); // 12 líneas * 2 vértices
-
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
 }
 void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size, float r, float g, float b) {
         // Guardar shader activo
@@ -146,7 +157,6 @@ void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size, floa
     int centerX = screenWidth / 2;
     int centerY = screenHeight / 2;
     
-    // Crear VAO temporal para el crosshair
     float vertices[] = {
         // Línea horizontal
         (float)centerX - size, (float)centerY, 0.0f,
@@ -160,15 +170,10 @@ void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size, floa
         (float)centerX, (float)centerY, 0.0f
     };
     
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
     
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindVertexArray(crosshairVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
     
     // Dibujar líneas
     setColor(r, g, b);
@@ -180,9 +185,6 @@ void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size, floa
     setColor(0.0f, 0.0f, 0.0f);
     glDrawArrays(GL_POINTS, 4, 1);
     
-    // Limpiar
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
     
     // Restaurar shader anterior si es necesario
     if (previousProgram != 0 && previousProgram != (GLint)shaderProgram) {
@@ -193,4 +195,8 @@ LineShader::~LineShader() {
     glDeleteProgram(shaderProgram);
     glDeleteVertexArrays(1, &axesVAO);
     glDeleteBuffers(1, &axesVBO);
+    glDeleteVertexArrays(1, &outlinesVAO);  
+    glDeleteBuffers(1, &outlinesVBO);       
+    glDeleteVertexArrays(1, &crosshairVAO);
+    glDeleteBuffers(1, &crosshairVBO);  
 }

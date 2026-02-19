@@ -11,6 +11,10 @@ class LineShader {
     unsigned int colorLoc;
     static unsigned int axesVAO;
     static unsigned int axesVBO;
+    static unsigned int outlinesVAO;
+    static unsigned int outlinesVBO;
+    static unsigned int crosshairVAO;
+    static unsigned int crosshairVBO;
 
   public:
     LineShader();
