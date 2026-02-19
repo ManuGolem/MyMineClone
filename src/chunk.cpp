@@ -328,6 +328,6 @@ void Chunk::render() {
     }
     if (vertexData.empty())
         return;
-    
+
     chunkBuffer.render();
 }
