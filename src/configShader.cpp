@@ -70,8 +70,6 @@ Shader::Shader() {
 
     use();
     // Configurar matriz de proyección (se hace una sola vez)
-    glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1280.0f / 720.0f, 0.1f, 100.0f);
-    setProjectionMatrix(glm::value_ptr(projection));
 
     // Configurar matriz model por defecto
     glm::mat4 model = glm::mat4(1.0f);
@@ -124,9 +122,7 @@ ChunkBuffer::~ChunkBuffer() {
 }
 void ChunkBuffer::uploadData(const std::vector<float>& vertices, const std::vector<unsigned int>& indices) {
     indexCount = indices.size();
-
     glBindVertexArray(VAO);
-
     // VBO - datos de vértices
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
