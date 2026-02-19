@@ -13,6 +13,11 @@ class Camera {
     float yaw;
     float pitch;
 
+    float fov = 90;
+    float aspect;
+    float nearPlane = 0.1f;
+    float farPlane = 1500.0f;
+
   public:
     Camera();
     void updateCameraVectors();
@@ -28,4 +33,6 @@ class Camera {
         return front;
     }
     vec3 getPosition();
+    mat4 getProjectionMatrix();
+    void setAspectRatio(float width, float height);
 };
