@@ -1,79 +1,255 @@
 #include "../include/world.h"
 
 World::World() {
+
+  // Configurar ruidos
+
+  terrainNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+  terrainNoise.SetFrequency(0.02f);
+  terrainNoise.SetFractalType(FastNoiseLite::FractalType_FBm);
+  terrainNoise.SetFractalOctaves(4);
+  terrainNoise.SetFractalGain(0.5f);
+
+  erosionNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+  erosionNoise.SetFrequency(0.002f);
+  erosionNoise.SetFractalOctaves(2);
+
+  detailNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+  detailNoise.SetFrequency(0.01f);
+  detailNoise.SetFractalOctaves(1);
+}
+int World::getTerrainHeight(int worldX, int worldZ) {
+  // Combinar los tres ruidos para un terreno más natural
+  float continent = terrainNoise.GetNoise((float)worldX, (float)worldZ);
+  float erosion = erosionNoise.GetNoise((float)worldX, (float)worldZ);
+  float detail = detailNoise.GetNoise((float)worldX, (float)worldZ);
+
+  // Normalizar cada uno a [0,1]
+  float nContinent = (continent + 1.0f) * 0.5f;
+  float nErosion = (erosion + 1.0f) * 0.5f;
+  float nDetail = (detail + 1.0f) * 0.5f;
+
+  // 1. CURVA DE DISTRIBUCIÓN para tener más control
+  // Esto hace que los valores alrededor de 0.5 sean más comunes
+  float shaped;
+  if (nContinent < 0.3f) {
+    // Océanos (30% del mapa)
+    shaped = nContinent * 0.4f; // Comprime océanos
+  } else if (nContinent < 0.7f) {
+    // Tierras (40% del mapa) - EXPANDIMOS este rango
+    float t = (nContinent - 0.3f) / 0.4f;
+    shaped = 0.12f + t * 0.56f; // Mapea a [0.12, 0.68]
+  } else {
+    // Montañas (30% del mapa)
+    float t = (nContinent - 0.7f) / 0.3f;
+    shaped = 0.68f + t * 0.32f; // Mapea a [0.68, 1.0]
+  }
+
+  // 2. AÑADIR EROSIÓN (20% influencia)
+  float withErosion = shaped * 0.8f + nErosion * 0.2f;
+
+  // 3. AÑADIR DETALLE (10% influencia)
+  float finalNoise = withErosion * 0.9f + nDetail * 0.1f;
+
+  // 4. MAPEO A ALTURAS MÁS REALISTAS
+  const int OCEAN_FLOOR = 38;   // Fondo marino
+  const int SHALLOW_WATER = 54; // Aguas poco profundas
+  const int BEACH = 58;         // Costa
+  const int LAND_LOW = 62;      // Tierra baja
+  const int LAND_MID = 75;      // Colinas suaves
+  const int LAND_HIGH = 100;    // Montañas
+  const int PEAK = 170;         // Picos
+
+  if (finalNoise < 0.12f) {
+    // Océano profundo
+    return OCEAN_FLOOR +
+           (int)((SHALLOW_WATER - OCEAN_FLOOR) * (finalNoise / 0.12f));
+  } else if (finalNoise < 0.2f) {
+    // Plataforma continental / aguas someras
+    float t = (finalNoise - 0.12f) / 0.08f;
+    return SHALLOW_WATER + (int)((BEACH - SHALLOW_WATER) * t);
+  } else if (finalNoise < 0.35f) {
+    // Costa / tierra baja
+    float t = (finalNoise - 0.2f) / 0.15f;
+    return BEACH + (int)((LAND_LOW - BEACH) * t);
+  } else if (finalNoise < 0.55f) {
+    // Tierras medias / colinas suaves
+    float t = (finalNoise - 0.35f) / 0.2f;
+    return LAND_LOW + (int)((LAND_MID - LAND_LOW) * t);
+  } else if (finalNoise < 0.75f) {
+    // Colinas altas / montañas bajas
+    float t = (finalNoise - 0.55f) / 0.2f;
+    return LAND_MID + (int)((LAND_HIGH - LAND_MID) * t);
+  } else {
+    // Montañas altas / picos
+    float t = (finalNoise - 0.75f) / 0.25f;
+    return LAND_HIGH + (int)((PEAK - LAND_HIGH) * t);
+  }
+}
+void World::generateWorldWithPerlin(int width, int depth) {
+  srand(time(NULL));
+  int newSeed1 = rand();
+  int newSeed2 = rand();
+  int newSeed3 = rand();
+
+  terrainNoise.SetSeed(newSeed1);
+  erosionNoise.SetSeed(newSeed2);
+  detailNoise.SetSeed(newSeed3);
+  float freq1 = 0.0005f + (rand() % 100) / 10000.0f;
+  terrainNoise.SetFrequency(freq1);
+
+  float freq2 = 0.001f + (rand() % 90) / 10000.0f;
+  erosionNoise.SetFrequency(freq2);
+
+  float freq3 = 0.005f + (rand() % 45) / 1000.0f;
+  detailNoise.SetFrequency(freq3);
+
+  int octavas1 = 2 + rand() % 3;
+  int octavas2 = 1 + rand() % 3;
+  int octavas3 = 1 + rand() % 2;
+  terrainNoise.SetFractalOctaves(octavas1);
+  erosionNoise.SetFractalOctaves(octavas2);
+  detailNoise.SetFractalOctaves(octavas3);
+
+  float gain = 0.3f + (rand() % 40) / 100.0f;
+  terrainNoise.SetFractalGain(gain);
+
+  int chunksInX = (width + 15) / 16;
+  int chunksInZ = (depth + 15) / 16;
+
+  for (int cx = -chunksInX / 2; cx < chunksInX / 2; cx++) {
+    for (int cz = -chunksInZ / 2; cz < chunksInZ / 2; cz++) {
+      createChunk(cx, cz);
+    }
+  }
 }
 void World::generateFlatWorld(int width, int depth) {
-    int chunksInX = (width + 15) / 16;
-    int chunksInZ = (depth + 15) / 16;
-    for (int cx = 0; cx < chunksInX; cx++) {
-        for (int cz = 0; cz < chunksInZ; cz++) {
-            Chunk& chunk = chunks[cx][cz];
-            chunk.setNroChunk(cx, cz);
-            for (int x = 0; x < 16; x++) {
-                for (int z = 0; z < 16; z++) {
-                    for (int y = 0; y < 255; y++) {
-                        int wordlX = cx * 16 + x;
-                        int wordlZ = cz * 16 + z;
-                        if (wordlX < width && wordlZ < depth) {
-                            Block block;
-                            block.active = true;
-                            if (y < 64) {
-                                block.type = 2;
-                            } else if (y == 64) {
-                                block.type = 4;
-                            } else {
-                                block.type = 0;
-                                block.active = false;
-                            }
-                            chunk.setBlock(x, y, z, block);
-                        }
-                    }
-                }
+  int chunksInX = (width + 15) / 16;
+  int chunksInZ = (depth + 15) / 16;
+  for (int cx = 0; cx < chunksInX; cx++) {
+    for (int cz = 0; cz < chunksInZ; cz++) {
+      Chunk &chunk = chunks[cx][cz];
+      chunk.setNroChunk(cx, cz);
+      for (int x = 0; x < 16; x++) {
+        for (int z = 0; z < 16; z++) {
+          for (int y = 0; y < 255; y++) {
+            int wordlX = cx * 16 + x;
+            int wordlZ = cz * 16 + z;
+            if (wordlX < width && wordlZ < depth) {
+              Block block;
+              block.active = true;
+              if (y < 64) {
+                block.type = 2;
+              } else if (y == 64) {
+                block.type = 4;
+              } else {
+                block.type = 0;
+                block.active = false;
+              }
+              chunk.setBlock(x, y, z, block);
             }
+          }
         }
+      }
     }
+  }
 }
-Chunk* World::getChunk(int x, int z) {
-    auto itX = chunks.find(x);
-    if (itX == chunks.end())
-        return nullptr;
-    auto itZ = itX->second.find(z);
-    if (itZ == itX->second.end())
-        return nullptr;
-    return &itZ->second;
+void World::deleteWorld() {
+  for (auto &xPair : chunks) {
+    for (auto &zPair : xPair.second) {
+      zPair.second.cleanup();
+    }
+  }
+  chunks.clear();
+}
+Chunk *World::getChunk(int x, int z) {
+  auto itX = chunks.find(x);
+  if (itX == chunks.end())
+    return nullptr;
+  auto itZ = itX->second.find(z);
+  if (itZ == itX->second.end())
+    return nullptr;
+  return &itZ->second;
 }
 ivec2 World::getChunkPos(vec3 worldPos) {
-    int chunkX = (int)floor(worldPos.x / 16.0f);
-    int chunkZ = (int)floor(worldPos.z / 16.0f);
-    return ivec2(chunkX, chunkZ);
+  int chunkX = (int)floor(worldPos.x / 16.0f);
+  int chunkZ = (int)floor(worldPos.z / 16.0f);
+  return ivec2(chunkX, chunkZ);
 }
 Block World::getBlock(int x, int y, int z) {
-    vec3 pos = {x, y, z};
-    ivec2 posChunk = getChunkPos(pos);
-    Chunk* chunk = getChunk(posChunk.x, posChunk.y);
-    int offsetX = chunk->getNroChunkX() * 16;
-    int offsetZ = chunk->getNroChunkZ() * 16;
-    Block copia = chunk->getBlock(x - offsetX, y, z - offsetZ);
-    return copia;
+  vec3 pos = {x, y, z};
+  ivec2 posChunk = getChunkPos(pos);
+  Chunk *chunk = getChunk(posChunk.x, posChunk.y);
+  int offsetX = chunk->getNroChunkX() * 16;
+  int offsetZ = chunk->getNroChunkZ() * 16;
+  Block copia = chunk->getBlock(x - offsetX, y, z - offsetZ);
+  return copia;
+}
+void World::createChunk(int cx, int cz) {
+  Chunk &chunk = chunks[cx][cz];
+  chunk.setNroChunk(cx, cz);
+
+  // Generar terreno
+  for (int x = 0; x < 16; x++) {
+    for (int z = 0; z < 16; z++) {
+      int worldX = cx * 16 + x;
+      int worldZ = cz * 16 + z;
+
+      int continentalHeight = getTerrainHeight(worldX, worldZ);
+
+      // Generar columna de bloques
+      for (int y = 0; y <= continentalHeight; y++) {
+        Block block;
+        block.active = true;
+
+        // Asignar tipos de bloque según altura
+        if (y == continentalHeight) {
+          block.type = 4; // Hierba en la superficie
+        } else if (y >= continentalHeight - 4) {
+          block.type = 3; // Tierra debajo de la hierba
+        } else if (y == 0) {
+          block.type = 18; // Bedrock en el fondo
+        } else {
+          block.type = 2; // Piedra en el resto
+        }
+
+        chunk.setBlock(x, y, z, block);
+      }
+
+      // Si la altura es muy baja, generar agua
+      if (continentalHeight < 60) {
+        for (int y = continentalHeight + 1; y <= 60; y++) {
+          Block waterBlock;
+          waterBlock.active = true;
+          waterBlock.type = 15; // Agua
+          chunk.setBlock(x, y, z, waterBlock);
+        }
+      }
+    }
+  }
 }
 void World::render(vec3 cameraPos, mat4 view, mat4 projection) {
-    ivec2 centerChunk = getChunkPos(cameraPos);
-    int cantRect = 0;
-    int renderDist = 32;
-    Chunk::sharedShader->use();
-    Chunk::sharedShader->setUseTexture(true);
-    Chunk::sharedShader->setProjectionMatrix(value_ptr(projection));
-    Chunk::sharedShader->setViewMatrix(glm::value_ptr(view));
-    for (int dx = -renderDist; dx <= renderDist; dx++) {
-        for (int dz = -renderDist; dz <= renderDist; dz++) {
-            Chunk* chunk = getChunk(centerChunk.x + dx, centerChunk.y + dz);
-            if (chunk) {
-                chunk->render();
-                cantRect += chunk->getCaras();
-            }
-        }
+  ivec2 centerChunk = getChunkPos(cameraPos);
+  int cantRect = 0;
+  int renderDist = 16;
+  Chunk::sharedShader->use();
+  Chunk::sharedShader->setUseTexture(true);
+  Chunk::sharedShader->setProjectionMatrix(value_ptr(projection));
+  Chunk::sharedShader->setViewMatrix(glm::value_ptr(view));
+  for (int dx = -renderDist; dx <= renderDist; dx++) {
+    for (int dz = -renderDist; dz <= renderDist; dz++) {
+      int chunkX = centerChunk.x + dx;
+      int chunkZ = centerChunk.y + dz;
+      Chunk *chunk = getChunk(chunkX, chunkZ);
+      if (chunk) {
+        chunk->render();
+        cantRect += chunk->getCaras();
+      } else {
+        createChunk(chunkX, chunkZ);
+      }
     }
-    // cout << "Cantidad de rectangulos generados: " << cantRect << endl;
+  }
+
+  cout << "Cantidad de rectangulos generados: " << cantRect << endl;
 }
-void World::update() {
-}
+void World::update() {}
