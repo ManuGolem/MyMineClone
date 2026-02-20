@@ -1,4 +1,5 @@
 #include "../include/chunk.h"
+#include "../include/world.h"
 template <size_t FILAS, size_t COLUMNAS>
 vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS]) {
   vector<Rectangulo> rectangulos;
@@ -51,7 +52,7 @@ vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS]) {
 }
 
 Shader *Chunk::sharedShader = nullptr;
-Chunk::Chunk() {
+Chunk::Chunk() : world(nullptr) {
   for (int x = 0; x < 16; x++) {
     for (int y = 0; y < 256; y++) {
       for (int z = 0; z < 16; z++) {
@@ -229,11 +230,13 @@ void Chunk::generateMesh() {
       for (int j = 0; j < 16; j++) {
         if (blocks[x][i][j].active && blocks[x][i][j].type != 0) {
           // Cara derecha (x+)
-          if ((x == 15) || !blocks[x + 1][i][j].active) {
+          int globalX = x + nroChunkX * 16;
+          int globalZ = j + nroChunkZ * 16;
+          if (!world || !world->getBlock(globalX + 1, i, globalZ).active) {
             capasDerechas[i][j] = blocks[x][i][j].type;
           }
           // Cara izquierda (x-)
-          if ((x == 0) || !blocks[x - 1][i][j].active) {
+          if (!world || !world->getBlock(globalX - 1, i, globalZ).active) {
             capasIzquierdas[i][j] = blocks[x][i][j].type;
           }
         }
@@ -283,12 +286,15 @@ void Chunk::generateMesh() {
     for (int i = 0; i < 16; i++) {
       for (int j = 0; j < 256; j++) {
         if (blocks[i][j][z].active) {
+          int globalX = i + nroChunkX * 16;
+          int globalZ = z + nroChunkZ * 16;
+
           // Cara frontal (z+)
-          if ((z == 15) || !blocks[i][j][z + 1].active) {
+          if (!world || !world->getBlock(globalX, j, globalZ + 1).active) {
             capasFrontal[i][j] = blocks[i][j][z].type;
           }
           // Cara trasera (z-)
-          if ((z == 0) || !blocks[i][j][z - 1].active) {
+          if (!world || !world->getBlock(globalX, j, globalZ - 1).active) {
             capasTrasera[i][j] = blocks[i][j][z].type;
           }
         }

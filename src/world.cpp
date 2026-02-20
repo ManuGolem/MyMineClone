@@ -177,18 +177,22 @@ ivec2 World::getChunkPos(vec3 worldPos) {
   return ivec2(chunkX, chunkZ);
 }
 Block World::getBlock(int x, int y, int z) {
-  vec3 pos = {x, y, z};
-  ivec2 posChunk = getChunkPos(pos);
+  ivec2 posChunk = getChunkPos(vec3(x, y, z));
   Chunk *chunk = getChunk(posChunk.x, posChunk.y);
+  if (chunk == nullptr) {
+    Block empty;
+    empty.active = false;
+    empty.type = 0;
+    return empty;
+  }
   int offsetX = chunk->getNroChunkX() * 16;
   int offsetZ = chunk->getNroChunkZ() * 16;
-  Block copia = chunk->getBlock(x - offsetX, y, z - offsetZ);
-  return copia;
+  return chunk->getBlock(x - offsetX, y, z - offsetZ);
 }
 void World::createChunk(int cx, int cz) {
   Chunk &chunk = chunks[cx][cz];
   chunk.setNroChunk(cx, cz);
-
+  chunk.setWorld(this);
   // Generar terreno
   for (int x = 0; x < 16; x++) {
     for (int z = 0; z < 16; z++) {

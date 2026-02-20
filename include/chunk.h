@@ -6,6 +6,7 @@
 #include <iostream>
 using namespace std;
 using namespace glm;
+class World;
 struct Block {
   bool active;
   int type;
@@ -17,6 +18,7 @@ struct Rectangulo {
 
 class Chunk {
 private:
+  World *world;
   Block blocks[16][256][16];
   vector<float> vertexData;
   vector<unsigned int> indexData;
@@ -42,4 +44,5 @@ public:
   int getNroChunkX() const { return nroChunkX; }
   int getNroChunkZ() const { return nroChunkZ; }
   void cleanup();
+  void setWorld(World *w) { world = w; }
 };
