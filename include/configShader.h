@@ -5,13 +5,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 class Shader {
-  private:
-    unsigned int modelLoc, viewLoc, projLoc;
-    unsigned int shaderProgram;
-    unsigned int textureID;
-    unsigned int useTextureLoc;
-    // Shaders como strings privados (noentendi esto)
-    const char* vertexShaderSrc = R"(
+private:
+  unsigned int modelLoc, viewLoc, projLoc;
+  unsigned int shaderProgram;
+  unsigned int textureID;
+  unsigned int useTextureLoc;
+  // Shaders como strings privados (noentendi esto)
+  const char *vertexShaderSrc = R"(
         #version 330 core
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aColor;        
@@ -33,7 +33,7 @@ class Shader {
             textureCoordOffset = aTexCoordOffset;
         }
     )";
-    const char* fragmentShaderSrc = R"(
+  const char *fragmentShaderSrc = R"(
         #version 330 core
         out vec4 FragColor;
 
@@ -60,28 +60,39 @@ class Shader {
         }
     )";
 
-  public:
-    Shader();
-    ~Shader();
-    void use();
-    void setModelMatrix(const float*);
-    void setViewMatrix(const float*);
-    void setProjectionMatrix(const float*);
-    void setUseTexture(bool use) {
-        glUniform1i(useTextureLoc, use ? 1 : 0);
-    }
-    unsigned int getTextureID() const {
-        return textureID;
-    }
+public:
+  Shader();
+  ~Shader();
+  void use();
+  void setModelMatrix(const float *);
+  void setViewMatrix(const float *);
+  void setProjectionMatrix(const float *);
+  void setUseTexture(bool use) { glUniform1i(useTextureLoc, use ? 1 : 0); }
+  unsigned int getTextureID() const { return textureID; }
 };
 class ChunkBuffer {
-  private:
-    unsigned int VAO, VBO, EBO;
-    int indexCount;
+private:
+  unsigned int VAO, VBO, EBO;
+  int indexCount;
 
-  public:
-    ChunkBuffer();
-    ~ChunkBuffer();
-    void render();
-    void uploadData(const std::vector<float>& vertices, const std::vector<unsigned int>& indices);
+public:
+  ChunkBuffer();
+  ~ChunkBuffer();
+  void render();
+  void uploadData(const std::vector<float> &vertices,
+                  const std::vector<unsigned int> &indices);
+  void cleanup() {
+    if (VAO != 0) {
+      glDeleteVertexArrays(1, &VAO);
+      VAO = 0;
+    }
+    if (VBO != 0) {
+      glDeleteBuffers(1, &VBO);
+      VBO = 0;
+    }
+    if (EBO != 0) {
+      glDeleteBuffers(1, &EBO);
+      EBO = 0;
+    }
+  }
 };
