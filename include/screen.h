@@ -10,45 +10,63 @@
 using namespace std;
 class LineShader;
 class Screen {
-private:
-  SDL_Window *window;
-  SDL_GLContext context;
-  bool running;
-  Camera camera;
-  const Uint8 *teclado;
-  int mouseX, mouseY;
-  int lastMouseX, lastMouseY;
-  bool openMenu = false;
-  bool gameInPause = false;
-  bool rightClicked = false;
-  bool leftClicked = false;
-  bool regenerateWorld = false;
-  int windowWidth = 1280;
-  int windowHeight = 720;
-  bool crosshairVisible = true;
-  int crosshairSize = 10;
-  float crosshairColor[3] = {1.0f, 1.0f, 1.0f};
+  private:
+    SDL_Window* window;
+    SDL_GLContext context;
+    bool running;
+    Camera camera;
+    Camera debugCamera;
+    bool debugMode = false;
+    bool ceroPressed = false;
+    const Uint8* teclado;
+    int mouseX, mouseY;
+    int lastMouseX, lastMouseY;
+    bool openMenu = false;
+    bool gameInPause = false;
+    bool rightClicked = false;
+    bool leftClicked = false;
+    bool regenerateWorld = false;
+    int windowWidth = 1280;
+    int windowHeight = 720;
+    bool crosshairVisible = true;
+    int crosshairSize = 10;
+    float crosshairColor[3] = {1.0f, 1.0f, 1.0f};
 
-  LineShader *lineShader;
+    LineShader* lineShader;
 
-public:
-  Screen();
-  ~Screen();
+  public:
+    Screen();
+    ~Screen();
 
-  Camera &getCamera();
-  bool isRunning();
-  void poll(float deltaTime);
-  void clear();
-  void swap();
-  void resize();
-  void renderMenu();
-  void renderCrosshair();
-  void renderDebugAxes(const glm::mat4 &view, const glm::mat4 &projection);
-  void renderBlockOutline(int x, int y, int z);
-  bool wasRightClicked() const { return rightClicked; }
-  bool wasLeftClicked() const { return leftClicked; }
-  bool getRegenerate() const { return regenerateWorld; }
-  void clearLeftClick() { leftClicked = false; }
-  void clearRightClick() { rightClicked = false; }
-  void clearRegenerate() { regenerateWorld = false; }
+    Camera& getCamera();
+    bool isRunning();
+    void poll(float deltaTime);
+    void clear();
+    void swap();
+    void resize();
+    void renderMenu();
+    void renderCrosshair();
+    void renderDebugAxes(const glm::mat4& view, const glm::mat4& projection);
+    void renderBlockOutline(int x, int y, int z);
+    bool wasRightClicked() const {
+        return rightClicked;
+    }
+    bool wasLeftClicked() const {
+        return leftClicked;
+    }
+    bool getRegenerate() const {
+        return regenerateWorld;
+    }
+    void clearLeftClick() {
+        leftClicked = false;
+    }
+    void clearRightClick() {
+        rightClicked = false;
+    }
+    void clearRegenerate() {
+        regenerateWorld = false;
+    }
+    Camera& getDebugCamera() { return debugCamera; }
+    bool isDebugMode() const { return debugMode; }
+    void clearDebugMode() { debugMode = false; }
 };
