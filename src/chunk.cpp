@@ -1,6 +1,6 @@
 #include "../include/chunk.h"
 #include "../include/world.h"
-#include <filesystem>
+bool esTransparent(int type) { return (type == 53 || type == 50); }
 template <size_t FILAS, size_t COLUMNAS>
 vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS]) {
   vector<Rectangulo> rectangulos;
@@ -74,7 +74,7 @@ void Chunk::cargarVertices(const Rectangulo &r, int eje, int direccion,
   float rcolor = 1.0f;
   float gcolor = 1.0f;
   float bcolor = 1.0f;
-  if (tipo_bloque == 54) {
+  if (tipo_bloque == 54 || tipo_bloque == 53) {
     // Leaf
     rcolor = 0.3f;
     gcolor = 0.8f;
@@ -236,18 +236,24 @@ void Chunk::generateMesh() {
           int globalZ = j + nroChunkZ * 16;
           // Cara derecha (x+)
           if (x == 15) {
-            if (!world || !world->getBlock(globalX + 1, i, globalZ).active) {
-              capasDerechas[i][j] = blocks[x][i][j].type;
+            if (world) {
+              Block block = world->getBlock(globalX + 1, i, globalZ);
+              if (!block.active || esTransparent(block.type))
+                capasDerechas[i][j] = blocks[x][i][j].type;
             }
-          } else if (!blocks[x + 1][i][j].active) {
+          } else if (!blocks[x + 1][i][j].active ||
+                     esTransparent(blocks[x + 1][i][j].type)) {
             capasDerechas[i][j] = blocks[x][i][j].type;
           }
           // Cara izquierda (x-)
           if (x == 0) {
-            if (!world || !world->getBlock(globalX - 1, i, globalZ).active) {
-              capasIzquierdas[i][j] = blocks[x][i][j].type;
+            if (world) {
+              Block block = world->getBlock(globalX - 1, i, globalZ);
+              if (!block.active || esTransparent(block.type))
+                capasIzquierdas[i][j] = blocks[x][i][j].type;
             }
-          } else if (!blocks[x - 1][i][j].active) {
+          } else if (!blocks[x - 1][i][j].active ||
+                     esTransparent(blocks[x - 1][i][j].type)) {
             capasIzquierdas[i][j] = blocks[x][i][j].type;
           }
         }
@@ -270,11 +276,13 @@ void Chunk::generateMesh() {
       for (int j = 0; j < 16; j++) {
         if (blocks[i][y][j].active && blocks[i][y][j].type != 0) {
           // Cara inferior (y-)
-          if ((y == 0) || !blocks[i][y - 1][j].active) {
+          if ((y == 0) || !blocks[i][y - 1][j].active ||
+              esTransparent(blocks[i][y - 1][j].type)) {
             capasInferiores[i][j] = blocks[i][y][j].type;
           }
           // Cara superior (y+)
-          if ((y == 255) || !blocks[i][y + 1][j].active) {
+          if ((y == 255) || !blocks[i][y + 1][j].active ||
+              esTransparent(blocks[i][y + 1][j].type)) {
             capasSuperiores[i][j] = blocks[i][y][j].type;
           }
         }
@@ -299,19 +307,26 @@ void Chunk::generateMesh() {
         if (blocks[i][j][z].active) {
           int globalX = i + nroChunkX * 16;
           int globalZ = z + nroChunkZ * 16;
+          // z+
           if (z == 15) {
-            if (!world || !world->getBlock(globalX, j, globalZ + 1).active) {
-              capasFrontal[i][j] = blocks[i][j][z].type;
+            if (world) {
+              Block block = world->getBlock(globalX, j, globalZ + 1);
+              if (!block.active || esTransparent(block.type))
+                capasFrontal[i][j] = blocks[i][j][z].type;
             }
-          } else if (!blocks[i][j][z + 1].active) {
+          } else if (!blocks[i][j][z + 1].active ||
+                     esTransparent(blocks[i][j][z + 1].type)) {
             capasFrontal[i][j] = blocks[i][j][z].type;
           }
-          // Cara izquierda (x-)
+          // Cara izquierda (Z-)
           if (z == 0) {
-            if (!world || !world->getBlock(globalX, j, globalZ - 1).active) {
-              capasTrasera[i][j] = blocks[i][j][z].type;
+            if (world) {
+              Block block = world->getBlock(globalX, j, globalZ - 1);
+              if (!block.active || esTransparent(block.type))
+                capasTrasera[i][j] = blocks[i][j][z].type;
             }
-          } else if (!blocks[i][j][z - 1].active) {
+          } else if (!blocks[i][j][z - 1].active ||
+                     esTransparent(blocks[i][j][z - 1].type)) {
             capasTrasera[i][j] = blocks[i][j][z].type;
           }
         }
