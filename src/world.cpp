@@ -1,4 +1,5 @@
 #include "../include/world.h"
+#include <cstdlib>
 #include <glm/geometric.hpp>
 World::World() {
   // Configurar ruidos
@@ -37,68 +38,63 @@ bool World::canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight,
   }
   return true;
 }
-void World::generateTree(int worldX, int height, int worldZ, int treeType) {
-  // Crear distintos arboles segun tipos
-  // Primero el mas facil
-  int trunkHeight = 5 + (rand() % 4);
-  int leafStart = height + trunkHeight - (rand() % 3);
-  int leafRadius = leafStart - height;
-  if (!canPlaceTree(worldX, height, worldZ, trunkHeight, leafRadius)) {
-    return;
-  }
-  // Genero primero el trunk
-  for (int y = 0; y <= trunkHeight; y++) {
-    Block woodBlock;
-    woodBlock.active = true;
-    woodBlock.type = 21;
+void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
+  int trunkHeight = 4 + (rand() % 3); // 4–6
 
-    ivec2 chunkPos = getChunkPos(vec3(worldX, height, worldZ));
+  int leafRadius = 2;
+  int leafStart = groundY + trunkHeight - 2;
+
+  if (!canPlaceTree(worldX, groundY, worldZ, trunkHeight + 2, leafRadius + 1))
+    return;
+
+  for (int y = 0; y < trunkHeight; y++) {
+    Block wood;
+    wood.active = true;
+    wood.type = 21;
+    ivec2 chunkPos = getChunkPos(vec3(worldX, groundY + y + 1, worldZ));
     Chunk *chunk = getChunk(chunkPos.x, chunkPos.y);
+
     if (chunk) {
       int localX = worldX - chunkPos.x * 16;
       int localZ = worldZ - chunkPos.y * 16;
-      chunk->setBlock(localX, height + y, localZ, woodBlock);
+      chunk->setBlock(localX, groundY + y + 1, localZ, wood);
     }
   }
-  // Genero las hojas
-  int canopyCenterY = height + trunkHeight - rand() % 4;
-  srand(time(NULL));
-  for (int dy = canopyCenterY; dy <= height + trunkHeight; dy++) {
-    for (int dx = -leafRadius; dx <= leafRadius; dx++) {
-      for (int dz = -leafRadius; dz <= leafRadius; dz++) {
-        int leafWorldX = worldX + dx;
-        int leafWorldY = dy;
-        int leafWorldZ = worldZ + dz;
-        if (dx == 0 && dz == 0)
-          continue; // No colocar hoja en el centro del tronco
-        if (rand() % 100 < 60 && dx == dz && abs(dx) == leafRadius)
+
+  // Hojas
+  for (int y = leafStart; y <= groundY + trunkHeight + 1; y++) {
+    int dy = y - (groundY + trunkHeight);
+    int currentRadius = leafRadius - abs(dy);
+    for (int dx = -currentRadius; dx <= currentRadius; dx++) {
+      for (int dz = -currentRadius; dz <= currentRadius; dz++) {
+        float dist = sqrt(dx * dx + dz * dz + dy * dy);
+        if (dist > leafRadius + 0.5f)
           continue;
+        // esquinas con probabilidad para hacerlo más orgánico
+        if (abs(dx) == currentRadius && abs(dz) == currentRadius &&
+            rand() % 100 < 40)
+          continue;
+        if (dx == dz && dx == 0 && dy != 1) {
+          continue;
+        }
         Block leaf;
         leaf.active = true;
-        leaf.type = 54;
+        leaf.type = 53; // Hojas transparentes
 
-        ivec2 chunkPos = getChunkPos(vec3(leafWorldX, leafWorldY, leafWorldZ));
+        int lx = worldX + dx;
+        int ly = y;
+        int lz = worldZ + dz;
+
+        ivec2 chunkPos = getChunkPos(vec3(lx, ly, lz));
         Chunk *chunk = getChunk(chunkPos.x, chunkPos.y);
+
         if (chunk) {
-          int localX = leafWorldX - chunkPos.x * 16;
-          int localZ = leafWorldZ - chunkPos.y * 16;
-          chunk->setBlock(localX, leafWorldY, localZ, leaf);
+          int localX = lx - chunkPos.x * 16;
+          int localZ = lz - chunkPos.y * 16;
+          chunk->setBlock(localX, ly, localZ, leaf);
         }
       }
     }
-    leafRadius--;
-  }
-  // Hoja arriba de todo
-  Block leaf;
-  leaf.active = true;
-  leaf.type = 54;
-
-  ivec2 chunkPos = getChunkPos(vec3(worldX, height + trunkHeight + 1, worldZ));
-  Chunk *chunk = getChunk(chunkPos.x, chunkPos.y);
-  if (chunk) {
-    int localX = worldX - chunkPos.x * 16;
-    int localZ = worldZ - chunkPos.y * 16;
-    chunk->setBlock(localX, height + trunkHeight + 1, localZ, leaf);
   }
 }
 int World::getTerrainHeight(int worldX, int worldZ) {
@@ -406,7 +402,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
                    mat4 renderProjection) {
   ivec2 centerChunk = getChunkPos(cameraPos);
   int cantRect = 0;
-  int renderDist = 16;
+  int renderDist = 32;
   int generateDist = renderDist + 5;
   int maxChunksPerFrame = 5;
   int chunksCreados = 0;
