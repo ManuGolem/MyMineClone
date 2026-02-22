@@ -52,7 +52,9 @@ private:
                 vec2 finalCoord = scaledCoord + textureCoordOffset;
 
                 vec4 texColor = texture(textureBlock, finalCoord);
-                FragColor = texColor * vec4(vertexColor, 1.0);  // <-- Multiplicar por texColor
+                if(texColor.a<0.1)
+                    discard;
+                FragColor = texColor * vec4(vertexColor, 1.0); 
             }else{
                 FragColor=vec4(vertexColor,1.0);
             }
