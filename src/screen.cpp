@@ -83,38 +83,39 @@ void Screen::poll(float deltaTime) {
             }
         }
     }
-    if(teclado[SDL_SCANCODE_0]){
+    if (teclado[SDL_SCANCODE_0]) {
         debugMode = true;
-            debugCamera = camera;
+        debugCamera = camera;
     }
     int rel_x, rel_y;
     SDL_GetRelativeMouseState(&rel_x, &rel_y);
     if (!openMenu) {
-        if(debugMode){
+        if (debugMode) {
             if (rel_x != 0 || rel_y != 0) {
                 debugCamera.processMouse((float)rel_x, (float)-rel_y);
             }
             float velocidad = 20.0f * deltaTime; // más rápida para explorar
-            if (teclado[SDL_SCANCODE_LCTRL])
+            if (teclado[SDL_SCANCODE_RCTRL])
                 velocidad = 70.0f * deltaTime;
-                
-            if (teclado[SDL_SCANCODE_W])
+
+            if (teclado[SDL_SCANCODE_UP])
                 debugCamera.moveForward(velocidad);
-            if (teclado[SDL_SCANCODE_S])
+            if (teclado[SDL_SCANCODE_DOWN])
                 debugCamera.moveBackward(velocidad);
-            if (teclado[SDL_SCANCODE_A])
+            if (teclado[SDL_SCANCODE_LEFT])
                 debugCamera.moveLeft(velocidad);
-            if (teclado[SDL_SCANCODE_D])
+            if (teclado[SDL_SCANCODE_RIGHT])
                 debugCamera.moveRight(velocidad);
-            if (teclado[SDL_SCANCODE_SPACE])
+            if (teclado[SDL_SCANCODE_U])
                 debugCamera.moveUp(velocidad);
-            if (teclado[SDL_SCANCODE_LSHIFT])
+            if (teclado[SDL_SCANCODE_RSHIFT])
                 debugCamera.moveDown(velocidad);
-            if(teclado[SDL_SCANCODE_9])
+            if (teclado[SDL_SCANCODE_9])
                 debugMode = false;
-        }else{
-             if (rel_x != 0 || rel_y != 0) {
-            camera.processMouse((float)rel_x, (float)-rel_y);
+        } else {
+            if (rel_x != 0 || rel_y != 0) {
+                camera.processMouse((float)rel_x, (float)-rel_y);
+            }
         }
         float velocidad = 5.0f * deltaTime;
         if (teclado[SDL_SCANCODE_LCTRL])
@@ -133,21 +134,7 @@ void Screen::poll(float deltaTime) {
             camera.moveDown(velocidad);
         if (teclado[SDL_SCANCODE_R])
             regenerateWorld = true;
-        }
     }
-    if (debugMode && !openMenu) {
-    float debugSpeed = 20.0f * deltaTime; // más rápida para explorar
-
-    if (teclado[SDL_SCANCODE_I]) debugCamera.moveForward(debugSpeed);
-    if (teclado[SDL_SCANCODE_K]) debugCamera.moveBackward(debugSpeed);
-    if (teclado[SDL_SCANCODE_J]) debugCamera.moveLeft(debugSpeed);
-    if (teclado[SDL_SCANCODE_L]) debugCamera.moveRight(debugSpeed);
-    if (teclado[SDL_SCANCODE_U]) debugCamera.moveUp(debugSpeed);
-    if (teclado[SDL_SCANCODE_O]) debugCamera.moveDown(debugSpeed);
-
-    // Opcional: permitir rotación con el mouse cuando debugMode está activo
-    // (habría que desactivar el movimiento de la cámara principal en ese caso)
-}
 }
 
 void Screen::clear() {
