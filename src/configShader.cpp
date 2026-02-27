@@ -11,9 +11,7 @@ unsigned int cargarTextura(const char *ruta) {
     // Configurar parámetros de la textura
 
     int width, height, nrChannels;
-    // Cargar la imagen (stb_image carga la imagen volteada? lo veremos)
-    stbi_set_flip_vertically_on_load(
-        true); // Los PNG normalmente tienen Y invertida
+    stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load(ruta, &width, &height, &nrChannels, 4);
 
     if (data) {
@@ -73,9 +71,7 @@ Shader::Shader() {
     viewLoc = glGetUniformLocation(shaderProgram, "view");
     projLoc = glGetUniformLocation(shaderProgram, "projection");
 
-    use();
-    // Configurar matriz de proyección (se hace una sola vez)
-
+    glUseProgram(shaderProgram);
     // Configurar matriz model por defecto
     glm::mat4 model = glm::mat4(1.0f);
     setModelMatrix(glm::value_ptr(model));
@@ -98,7 +94,12 @@ Shader::Shader() {
     useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
 }
 Shader::~Shader() { glDeleteProgram(shaderProgram); }
-void Shader::use() { glUseProgram(shaderProgram); }
+void Shader::use() {
+    glUseProgram(shaderProgram);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, getTextureID());
+    setUseTexture(true);
+}
 void Shader::setModelMatrix(const float *matrix) {
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
 }
