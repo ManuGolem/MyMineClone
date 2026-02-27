@@ -8,6 +8,7 @@
 #include <mutex>
 #include <queue>
 #include <set>
+#include <stack>
 #include <thread>
 #include <utility>
 struct pendingBlock {
@@ -35,7 +36,7 @@ class World {
     mutex mutexChunkResult;
     mutex mutexChunkRequest;
     mutex mutexChunkUpdateRequest;
-    queue<pair<int, int>> chunkRequestQueue;
+    stack<pair<int, int>> chunkRequestQueue;
     queue<pair<int, int>> chunkRequestUpdateQueue;
     set<pair<int, int>> requestedChunks;
     set<pair<int, int>> requestedUpdateChunks;
@@ -48,8 +49,7 @@ class World {
     ivec2 getChunkPos(vec3 worldPos);
     shared_ptr<Chunk> getChunk(int chunkX, int chunkZ);
     void generateFlatWorld(int width, int depth);
-    void generateWorldWithPerlin(int width, int depth);
-    Block getBlock(int x, int y, int z);
+    void generateWorldWithPerlin();
     void insertChunks();
     void render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
                 mat4 renderProjection);
