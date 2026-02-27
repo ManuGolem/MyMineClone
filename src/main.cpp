@@ -34,7 +34,7 @@ bool detectBlock(Screen &screen, World &mundo, vec3 &blockSelect,
 int main() {
     Screen screen;
     World world;
-    world.generateWorldWithPerlin(160, 160);
+    world.generateWorldWithPerlin();
     world.startCreationThread();
     Uint32 lastFrame = SDL_GetTicks();
     int frameCount = 0;
@@ -80,7 +80,7 @@ int main() {
 
         if (screen.getRegenerate()) {
             world.deleteWorld();
-            world.generateWorldWithPerlin(160, 160);
+            world.generateWorldWithPerlin();
         }
         screen.clearRegenerate();
         screen.clearLeftClick();
@@ -104,7 +104,7 @@ int main() {
         }
         // Renderizar menu
         screen.renderMenu();
-        screen.renderCrosshair();
+        screen.renderUI();
         // Cambiar los back/front frames
         screen.swap();
     }
