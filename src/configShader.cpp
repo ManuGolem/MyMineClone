@@ -4,164 +4,167 @@
 #include <iostream>
 using namespace std;
 unsigned int cargarTextura(const char *ruta) {
-  unsigned int textureID;
-  glGenTextures(1, &textureID);
-  glBindTexture(GL_TEXTURE_2D, textureID);
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
 
-  // Configurar parámetros de la textura
+    // Configurar parámetros de la textura
 
-  int width, height, nrChannels;
-  // Cargar la imagen (stb_image carga la imagen volteada? lo veremos)
-  stbi_set_flip_vertically_on_load(
-      true); // Los PNG normalmente tienen Y invertida
-  unsigned char *data = stbi_load(ruta, &width, &height, &nrChannels, 4);
+    int width, height, nrChannels;
+    // Cargar la imagen (stb_image carga la imagen volteada? lo veremos)
+    stbi_set_flip_vertically_on_load(
+        true); // Los PNG normalmente tienen Y invertida
+    unsigned char *data = stbi_load(ruta, &width, &height, &nrChannels, 4);
 
-  if (data) {
-    // Asumimos que el atlas es RGBA (4 canales)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    cout << "Textura cargada: " << ruta << " (" << width << "x" << height
-         << ", " << nrChannels << " canales)" << endl;
-  } else {
-    cout << "ERROR: No se pudo cargar la textura: " << ruta << endl;
-  }
-  stbi_image_free(data); // Liberar memoria de la imagen
-  return textureID;
+    if (data) {
+        // Asumimos que el atlas es RGBA (4 canales)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        cout << "Textura cargada: " << ruta << " (" << width << "x" << height
+             << ", " << nrChannels << " canales)" << endl;
+    } else {
+        cout << "ERROR: No se pudo cargar la textura: " << ruta << endl;
+    }
+    stbi_image_free(data); // Liberar memoria de la imagen
+    return textureID;
 }
 Shader::Shader() {
-  unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vs, 1, &vertexShaderSrc, NULL);
-  glCompileShader(vs);
-  // LOGS idk
-  int success;
-  char infoLog[512];
-  glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(vs, 512, NULL, infoLog);
-    cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
-  }
-  // El otro shader
-  unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fs, 1, &fragmentShaderSrc, NULL);
-  glCompileShader(fs);
+    unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vertexShaderSrc, NULL);
+    glCompileShader(vs);
+    // LOGS idk
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vs, 512, NULL, infoLog);
+        cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
+             << infoLog << endl;
+    }
+    // El otro shader
+    unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fragmentShaderSrc, NULL);
+    glCompileShader(fs);
 
-  glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(fs, 512, NULL, infoLog);
-    cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << endl;
-  }
-  // Crear programa
-  shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vs);
-  glAttachShader(shaderProgram, fs);
-  glLinkProgram(shaderProgram);
+    glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fs, 512, NULL, infoLog);
+        cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
+             << infoLog << endl;
+    }
+    // Crear programa
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vs);
+    glAttachShader(shaderProgram, fs);
+    glLinkProgram(shaderProgram);
 
-  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success) {
-    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << endl;
-  }
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << endl;
+    }
 
-  glDeleteShader(vs);
-  glDeleteShader(fs);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
 
-  // Obtener ubicaciones de uniforms
-  modelLoc = glGetUniformLocation(shaderProgram, "model");
-  viewLoc = glGetUniformLocation(shaderProgram, "view");
-  projLoc = glGetUniformLocation(shaderProgram, "projection");
+    // Obtener ubicaciones de uniforms
+    modelLoc = glGetUniformLocation(shaderProgram, "model");
+    viewLoc = glGetUniformLocation(shaderProgram, "view");
+    projLoc = glGetUniformLocation(shaderProgram, "projection");
 
-  use();
-  // Configurar matriz de proyección (se hace una sola vez)
+    use();
+    // Configurar matriz de proyección (se hace una sola vez)
 
-  // Configurar matriz model por defecto
-  glm::mat4 model = glm::mat4(1.0f);
-  setModelMatrix(glm::value_ptr(model));
+    // Configurar matriz model por defecto
+    glm::mat4 model = glm::mat4(1.0f);
+    setModelMatrix(glm::value_ptr(model));
 
-  textureID = cargarTextura("../textures/textures.png");
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, textureID);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                  GL_NEAREST); //
-  glUniform1i(glGetUniformLocation(shaderProgram, "textureBlock"), 0);
-  float textureSize = 1 / 16.0f;
-  glUniform1f(glGetUniformLocation(shaderProgram, "textureSize"), textureSize);
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_BACK);
-  glFrontFace(GL_CCW);
-  useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
+    textureID = cargarTextura("../textures/textures.png");
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                    GL_NEAREST); //
+    glUniform1i(glGetUniformLocation(shaderProgram, "textureBlock"), 0);
+    float textureSize = 1 / 16.0f;
+    glUniform1f(glGetUniformLocation(shaderProgram, "textureSize"),
+                textureSize);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
 }
 Shader::~Shader() { glDeleteProgram(shaderProgram); }
 void Shader::use() { glUseProgram(shaderProgram); }
 void Shader::setModelMatrix(const float *matrix) {
-  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
 }
 
 void Shader::setViewMatrix(const float *matrix) {
-  glUniformMatrix4fv(viewLoc, 1, GL_FALSE, matrix);
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, matrix);
 }
 
 void Shader::setProjectionMatrix(const float *matrix) {
-  glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix);
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix);
 }
 
 // Implementacion de la clase chunkBuffer
 ChunkBuffer::ChunkBuffer() : indexCount(0) {
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 }
 ChunkBuffer::~ChunkBuffer() {
-  glDeleteVertexArrays(1, &VAO);
-  glDeleteBuffers(1, &VBO);
-  glDeleteBuffers(1, &EBO);
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 }
 void ChunkBuffer::uploadData(const std::vector<float> &vertices,
                              const std::vector<unsigned int> &indices) {
-  indexCount = indices.size();
-  glBindVertexArray(VAO);
-  // VBO - datos de vértices
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
-               vertices.data(), GL_STATIC_DRAW);
+    indexCount = indices.size();
+    glBindVertexArray(VAO);
+    // VBO - datos de vértices
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
+                 vertices.data(), GL_STATIC_DRAW);
 
-  // EBO - índices
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
-               indices.data(), GL_STATIC_DRAW);
+    // EBO - índices
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
+                 indices.data(), GL_STATIC_DRAW);
 
-  // Posición (3 floats) - location 0
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
-                        (void *)0);
-  glEnableVertexAttribArray(0);
+    // Posición (3 floats) - location 0
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
+                          (void *)0);
+    glEnableVertexAttribArray(0);
 
-  // Color (3 floats) - location 1
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
-                        (void *)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
+    // Color (3 floats) - location 1
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
+                          (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
-  // Coordenadas de textura (2 floats) - location 2
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
-                        (void *)(6 * sizeof(float)));
-  glEnableVertexAttribArray(2);
+    // Coordenadas de textura (2 floats) - location 2
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
+                          (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
-  // Offset de textura (2 floats) - location 3
-  glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
-                        (void *)(8 * sizeof(float)));
-  glEnableVertexAttribArray(3);
+    // Offset de textura (2 floats) - location 3
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
+                          (void *)(8 * sizeof(float)));
+    glEnableVertexAttribArray(3);
 
-  // Verificación opcional
-  GLenum err = glGetError();
-  if (err != GL_NO_ERROR) {
-    std::cerr << "OpenGL error in uploadData: " << err << std::endl;
-  }
+    // Verificación opcional
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        std::cerr << "OpenGL error in uploadData: " << err << std::endl;
+    }
 
-  glBindVertexArray(0);
+    glBindVertexArray(0);
 }
 void ChunkBuffer::render() {
-  glBindVertexArray(VAO);
-  glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }

@@ -29,9 +29,7 @@ class Camera {
     void moveDown(float);
     void processMouse(float, float);
     mat4 getViewMatrix();
-    vec3 getFront() const {
-        return front;
-    }
+    vec3 getFront() const { return front; }
     vec3 getPosition();
     mat4 getProjectionMatrix();
     void setAspectRatio(float width, float height);

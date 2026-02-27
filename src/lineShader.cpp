@@ -6,7 +6,7 @@ unsigned int LineShader::outlinesVBO = 0;
 unsigned int LineShader::crosshairVAO = 0;
 unsigned int LineShader::crosshairVBO = 0;
 LineShader::LineShader() {
-    const char* vertexSrc = R"(
+    const char *vertexSrc = R"(
             #version 330 core
             layout (location = 0) in vec3 aPos;
             
@@ -19,7 +19,7 @@ LineShader::LineShader() {
             }
         )";
 
-    const char* fragmentSrc = R"(
+    const char *fragmentSrc = R"(
             #version 330 core
             out vec4 FragColor;
             
@@ -68,7 +68,8 @@ LineShader::LineShader() {
     glBindBuffer(GL_ARRAY_BUFFER, axesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+                          (void *)0);
     glEnableVertexAttribArray(0);
 
     // Outlines
@@ -76,7 +77,8 @@ LineShader::LineShader() {
     glGenBuffers(1, &outlinesVBO);
     glBindVertexArray(outlinesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+                          (void *)0);
     glEnableVertexAttribArray(0);
 
     // Crosshair
@@ -84,12 +86,14 @@ LineShader::LineShader() {
     glGenBuffers(1, &crosshairVBO);
     glBindVertexArray(crosshairVAO);
     glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+                          (void *)0);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
-void LineShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
+void LineShader::drawDebugAxes(const glm::mat4 &view,
+                               const glm::mat4 &projection) {
     use();
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
@@ -115,7 +119,8 @@ void LineShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projectio
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
 }
-void LineShader::drawOutline(int x, int y, int z, const glm::mat4& view, const glm::mat4& projection) {
+void LineShader::drawOutline(int x, int y, int z, const glm::mat4 &view,
+                             const glm::mat4 &projection) {
     GLint previousProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
     use();
@@ -125,17 +130,24 @@ void LineShader::drawOutline(int x, int y, int z, const glm::mat4& view, const g
     glm::mat4 model(1.0f);
     setModelMatrix(glm::value_ptr(model));
     // 12 aristas del cubo (24 vértices)
-    float vertices[] = {// Cara inferior
-                        x - 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f,
-                        y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z - 0.5f,
+    float vertices[] = {
+        // Cara inferior
+        x - 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f,
+        y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y - 1.0f,
+        z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f,
+        x - 0.5f, y - 1.0f, z - 0.5f,
 
-                        // Cara superior
-                        x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z + 0.5f, x + 0.5f,
-                        y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z - 0.5f,
+        // Cara superior
+        x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f,
+        y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y + 0.0f,
+        z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f,
+        x - 0.5f, y + 0.0f, z - 0.5f,
 
-                        // Aristas verticales
-                        x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f,
-                        y - 1.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f};
+        // Aristas verticales
+        x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f,
+        y - 1.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f, y - 1.0f,
+        z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f,
+        x + 0.5f, y + 0.0f, z + 0.5f};
 
     glBindVertexArray(outlinesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
@@ -153,12 +165,14 @@ void LineShader::drawOutline(int x, int y, int z, const glm::mat4& view, const g
         glUseProgram(previousProgram);
     }
 }
-void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size, float r, float g, float b) {
+void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size,
+                               float r, float g, float b) {
     // Guardar shader activo
     GLint previousProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
     // Configurar proyección ortográfica para 2D
-    glm::mat4 ortho = glm::ortho(0.0f, (float)screenWidth, (float)screenHeight, 0.0f);
+    glm::mat4 ortho =
+        glm::ortho(0.0f, (float)screenWidth, (float)screenHeight, 0.0f);
 
     // Usar este shader
     use();
@@ -170,10 +184,12 @@ void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size, floa
     int centerY = screenHeight / 2;
 
     float vertices[] = {// Línea horizontal
-                        (float)centerX - size, (float)centerY, 0.0f, (float)centerX + size, (float)centerY, 0.0f,
+                        (float)centerX - size, (float)centerY, 0.0f,
+                        (float)centerX + size, (float)centerY, 0.0f,
 
                         // Línea vertical
-                        (float)centerX, (float)centerY - size, 0.0f, (float)centerX, (float)centerY + size, 0.0f,
+                        (float)centerX, (float)centerY - size, 0.0f,
+                        (float)centerX, (float)centerY + size, 0.0f,
 
                         // Punto central
                         (float)centerX, (float)centerY, 0.0f};

@@ -11,14 +11,14 @@ using namespace std;
 class LineShader;
 class Screen {
   private:
-    SDL_Window* window;
+    SDL_Window *window;
     SDL_GLContext context;
     bool running;
     Camera camera;
     Camera debugCamera;
     bool debugMode = false;
     bool ceroPressed = false;
-    const Uint8* teclado;
+    const Uint8 *teclado;
     int mouseX, mouseY;
     int lastMouseX, lastMouseY;
     bool openMenu = false;
@@ -32,13 +32,13 @@ class Screen {
     int crosshairSize = 10;
     float crosshairColor[3] = {1.0f, 1.0f, 1.0f};
 
-    LineShader* lineShader;
+    LineShader *lineShader;
 
   public:
     Screen();
     ~Screen();
 
-    Camera& getCamera();
+    Camera &getCamera();
     bool isRunning();
     void poll(float deltaTime);
     void clear();
@@ -46,27 +46,15 @@ class Screen {
     void resize();
     void renderMenu();
     void renderCrosshair();
-    void renderDebugAxes(const glm::mat4& view, const glm::mat4& projection);
+    void renderDebugAxes(const glm::mat4 &view, const glm::mat4 &projection);
     void renderBlockOutline(int x, int y, int z);
-    bool wasRightClicked() const {
-        return rightClicked;
-    }
-    bool wasLeftClicked() const {
-        return leftClicked;
-    }
-    bool getRegenerate() const {
-        return regenerateWorld;
-    }
-    void clearLeftClick() {
-        leftClicked = false;
-    }
-    void clearRightClick() {
-        rightClicked = false;
-    }
-    void clearRegenerate() {
-        regenerateWorld = false;
-    }
-    Camera& getDebugCamera() { return debugCamera; }
+    bool wasRightClicked() const { return rightClicked; }
+    bool wasLeftClicked() const { return leftClicked; }
+    bool getRegenerate() const { return regenerateWorld; }
+    void clearLeftClick() { leftClicked = false; }
+    void clearRightClick() { rightClicked = false; }
+    void clearRegenerate() { regenerateWorld = false; }
+    Camera &getDebugCamera() { return debugCamera; }
     bool isDebugMode() const { return debugMode; }
     void clearDebugMode() { debugMode = false; }
 };
