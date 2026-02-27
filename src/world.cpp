@@ -88,10 +88,19 @@ void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
                 ivec2 chunkPos = getChunkPos(vec3(lx, ly, lz));
                 auto chunk = getChunk(chunkPos.x, chunkPos.y);
 
+                int localX = lx - chunkPos.x * 16;
+                int localZ = lz - chunkPos.y * 16;
                 if (chunk) {
-                    int localX = lx - chunkPos.x * 16;
-                    int localZ = lz - chunkPos.y * 16;
                     chunk->setBlock(localX, ly, localZ, leaf);
+                } else {
+                    pendingBlock futureBlock;
+                    futureBlock.block = leaf;
+                    futureBlock.x = localX;
+                    futureBlock.y = y;
+                    futureBlock.z = localZ;
+                    lock_guard<mutex> lock(mutexPendingBlocks);
+                    pendingBlocks[chunkPos.x][chunkPos.y].push_back(
+                        futureBlock);
                 }
             }
         }
@@ -641,7 +650,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
     int renderDist = 16;
     int generateDist = renderDist + 5;
     int cantChunks = 0;
-    int maxChunksPerFrame = 2;
+    int maxChunksPerFrame = 4;
     Chunk::sharedShader->use();
     Chunk::sharedShader->setUseTexture(true);
     Chunk::sharedShader->setProjectionMatrix(value_ptr(renderProjection));
