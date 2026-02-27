@@ -7,6 +7,7 @@
 #include <iostream>
 class LineShader {
   private:
+    // Shader para lineas
     unsigned int shaderProgram;
     unsigned int modelLoc, viewLoc, projLoc;
     unsigned int colorLoc;
@@ -16,10 +17,17 @@ class LineShader {
     static unsigned int outlinesVBO;
     static unsigned int crosshairVAO;
     static unsigned int crosshairVBO;
+    // Shader para UI
+    unsigned int uiShaderProgram;
+    unsigned int uiModelLoc, uiViewLoc, uiProjLoc;
+    unsigned int uiTextureLoc, uiColorLoc;
+    unsigned int uiVAO, uiVBO, uiEBO;
+    // Textura
+    unsigned int hotbarTextureID;
+    unsigned int selectorTextureID;
 
   public:
     LineShader();
-    void use() { glUseProgram(shaderProgram); }
 
     void setModelMatrix(const float *matrix) {
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
@@ -37,6 +45,8 @@ class LineShader {
                      const glm::mat4 &projection);
     void drawCrosshair(int screenWidth, int screenHeight, int size = 10,
                        float r = 1.0f, float g = 1.0f, float b = 1.0f);
+    void drawHotbar(int windowWidth, int windowHeight, int hotbarNumSelected);
+    void loadHotbarTexture();
     void setColor(float r, float g, float b) { glUniform3f(colorLoc, r, g, b); }
     unsigned int getProgram() const { return shaderProgram; }
     ~LineShader();
