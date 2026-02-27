@@ -1,6 +1,5 @@
 #include "../include/world.h"
 #include <cstdlib>
-#include <future>
 #include <glm/geometric.hpp>
 #include <memory>
 #include <mutex>
@@ -24,7 +23,7 @@ World::World() {
 bool World::canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight,
                          int canopyRadius) {
     // Verificar que el suelo es válido (hierba/tierra)
-    Block groundBlock = getBlock(worldX, groundY, worldZ);
+    Block groundBlock = getBlockSafe(worldX, groundY, worldZ);
     if (!groundBlock.active ||
         (groundBlock.type != 4 && groundBlock.type != 3)) {
         return false;
@@ -32,12 +31,12 @@ bool World::canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight,
 
     // Verificar espacio para el tronco (que no haya bloques)
     for (int y = 1; y <= treeHeight; y++) {
-        Block block = getBlock(worldX, groundY + y, worldZ);
+        Block block = getBlockSafe(worldX, groundY + y, worldZ);
         if (block.active) {
             return false;
         }
     }
-    Block ceilTrunk = getBlock(worldX, groundY + treeHeight + 1, worldZ);
+    Block ceilTrunk = getBlockSafe(worldX, groundY + treeHeight + 1, worldZ);
     if (ceilTrunk.active) {
         return false;
     }
@@ -53,13 +52,7 @@ void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
         Block wood;
         wood.active = true;
         wood.type = 21;
-        ivec2 chunkPos = getChunkPos(vec3(worldX, groundY + y + 1, worldZ));
-        auto chunk = getChunk(chunkPos.x, chunkPos.y);
-        if (chunk) {
-            int localX = worldX - chunkPos.x * 16;
-            int localZ = worldZ - chunkPos.y * 16;
-            chunk->setBlock(localX, groundY + y + 1, localZ, wood);
-        }
+        setBlockSafe(worldX, groundY + y + 1, worldZ, wood);
     }
     // Hojas
     for (int y = leafStart; y <= groundY + trunkHeight + 1; y++) {
@@ -238,7 +231,7 @@ void World::createChunkSingle(int cx, int cz) {
     auto chunkReal = getChunk(cx, cz);
     chunkReal->generateMesh();
 }
-void World::generateWorldWithPerlin(int width, int depth) {
+void World::generateWorldWithPerlin() {
     srand(time(NULL));
     int newSeed1 = rand();
     int newSeed2 = rand();
@@ -266,8 +259,6 @@ void World::generateWorldWithPerlin(int width, int depth) {
     float gain = 0.3f + (rand() % 40) / 100.0f;
     terrainNoise.SetFractalGain(gain);
 
-    int chunksInX = (width + 15) / 16;
-    int chunksInZ = (depth + 15) / 16;
     createChunkSingle(0, 0);
 }
 
@@ -353,25 +344,16 @@ Block World::getBlockSafe(int x, int y, int z) {
     int offsetZ = chunk->getNroChunkZ() * 16;
     return chunk->getBlock(x - offsetX, y, z - offsetZ);
 }
-Block World::getBlock(int x, int y, int z) {
-    ivec2 posChunk = getChunkPos(vec3(x, y, z));
-    auto chunk = getChunk(posChunk.x, posChunk.y);
-    if (chunk == nullptr || y > 255) {
-        Block empty;
-        empty.active = false;
-        empty.type = 0;
-        return empty;
-    }
-    int offsetX = chunk->getNroChunkX() * 16;
-    int offsetZ = chunk->getNroChunkZ() * 16;
-    return chunk->getBlock(x - offsetX, y, z - offsetZ);
-}
 void World::setBlockSafe(int x, int y, int z, Block block) {
     ivec2 posChunk = getChunkPos(vec3(x, y, z));
     shared_ptr<Chunk> chunk;
     lock_guard<mutex> lock(mapChunks);
     chunk = getChunk(posChunk.x, posChunk.y);
-    chunk->setBlock(x - posChunk.x * 16, y, z - posChunk.y * 16, block);
+    if (chunk) {
+        chunk->setBlock(x - posChunk.x * 16, y, z - posChunk.y * 16, block);
+    } else {
+        return;
+    }
     if (x - posChunk.x * 16 == 15) {
         auto chunkXPlus = getChunk(posChunk.x + 1, posChunk.y);
         if (chunkXPlus && !chunkXPlus->isUpdating) {
@@ -648,11 +630,10 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
     insertChunks();
     ivec2 centerChunk = getChunkPos(cameraPos);
     int renderDist = 16;
-    int generateDist = renderDist + 5;
+    int generateDist = renderDist + 3;
     int cantChunks = 0;
-    int maxChunksPerFrame = 4;
+    int maxChunksPerFrame = 5;
     Chunk::sharedShader->use();
-    Chunk::sharedShader->setUseTexture(true);
     Chunk::sharedShader->setProjectionMatrix(value_ptr(renderProjection));
     Chunk::sharedShader->setViewMatrix(glm::value_ptr(renderView));
     mat4 vp = projection * view;
@@ -670,7 +651,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
             if (chunk) {
                 chunk->render();
 
-            } else if (cantChunks < maxChunksPerFrame) {
+            } else {
                 lock_guard<mutex> lock(setChunkRequestMutex);
                 if (requestedChunks.find({chunkX, chunkZ}) ==
                     requestedChunks.end()) {
@@ -680,7 +661,6 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
                     }
                     requestedChunks.insert({chunkX, chunkZ});
                     RequestCV.notify_one();
-                    cantChunks++;
                 }
             }
         } else {
@@ -758,7 +738,7 @@ void World::loopCreation() {
         });
         if (!threadRunning)
             break;
-        auto [x, z] = chunkRequestQueue.front();
+        auto [x, z] = chunkRequestQueue.top();
         chunkRequestQueue.pop();
         lock.unlock();
         createChunk(x, z);
