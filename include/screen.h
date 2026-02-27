@@ -29,9 +29,10 @@ class Screen {
     int windowWidth = 1280;
     int windowHeight = 720;
     bool crosshairVisible = true;
+    bool hotbarVisible = true;
+    int hotbarNumSelected = 1;
     int crosshairSize = 10;
     float crosshairColor[3] = {1.0f, 1.0f, 1.0f};
-
     LineShader *lineShader;
 
   public:
@@ -45,7 +46,7 @@ class Screen {
     void swap();
     void resize();
     void renderMenu();
-    void renderCrosshair();
+    void renderUI();
     void renderDebugAxes(const glm::mat4 &view, const glm::mat4 &projection);
     void renderBlockOutline(int x, int y, int z);
     bool wasRightClicked() const { return rightClicked; }

@@ -80,7 +80,7 @@ void Screen::poll(float deltaTime) {
             }
         }
     }
-    if (teclado[SDL_SCANCODE_0]) {
+    if (teclado[SDL_SCANCODE_P]) {
         debugMode = true;
         debugCamera = camera;
     }
@@ -91,9 +91,9 @@ void Screen::poll(float deltaTime) {
             if (rel_x != 0 || rel_y != 0) {
                 debugCamera.processMouse((float)rel_x, (float)-rel_y);
             }
-            float velocidad = 20.0f * deltaTime; // más rápida para explorar
+            float velocidad = 20.0f * deltaTime;
             if (teclado[SDL_SCANCODE_RCTRL])
-                velocidad = 70.0f * deltaTime;
+                velocidad = 130.0f * deltaTime;
 
             if (teclado[SDL_SCANCODE_UP])
                 debugCamera.moveForward(velocidad);
@@ -107,16 +107,14 @@ void Screen::poll(float deltaTime) {
                 debugCamera.moveUp(velocidad);
             if (teclado[SDL_SCANCODE_RSHIFT])
                 debugCamera.moveDown(velocidad);
-            if (teclado[SDL_SCANCODE_9])
-                debugMode = false;
         } else {
             if (rel_x != 0 || rel_y != 0) {
                 camera.processMouse((float)rel_x, (float)-rel_y);
             }
         }
-        float velocidad = 5.0f * deltaTime;
+        float velocidad = 4.317f * deltaTime;
         if (teclado[SDL_SCANCODE_LCTRL])
-            velocidad = 50.0f * deltaTime;
+            velocidad = 100.0f * deltaTime;
         if (teclado[SDL_SCANCODE_W])
             camera.moveForward(velocidad);
         if (teclado[SDL_SCANCODE_S])
@@ -129,8 +127,12 @@ void Screen::poll(float deltaTime) {
             camera.moveUp(velocidad);
         if (teclado[SDL_SCANCODE_LSHIFT])
             camera.moveDown(velocidad);
-        if (teclado[SDL_SCANCODE_R])
-            regenerateWorld = true;
+        for (int i = SDL_SCANCODE_1; i <= SDL_SCANCODE_9; i++) {
+            if (teclado[i]) {
+                hotbarNumSelected = i - SDL_SCANCODE_1 + 1;
+                break;
+            }
+        }
     }
 }
 
@@ -140,22 +142,33 @@ void Screen::clear() {
 }
 
 void Screen::swap() { SDL_GL_SwapWindow(window); }
-void Screen::renderCrosshair() {
-    if (!crosshairVisible || debugMode) {
+void Screen::renderUI() {
+    GLint previousProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
+    if (debugMode) {
         return;
     }
     // Guardar estado del depth test
     GLboolean depthTest;
     glGetBooleanv(GL_DEPTH_TEST, &depthTest);
     glDisable(GL_DEPTH_TEST);
-    // Dibujar crosshair usando lineShader
-    lineShader->drawCrosshair(windowWidth, windowHeight, crosshairSize,
-                              crosshairColor[0], crosshairColor[1],
-                              crosshairColor[2]);
-
+    if (crosshairVisible) {
+        // Render Crosshair
+        lineShader->drawCrosshair(windowWidth, windowHeight, crosshairSize,
+                                  crosshairColor[0], crosshairColor[1],
+                                  crosshairColor[2]);
+    }
+    if (hotbarVisible) {
+        // Render hotbar
+        lineShader->drawHotbar(windowWidth, windowHeight, hotbarNumSelected);
+    }
     // Restaurar depth test
     if (depthTest)
         glEnable(GL_DEPTH_TEST);
+    if (previousProgram != 0 &&
+        previousProgram != (GLint)lineShader->getProgram()) {
+        glUseProgram(previousProgram);
+    }
 }
 void Screen::renderDebugAxes(const glm::mat4 &view,
                              const glm::mat4 &projection) {
