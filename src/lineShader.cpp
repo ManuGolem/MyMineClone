@@ -1,4 +1,5 @@
 #include "../include/lineShader.h"
+#include "../include/stb_image.h"
 unsigned int LineShader::axesVAO = 0;
 unsigned int LineShader::axesVBO = 0;
 unsigned int LineShader::outlinesVAO = 0;
@@ -6,6 +7,36 @@ unsigned int LineShader::outlinesVBO = 0;
 unsigned int LineShader::crosshairVAO = 0;
 unsigned int LineShader::crosshairVBO = 0;
 LineShader::LineShader() {
+    const char *uiVertexSrc = R"(
+    #version 330 core
+    layout (location = 0) in vec3 aPos;
+    layout (location = 1) in vec2 aTexCoord;
+    
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
+    
+    out vec2 TexCoord;
+    
+    void main() {
+        gl_Position = projection * view * model * vec4(aPos, 1.0);
+        TexCoord = aTexCoord;
+    }
+    )";
+
+    const char *uiFragmentSrc = R"(
+    #version 330 core
+    out vec4 FragColor;
+    
+    in vec2 TexCoord;
+    
+    uniform sampler2D uiTexture;
+    uniform vec4 color;
+    
+    void main() {
+        FragColor = texture(uiTexture, TexCoord) * color;
+    }
+    )";
     const char *vertexSrc = R"(
             #version 330 core
             layout (location = 0) in vec3 aPos;
@@ -30,7 +61,6 @@ LineShader::LineShader() {
             }
         )";
 
-    // Compilar shaders (igual que en tu Shader actual)
     unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &vertexSrc, NULL);
     glCompileShader(vs);
@@ -91,10 +121,66 @@ LineShader::LineShader() {
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    // Compilar shader para UI items
+    unsigned int uiVS = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(uiVS, 1, &uiVertexSrc, NULL);
+    glCompileShader(uiVS);
+
+    unsigned int uiFS = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(uiFS, 1, &uiFragmentSrc, NULL);
+    glCompileShader(uiFS);
+    uiShaderProgram = glCreateProgram();
+    glAttachShader(uiShaderProgram, uiVS);
+    glAttachShader(uiShaderProgram, uiFS);
+    glLinkProgram(uiShaderProgram);
+
+    glDeleteShader(uiVS);
+    glDeleteShader(uiFS);
+
+    // Obtener uniforms del shader UI
+    uiModelLoc = glGetUniformLocation(uiShaderProgram, "model");
+    uiViewLoc = glGetUniformLocation(uiShaderProgram, "view");
+    uiProjLoc = glGetUniformLocation(uiShaderProgram, "projection");
+    uiTextureLoc = glGetUniformLocation(uiShaderProgram, "uiTexture");
+    uiColorLoc = glGetUniformLocation(uiShaderProgram, "color");
+    // Crear VAO/VBO para UI
+    float uiVertices[] = {
+        // posiciones    // texCoords
+        0.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
+        1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // bottom-right
+        1.0f, 1.0f, 0.0f, 1.0f, 0.0f, // top-right
+        0.0f, 1.0f, 0.0f, 0.0f, 0.0f  // top-left
+    };
+    unsigned int uiIndices[] = {0, 1, 2, 2, 3, 0};
+
+    glGenVertexArrays(1, &uiVAO);
+    glGenBuffers(1, &uiVBO);
+    glGenBuffers(1, &uiEBO);
+
+    glBindVertexArray(uiVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uiVertices), uiVertices,
+                 GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, uiEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uiIndices), uiIndices,
+                 GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                          (void *)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                          (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    // Cargar texturas
+    loadHotbarTexture();
 }
 void LineShader::drawDebugAxes(const glm::mat4 &view,
                                const glm::mat4 &projection) {
-    use();
+    glUseProgram(shaderProgram);
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
 
@@ -121,9 +207,7 @@ void LineShader::drawDebugAxes(const glm::mat4 &view,
 }
 void LineShader::drawOutline(int x, int y, int z, const glm::mat4 &view,
                              const glm::mat4 &projection) {
-    GLint previousProgram;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
-    use();
+    glUseProgram(shaderProgram);
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
 
@@ -153,29 +237,104 @@ void LineShader::drawOutline(int x, int y, int z, const glm::mat4 &view,
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
-    // Dibujar con depth test NORMAL (no modificamos nada)
     glLineWidth(1.0f);
-    setColor(0.0f, 0.0f, 0.0f);    // Negro
-    glDrawArrays(GL_LINES, 0, 24); // 12 líneas * 2 vértices
-
-    // Restaurar shader anterior si es necesario
+    setColor(0.0f, 0.0f, 0.0f);
+    glDrawArrays(GL_LINES, 0, 24);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    if (previousProgram != 0 && previousProgram != (GLint)shaderProgram) {
-        glBindVertexArray(0);
-        glUseProgram(previousProgram);
+}
+void LineShader::loadHotbarTexture() {
+    // Cargar textura de la hotbar completa
+    int width, height, channels;
+    unsigned char *data =
+        stbi_load("../textures/Hotbar.png", &width, &height, &channels, 4);
+    if (data) {
+        glGenTextures(1, &hotbarTextureID);
+        glBindTexture(GL_TEXTURE_2D, hotbarTextureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        stbi_image_free(data);
     }
+    // Cargar textura del selector
+    data = stbi_load("../textures/Hotbar_selector.png", &width, &height,
+                     &channels, 4);
+    if (data) {
+        glGenTextures(1, &selectorTextureID);
+        glBindTexture(GL_TEXTURE_2D, selectorTextureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        stbi_image_free(data);
+    }
+}
+void LineShader::drawHotbar(int screenWidth, int screenHeight, int selected) {
+    glUseProgram(uiShaderProgram);
+
+    // Configurar proyección ortográfica (CORREGIDA)
+    // 0,0 es esquina inferior izquierda, screenWidth, screenHeight es esquina
+    // superior derecha
+    glm::mat4 projection =
+        glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
+    glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glm::mat4 view(1.0f);
+    glUniformMatrix4fv(uiViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+    // Configurar blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+
+    // Dimensiones
+    float hotbarWidth = 364.0f;
+    float hotbarHeight = 44.0f;
+    float selectorSize = 48.0f;
+
+    float posX = (screenWidth - hotbarWidth) / 2.0f;
+    float posY = 10.0f;
+
+    // Dibujar hotbar
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, hotbarTextureID);
+    glUniform1i(uiTextureLoc, 0);
+    glUniform4f(uiColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+
+    glm::mat4 model =
+        glm::translate(glm::mat4(1.0f), glm::vec3(posX, posY, 0.0f));
+    model = glm::scale(model, glm::vec3(hotbarWidth, hotbarHeight, 1.0f));
+    glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+    glBindVertexArray(uiVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    // Dibujar selector
+    glBindTexture(GL_TEXTURE_2D, selectorTextureID);
+
+    float slotWidth = hotbarWidth / 9.0f;
+    float selectorX =
+        posX + (selected - 1) * slotWidth - (selectorSize - slotWidth) / 2.0f;
+    float selectorY = posY - (selectorSize - hotbarHeight) / 2.0f;
+
+    model =
+        glm::translate(glm::mat4(1.0f), glm::vec3(selectorX, selectorY, 0.1f));
+    model = glm::scale(model, glm::vec3(selectorSize, selectorSize, 1.0f));
+    glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 }
 void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size,
                                float r, float g, float b) {
-    // Guardar shader activo
-    GLint previousProgram;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
     // Configurar proyección ortográfica para 2D
     glm::mat4 ortho =
         glm::ortho(0.0f, (float)screenWidth, (float)screenHeight, 0.0f);
 
-    // Usar este shader
-    use();
+    // Usar lineshader
+    glUseProgram(shaderProgram);
     setProjectionMatrix(glm::value_ptr(ortho));
     setViewMatrix(glm::value_ptr(glm::mat4(1.0f)));
     setModelMatrix(glm::value_ptr(glm::mat4(1.0f)));
@@ -202,18 +361,19 @@ void LineShader::drawCrosshair(int screenWidth, int screenHeight, int size,
     setColor(r, g, b);
     glLineWidth(2.0f);
     glDrawArrays(GL_LINES, 0, 4);
-
-    // Restaurar shader anterior si es necesario
-    if (previousProgram != 0 && previousProgram != (GLint)shaderProgram) {
-        glUseProgram(previousProgram);
-    }
 }
 LineShader::~LineShader() {
     glDeleteProgram(shaderProgram);
+    glDeleteProgram(uiShaderProgram);
     glDeleteVertexArrays(1, &axesVAO);
     glDeleteBuffers(1, &axesVBO);
     glDeleteVertexArrays(1, &outlinesVAO);
     glDeleteBuffers(1, &outlinesVBO);
     glDeleteVertexArrays(1, &crosshairVAO);
     glDeleteBuffers(1, &crosshairVBO);
+    glDeleteVertexArrays(1, &uiVAO);
+    glDeleteBuffers(1, &uiVBO);
+    glDeleteBuffers(1, &uiEBO);
+    glDeleteTextures(1, &hotbarTextureID);
+    glDeleteTextures(1, &selectorTextureID);
 }
