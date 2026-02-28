@@ -1,4 +1,5 @@
 #include "../include/lineShader.h"
+#include "../include/chunk.h"
 #include "../include/stb_image.h"
 unsigned int LineShader::axesVAO = 0;
 unsigned int LineShader::axesVBO = 0;
@@ -174,7 +175,6 @@ LineShader::LineShader() {
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-
     // Cargar texturas
     loadHotbarTexture();
 }
@@ -252,8 +252,8 @@ void LineShader::loadHotbarTexture() {
         glBindTexture(GL_TEXTURE_2D, hotbarTextureID);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, data);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         stbi_image_free(data);
     }
     // Cargar textura del selector
@@ -264,17 +264,49 @@ void LineShader::loadHotbarTexture() {
         glBindTexture(GL_TEXTURE_2D, selectorTextureID);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, data);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        stbi_image_free(data);
+    }
+
+    data =
+        stbi_load("../textures/icons/dirt.png", &width, &height, &channels, 4);
+    if (data) {
+        glGenTextures(1, &iconTexturesID[3]);
+        glBindTexture(GL_TEXTURE_2D, iconTexturesID[3]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        stbi_image_free(data);
+    }
+    data =
+        stbi_load("../textures/icons/stone.png", &width, &height, &channels, 4);
+    if (data) {
+        glGenTextures(1, &iconTexturesID[2]);
+        glBindTexture(GL_TEXTURE_2D, iconTexturesID[2]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        stbi_image_free(data);
+    }
+    data = stbi_load("../textures/icons/grass_block.png", &width, &height,
+                     &channels, 4);
+    if (data) {
+        glGenTextures(1, &iconTexturesID[4]);
+        glBindTexture(GL_TEXTURE_2D, iconTexturesID[4]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         stbi_image_free(data);
     }
 }
-void LineShader::drawHotbar(int screenWidth, int screenHeight, int selected) {
+void LineShader::drawHotbar(int screenWidth, int screenHeight, int selected,
+                            vector<int> blockTypes) {
     glUseProgram(uiShaderProgram);
 
-    // Configurar proyección ortográfica (CORREGIDA)
-    // 0,0 es esquina inferior izquierda, screenWidth, screenHeight es esquina
-    // superior derecha
     glm::mat4 projection =
         glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
     glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -291,11 +323,12 @@ void LineShader::drawHotbar(int screenWidth, int screenHeight, int selected) {
     float hotbarWidth = 364.0f;
     float hotbarHeight = 44.0f;
     float selectorSize = 48.0f;
-
+    int slotWidth = 40;
+    float slotHeight = hotbarHeight;
     float posX = (screenWidth - hotbarWidth) / 2.0f;
     float posY = 10.0f;
 
-    // Dibujar hotbar
+    // Dibujar hotbar (Fondo)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, hotbarTextureID);
     glUniform1i(uiTextureLoc, 0);
@@ -308,13 +341,11 @@ void LineShader::drawHotbar(int screenWidth, int screenHeight, int selected) {
 
     glBindVertexArray(uiVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
     // Dibujar selector
     glBindTexture(GL_TEXTURE_2D, selectorTextureID);
 
-    float slotWidth = hotbarWidth / 9.0f;
-    float selectorX =
-        posX + (selected - 1) * slotWidth - (selectorSize - slotWidth) / 2.0f;
+    float selectorX = posX + (selected - 1) * slotWidth + 2 -
+                      (selectorSize - slotWidth) / 2.0f;
     float selectorY = posY - (selectorSize - hotbarHeight) / 2.0f;
 
     model =
@@ -323,7 +354,41 @@ void LineShader::drawHotbar(int screenWidth, int screenHeight, int selected) {
     glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    // Dibujar icono
+    float iconSize = 32.0f;
 
+    glBindVertexArray(uiVAO); // usamos el mismo quad
+
+    for (int i = 0; i < blockTypes.size(); i++) {
+
+        int blockType = blockTypes[i];
+        if (iconTexturesID[blockType] == 0)
+            continue;
+
+        glBindTexture(GL_TEXTURE_2D, iconTexturesID[blockType]);
+        glUniform1i(uiTextureLoc, 0);
+        glUniform4f(uiColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+
+        float slotX = posX + 2 + i * slotWidth;
+        float slotY = posY;
+
+        float centerX = slotX + slotWidth / 2.0f;
+        float centerY = slotY + hotbarHeight / 2.0f;
+
+        float iconX = centerX - iconSize / 2.0f;
+        float iconY = centerY - iconSize / 2.0f;
+
+        glm::mat4 iconModel =
+            glm::translate(glm::mat4(1.0f), glm::vec3(iconX, iconY, 0.2f));
+        iconModel = glm::scale(iconModel, glm::vec3(iconSize, iconSize, 1.0f));
+
+        glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
+
+    // Restaurar estado
+    glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 }
