@@ -4,6 +4,7 @@
 #include "../imgui/imgui.h"
 #include "../include/lineShader.h"
 #include "camera.h"
+#include "chunk.h"
 #include "glad.h"
 #include <SDL2/SDL.h>
 #include <iostream>
@@ -31,6 +32,7 @@ class Screen {
     bool crosshairVisible = true;
     bool hotbarVisible = true;
     int hotbarNumSelected = 1;
+    vector<int> blocksInHotbar = {2, 4, 3, 0, 0, 0, 0, 0, 0};
     int crosshairSize = 10;
     float crosshairColor[3] = {1.0f, 1.0f, 1.0f};
     LineShader *lineShader;
@@ -50,6 +52,7 @@ class Screen {
     void renderDebugAxes(const glm::mat4 &view, const glm::mat4 &projection);
     void renderBlockOutline(int x, int y, int z);
     bool wasRightClicked() const { return rightClicked; }
+    Block getBlockSelected();
     bool wasLeftClicked() const { return leftClicked; }
     bool getRegenerate() const { return regenerateWorld; }
     void clearLeftClick() { leftClicked = false; }
