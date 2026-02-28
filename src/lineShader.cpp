@@ -1,6 +1,7 @@
 #include "../include/lineShader.h"
 #include "../include/chunk.h"
 #include "../include/stb_image.h"
+#include "configShader.h"
 unsigned int LineShader::axesVAO = 0;
 unsigned int LineShader::axesVBO = 0;
 unsigned int LineShader::outlinesVAO = 0;
@@ -176,7 +177,28 @@ LineShader::LineShader() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     // Cargar texturas
-    loadHotbarTexture();
+    loadHotbarTexture("../textures/Hotbar.png", hotbarTextureID);
+    loadHotbarTexture("../textures/Hotbar_selector.png", selectorTextureID);
+    loadHotbarTexture("../textures/icons/dirt.png", iconTexturesID[3]);
+    loadHotbarTexture("../textures/icons/stone.png", iconTexturesID[2]);
+    loadHotbarTexture("../textures/icons/grass_block.png", iconTexturesID[4]);
+    loadHotbarTexture("../textures/creativeInventory/tab_items.png",
+                      tabItemsTextureID);
+    loadHotbarTexture("../textures/creativeInventory/tab_top_unselected.png",
+                      tabTopUnselectedTextureID);
+
+    loadHotbarTexture("../textures/creativeInventory/tab_top_selected_left.png",
+                      tabTopSelectedLeftTextureID);
+    loadHotbarTexture(
+        "../textures/creativeInventory/tab_top_selected_right.png",
+        tabTopSelectedRightTextureID);
+    loadHotbarTexture(
+        "../textures/creativeInventory/tab_top_selected_middle.png",
+        tabTopSelectedMidTextureID);
+    loadHotbarTexture("../textures/creativeInventory/scroller.png",
+                      scrollerTextureID);
+    loadHotbarTexture("../textures/creativeInventory/scroller_disabled.png",
+                      scrollerDisabledTextureID);
 }
 void LineShader::drawDebugAxes(const glm::mat4 &view,
                                const glm::mat4 &projection) {
@@ -242,66 +264,102 @@ void LineShader::drawOutline(int x, int y, int z, const glm::mat4 &view,
     glDrawArrays(GL_LINES, 0, 24);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-void LineShader::loadHotbarTexture() {
+void LineShader::loadHotbarTexture(const char *path, unsigned int &textureID) {
     // Cargar textura de la hotbar completa
     int width, height, channels;
-    unsigned char *data =
-        stbi_load("../textures/Hotbar.png", &width, &height, &channels, 4);
+    unsigned char *data = stbi_load(path, &width, &height, &channels, 4);
     if (data) {
-        glGenTextures(1, &hotbarTextureID);
-        glBindTexture(GL_TEXTURE_2D, hotbarTextureID);
+        glGenTextures(1, &textureID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, data);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         stbi_image_free(data);
     }
-    // Cargar textura del selector
-    data = stbi_load("../textures/Hotbar_selector.png", &width, &height,
-                     &channels, 4);
-    if (data) {
-        glGenTextures(1, &selectorTextureID);
-        glBindTexture(GL_TEXTURE_2D, selectorTextureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, data);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        stbi_image_free(data);
+}
+void LineShader::drawCreativeInventory(int screenWidth, int screenHeight,
+                                       vector<int> itemsInInventory,
+                                       int tabTopSelected) {
+    glUseProgram(uiShaderProgram);
+    glm::mat4 projection =
+        glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
+    glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    glm::mat4 view(1.0f);
+    glUniformMatrix4fv(uiViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    glActiveTexture(GL_TEXTURE0);
+    float scale = 2.0f;
+    float itemTabWidth = 194.0f * scale;
+    float itemTabHeight = 135.0f * scale;
+    float posX = (screenWidth - itemTabWidth) / 2.0f;
+    float posY = (screenHeight - itemTabHeight) / 2.0f;
+    // Dibujar tabTop
+    float tabTopHeight = 30.0f * scale;
+    float tabTopWidth = 26.0f * scale;
+    float posYTop = posY + itemTabHeight - 10;
+    glBindTexture(GL_TEXTURE_2D, tabTopUnselectedTextureID);
+    glUniform1i(uiTextureLoc, 0);
+    glUniform4f(uiColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+    vector<float> pos = {0.0f,
+                         2.0f + tabTopWidth,
+                         2 * (2.0f + tabTopWidth),
+                         3 * (2.0f + tabTopWidth),
+                         4 * (2.0f + tabTopWidth),
+                         5 * (2.0f + tabTopWidth) + 12.0f,
+                         itemTabWidth - tabTopWidth};
+    glm::mat4 model;
+    for (int i = 0; i < 7; i++) {
+        if (i == tabTopSelected - 1)
+            continue;
+        int px = pos[i];
+        model = glm::translate(glm::mat4(1.0f),
+                               glm::vec3(posX + px, posYTop, 0.0f));
+        model = glm::scale(model, glm::vec3(tabTopWidth, tabTopHeight, 1.0f));
+        glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glBindVertexArray(uiVAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
 
-    data =
-        stbi_load("../textures/icons/dirt.png", &width, &height, &channels, 4);
-    if (data) {
-        glGenTextures(1, &iconTexturesID[3]);
-        glBindTexture(GL_TEXTURE_2D, iconTexturesID[3]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, data);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        stbi_image_free(data);
+    // Dibujo tabItem
+
+    glBindTexture(GL_TEXTURE_2D, tabItemsTextureID);
+    glUniform1i(uiTextureLoc, 0);
+    glUniform4f(uiColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+
+    model = glm::translate(glm::mat4(1.0f), glm::vec3(posX, posY, 0.0f));
+    model = glm::scale(model, glm::vec3(itemTabWidth, itemTabHeight, 1.0f));
+    glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+    glBindVertexArray(uiVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    // Dibujo tab top selected
+    tabTopHeight = 32.0f * scale;
+    tabTopWidth = 26.0f * scale;
+    posYTop = posY + itemTabHeight - 8;
+    if (tabTopSelected == 1) {
+        glBindTexture(GL_TEXTURE_2D, tabTopSelectedLeftTextureID);
+    } else if (tabTopSelected == 7) {
+        glBindTexture(GL_TEXTURE_2D, tabTopSelectedRightTextureID);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, tabTopSelectedMidTextureID);
     }
-    data =
-        stbi_load("../textures/icons/stone.png", &width, &height, &channels, 4);
-    if (data) {
-        glGenTextures(1, &iconTexturesID[2]);
-        glBindTexture(GL_TEXTURE_2D, iconTexturesID[2]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, data);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        stbi_image_free(data);
-    }
-    data = stbi_load("../textures/icons/grass_block.png", &width, &height,
-                     &channels, 4);
-    if (data) {
-        glGenTextures(1, &iconTexturesID[4]);
-        glBindTexture(GL_TEXTURE_2D, iconTexturesID[4]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, data);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        stbi_image_free(data);
-    }
+    int px = pos[tabTopSelected - 1];
+    glUniform1i(uiTextureLoc, 0);
+    glUniform4f(uiColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+    model =
+        glm::translate(glm::mat4(1.0f), glm::vec3(posX + px, posYTop, 0.0f));
+    model = glm::scale(model, glm::vec3(tabTopWidth, tabTopHeight, 1.0f));
+    glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glBindVertexArray(uiVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    // Restaurar estado
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 }
 void LineShader::drawHotbar(int screenWidth, int screenHeight, int selected,
                             vector<int> blockTypes) {
