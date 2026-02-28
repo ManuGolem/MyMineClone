@@ -140,7 +140,12 @@ void Screen::clear() {
     glClearColor(0.1f, 0.15f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-
+Block Screen::getBlockSelected() {
+    Block block;
+    block.type = blocksInHotbar[hotbarNumSelected - 1];
+    block.active = block.type != 0;
+    return block;
+}
 void Screen::swap() { SDL_GL_SwapWindow(window); }
 void Screen::renderUI() {
     GLint previousProgram;
@@ -160,7 +165,8 @@ void Screen::renderUI() {
     }
     if (hotbarVisible) {
         // Render hotbar
-        lineShader->drawHotbar(windowWidth, windowHeight, hotbarNumSelected);
+        lineShader->drawHotbar(windowWidth, windowHeight, hotbarNumSelected,
+                               blocksInHotbar);
     }
     // Restaurar depth test
     if (depthTest)
