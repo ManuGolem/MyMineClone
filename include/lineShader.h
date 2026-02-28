@@ -24,12 +24,19 @@ class LineShader {
     unsigned int uiModelLoc, uiViewLoc, uiProjLoc;
     unsigned int uiTextureLoc, uiColorLoc;
     unsigned int uiVAO, uiVBO, uiEBO;
-    // Textura
+    // Textura de la hotbar
     unsigned int hotbarTextureID;
     unsigned int selectorTextureID;
-
-    // Icono
+    // Texturas Icono
     unordered_map<int, unsigned int> iconTexturesID;
+    // Textura creativeInventory
+    unsigned int tabItemsTextureID;
+    unsigned int tabTopUnselectedTextureID;
+    unsigned int tabTopSelectedRightTextureID;
+    unsigned int tabTopSelectedLeftTextureID;
+    unsigned int tabTopSelectedMidTextureID;
+    unsigned int scrollerTextureID;
+    unsigned int scrollerDisabledTextureID;
 
   public:
     LineShader();
@@ -52,7 +59,10 @@ class LineShader {
                        float r = 1.0f, float g = 1.0f, float b = 1.0f);
     void drawHotbar(int windowWidth, int windowHeight, int hotbarNumSelected,
                     vector<int> blockTypes);
-    void loadHotbarTexture();
+    void drawCreativeInventory(int windowWidth, int windowHeight,
+                               vector<int> itemsInInventory,
+                               int tabTopSelected);
+    void loadHotbarTexture(const char *path, unsigned int &textureID);
     void setColor(float r, float g, float b) { glUniform3f(colorLoc, r, g, b); }
     unsigned int getProgram() const { return shaderProgram; }
     ~LineShader();
