@@ -65,7 +65,13 @@ void Screen::poll(float deltaTime) {
         if (e.type == SDL_KEYDOWN) {
             if (e.key.keysym.sym == SDLK_ESCAPE) {
                 openMenu = !openMenu;
+                inventoryOpen = false;
                 SDL_SetRelativeMouseMode(openMenu ? SDL_FALSE : SDL_TRUE);
+            }
+            if (e.key.keysym.sym == SDLK_e) {
+
+                inventoryOpen = !inventoryOpen && !openMenu;
+                SDL_SetRelativeMouseMode(inventoryOpen ? SDL_FALSE : SDL_TRUE);
             }
         }
         // Mouse
@@ -86,7 +92,7 @@ void Screen::poll(float deltaTime) {
     }
     int rel_x, rel_y;
     SDL_GetRelativeMouseState(&rel_x, &rel_y);
-    if (!openMenu) {
+    if (!openMenu && !inventoryOpen) {
         if (debugMode) {
             if (rel_x != 0 || rel_y != 0) {
                 debugCamera.processMouse((float)rel_x, (float)-rel_y);
@@ -134,6 +140,14 @@ void Screen::poll(float deltaTime) {
             }
         }
     }
+    if (inventoryOpen) {
+        for (int i = SDL_SCANCODE_1; i <= SDL_SCANCODE_7; i++) {
+            if (teclado[i]) {
+                tabTopSelected = i - SDL_SCANCODE_1 + 1;
+                break;
+            }
+        }
+    }
 }
 
 void Screen::clear() {
@@ -167,6 +181,10 @@ void Screen::renderUI() {
         // Render hotbar
         lineShader->drawHotbar(windowWidth, windowHeight, hotbarNumSelected,
                                blocksInHotbar);
+    }
+    if (inventoryOpen) {
+        lineShader->drawCreativeInventory(windowWidth, windowHeight,
+                                          itemsInInventory, tabTopSelected);
     }
     // Restaurar depth test
     if (depthTest)
