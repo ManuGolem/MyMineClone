@@ -64,9 +64,7 @@ int main() {
             //   // Renderizar outline del bloque a mirar
             screen.renderBlockOutline(blockPos.x, blockPos.y, blockPos.z);
             if (screen.wasRightClicked() && colocar) {
-                Block block;
-                block.active = true;
-                block.type = 2;
+                Block block = screen.getBlockSelected();
                 world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z,
                                    block);
             }
