@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <vector>
+using namespace std;
 class LineShader {
   private:
     // Shader para lineas
@@ -26,6 +28,9 @@ class LineShader {
     unsigned int hotbarTextureID;
     unsigned int selectorTextureID;
 
+    // Icono
+    unordered_map<int, unsigned int> iconTexturesID;
+
   public:
     LineShader();
 
@@ -45,7 +50,8 @@ class LineShader {
                      const glm::mat4 &projection);
     void drawCrosshair(int screenWidth, int screenHeight, int size = 10,
                        float r = 1.0f, float g = 1.0f, float b = 1.0f);
-    void drawHotbar(int windowWidth, int windowHeight, int hotbarNumSelected);
+    void drawHotbar(int windowWidth, int windowHeight, int hotbarNumSelected,
+                    vector<int> blockTypes);
     void loadHotbarTexture();
     void setColor(float r, float g, float b) { glUniform3f(colorLoc, r, g, b); }
     unsigned int getProgram() const { return shaderProgram; }
