@@ -2,14 +2,14 @@
 #include "../imgui/backends/imgui_impl_opengl3.h"
 #include "../imgui/backends/imgui_impl_sdl2.h"
 #include "../imgui/imgui.h"
-#include "../include/lineShader.h"
+#include "../include/UIShader.h"
 #include "camera.h"
 #include "chunk.h"
 #include "glad.h"
 #include <SDL2/SDL.h>
 #include <iostream>
 using namespace std;
-class LineShader;
+class UIShader;
 class Screen {
   private:
     SDL_Window *window;
@@ -34,12 +34,11 @@ class Screen {
     int hotbarNumSelected = 1;
     bool inventoryOpen = false;
     vector<int> blocksInHotbar = {2, 4, 3, 0, 0, 0, 0, 0, 0};
-    vector<int> itemsInInventory = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    int tabTopSelected = 2;
+    vector<int> itemsInInventory = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int tabTopSelected = 1;
     int crosshairSize = 10;
     float crosshairColor[3] = {1.0f, 1.0f, 1.0f};
-    LineShader *lineShader;
+    UIShader *uiShader;
 
   public:
     Screen();

@@ -7,16 +7,14 @@ Screen::Screen() {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-                        SDL_GL_CONTEXT_PROFILE_CORE);
-    window = SDL_CreateWindow("Prueba", SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight,
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    window = SDL_CreateWindow("Prueba", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight,
                               SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     context = SDL_GL_CreateContext(window);
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         std::cout << "GLAD failed\n";
     }
-    lineShader = new LineShader();
+    uiShader = new UIShader();
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
@@ -141,12 +139,7 @@ void Screen::poll(float deltaTime) {
         }
     }
     if (inventoryOpen) {
-        for (int i = SDL_SCANCODE_1; i <= SDL_SCANCODE_7; i++) {
-            if (teclado[i]) {
-                tabTopSelected = i - SDL_SCANCODE_1 + 1;
-                break;
-            }
-        }
+        // Crear atajos para mover items a la hotbar
     }
 }
 
@@ -173,39 +166,33 @@ void Screen::renderUI() {
     glDisable(GL_DEPTH_TEST);
     if (crosshairVisible) {
         // Render Crosshair
-        lineShader->drawCrosshair(windowWidth, windowHeight, crosshairSize,
-                                  crosshairColor[0], crosshairColor[1],
-                                  crosshairColor[2]);
+        uiShader->drawCrosshair(windowWidth, windowHeight, crosshairSize, crosshairColor[0], crosshairColor[1],
+                                crosshairColor[2]);
     }
     if (hotbarVisible) {
         // Render hotbar
-        lineShader->drawHotbar(windowWidth, windowHeight, hotbarNumSelected,
-                               blocksInHotbar);
+        uiShader->drawHotbar(windowWidth, windowHeight, hotbarNumSelected, blocksInHotbar);
     }
     if (inventoryOpen) {
-        lineShader->drawCreativeInventory(windowWidth, windowHeight,
-                                          itemsInInventory, tabTopSelected);
+        uiShader->drawCreativeInventory(windowWidth, windowHeight, itemsInInventory, tabTopSelected, blocksInHotbar);
     }
     // Restaurar depth test
     if (depthTest)
         glEnable(GL_DEPTH_TEST);
-    if (previousProgram != 0 &&
-        previousProgram != (GLint)lineShader->getProgram()) {
+    if (previousProgram != 0 && previousProgram != (GLint)uiShader->getProgram()) {
         glUseProgram(previousProgram);
     }
 }
-void Screen::renderDebugAxes(const glm::mat4 &view,
-                             const glm::mat4 &projection) {
+void Screen::renderDebugAxes(const glm::mat4 &view, const glm::mat4 &projection) {
     // Guardar shader activo
     GLint previousProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
 
-    // Dibujar ejes usando lineShader
-    lineShader->drawDebugAxes(view, projection);
+    // Dibujar ejes usando UIShader
+    uiShader->drawDebugAxes(view, projection);
 
     // Restaurar shader anterior
-    if (previousProgram != 0 &&
-        previousProgram != (GLint)lineShader->getProgram()) {
+    if (previousProgram != 0 && previousProgram != (GLint)uiShader->getProgram()) {
         glUseProgram(previousProgram);
     }
 }
@@ -213,12 +200,10 @@ void Screen::renderBlockOutline(int x, int y, int z) {
     // Guardar shader activo
     GLint previousProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
-    // Dibujar outline usando lineShader
-    lineShader->drawOutline(x, y, z, camera.getViewMatrix(),
-                            camera.getProjectionMatrix());
+    // Dibujar outline usando UIShader
+    uiShader->drawOutline(x, y, z, camera.getViewMatrix(), camera.getProjectionMatrix());
     // Restaurar shader anterior
-    if (previousProgram != 0 &&
-        previousProgram != (GLint)lineShader->getProgram()) {
+    if (previousProgram != 0 && previousProgram != (GLint)uiShader->getProgram()) {
         glUseProgram(previousProgram);
     }
 }
@@ -233,23 +218,17 @@ void Screen::renderMenu() {
     SDL_GetWindowSize(window, &display_w, &display_h);
 
     // Configurar ventana del menú (centrada)
-    ImGui::SetNextWindowPos(ImVec2(display_w * 0.5f, display_h * 0.5f),
-                            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowPos(ImVec2(display_w * 0.5f, display_h * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(400, 500));
 
     // Estilo Minecraft
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.95f));
-    ImGui::PushStyleColor(ImGuiCol_TitleBgActive,
-                          ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                          ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,
-                          ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
 
-    ImGui::Begin("PAUSA", &openMenu,
-                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                     ImGuiWindowFlags_NoMove);
+    ImGui::Begin("PAUSA", &openMenu, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
     // Título
     ImGui::SetWindowFontScale(2.0f);
@@ -277,8 +256,7 @@ void Screen::renderMenu() {
     }
 
     ImGui::SetCursorPosX((ImGui::GetWindowWidth() - anchoBoton) * 0.5f);
-    if (ImGui::Button("Salir al menu principal",
-                      ImVec2(anchoBoton, alturaBoton))) {
+    if (ImGui::Button("Salir al menu principal", ImVec2(anchoBoton, alturaBoton))) {
         // Aquí pondrías la lógica para volver al menú principal
         std::cout << "Volver al menú principal" << std::endl;
     }
@@ -293,8 +271,7 @@ void Screen::renderMenu() {
     ImGui::Separator();
     ImGui::Dummy(ImVec2(0.0f, 10.0f));
 
-    ImGui::Text("Posicion: %.1f, %.1f, %.1f", camera.getPosition().x,
-                camera.getPosition().y, camera.getPosition().z);
+    ImGui::Text("Posicion: %.1f, %.1f, %.1f", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
 
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 
