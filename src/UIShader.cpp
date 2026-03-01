@@ -175,9 +175,16 @@ UIShader::UIShader() {
     loadHotbarTexture("../textures/icons/dirt.png", iconTexturesID[3]);
     loadHotbarTexture("../textures/icons/stone.png", iconTexturesID[2]);
     loadHotbarTexture("../textures/icons/grass_block.png", iconTexturesID[4]);
+    loadHotbarTexture("../textures/icons/brick.png", iconTexturesID[8]);
+    loadHotbarTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
+    loadHotbarTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
+    loadHotbarTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);
+    loadHotbarTexture("../textures/icons/redstone.png", iconTexturesID[258]);
+    loadHotbarTexture("../textures/icons/compass.png", iconTexturesID[259]);
     loadHotbarTexture("../textures/creativeInventory/tab_items.png", tabItemsTextureID);
     loadHotbarTexture("../textures/creativeInventory/tab_top_unselected.png", tabTopUnselectedTextureID);
 
+    vector<int> posTextures = {8, 210, 4, 257, 258, 36, 259};
     loadHotbarTexture("../textures/creativeInventory/tab_top_selected_left.png", tabTopSelectedLeftTextureID);
     loadHotbarTexture("../textures/creativeInventory/tab_top_selected_right.png", tabTopSelectedRightTextureID);
     loadHotbarTexture("../textures/creativeInventory/tab_top_selected_middle.png", tabTopSelectedMidTextureID);
@@ -266,14 +273,14 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
-    float scale = 2.0f;
-    float itemTabWidth = 194.0f * scale;
-    float itemTabHeight = 135.0f * scale;
+    float iconSize = 30;
+    float itemTabWidth = 194.0f * 2.0f;
+    float itemTabHeight = 135.0f * 2.0f;
     float posX = (screenWidth - itemTabWidth) / 2.0f;
     float posY = (screenHeight - itemTabHeight) / 2.0f;
     // Dibujar tabTop
-    float tabTopHeight = 30.0f * scale;
-    float tabTopWidth = 26.0f * scale;
+    float tabTopHeight = 60;
+    float tabTopWidth = 52.0f;
     float posYTop = posY + itemTabHeight - 10;
     glBindTexture(GL_TEXTURE_2D, tabTopUnselectedTextureID);
     glUniform1i(uiTextureLoc, 0);
@@ -296,18 +303,15 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
-
     // Dibujo tabItem
     glBindTexture(GL_TEXTURE_2D, tabItemsTextureID);
-
     model = glm::translate(glm::mat4(1.0f), glm::vec3(posX, posY, 0.0f));
     model = glm::scale(model, glm::vec3(itemTabWidth, itemTabHeight, 1.0f));
     glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     // Dibujo tab top selected
-    tabTopHeight = 32.0f * scale;
-    tabTopWidth = 26.0f * scale;
+    tabTopHeight = 64.0f;
+    tabTopWidth = 52.0f;
     posYTop = posY + itemTabHeight - 8;
     if (tabTopSelected == 1) {
         glBindTexture(GL_TEXTURE_2D, tabTopSelectedLeftTextureID);
@@ -321,9 +325,19 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     model = glm::scale(model, glm::vec3(tabTopWidth, tabTopHeight, 1.0f));
     glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    // Dibujar iconos en las tabTop
+    vector<int> posTextures = {8, 210, 4, 257, 258, 36, 259};
+    posYTop += 13;
+    for (int i = 0; i < 7; i++) {
+        glBindTexture(GL_TEXTURE_2D, iconTexturesID[posTextures[i]]);
+        int px = pos[i] + 11.0f;
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(posX + px, posYTop, 0.0f));
+        model = glm::scale(model, glm::vec3(iconSize, iconSize, 1.0f));
+        glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
     // Draw items de la hotbar en el inv
-    float slotSize = 18 * scale;
-    float iconSize = 15 * scale;
+    float slotSize = 36.0f;
     posY += 15;
     posX += 16;
     for (int i = 0; i < blockInHotbar.size(); i++) {
@@ -332,13 +346,12 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
             continue;
         glBindTexture(GL_TEXTURE_2D, iconTexturesID[blockType]);
         float slotX = posX + 3 + i * slotSize;
-        cout << slotX << endl;
         glm::mat4 iconModel = glm::translate(glm::mat4(1.0f), glm::vec3(slotX, posY, 0.0f));
         iconModel = glm::scale(iconModel, glm::vec3(iconSize, iconSize, 1.0f));
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
-    //  Restaurar estado
+    //   Restaurar estado
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
