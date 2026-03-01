@@ -1,8 +1,7 @@
 #include "../include/configShader.h"
 #include "../include/screen.h"
 #include "../include/world.h"
-bool detectBlock(Screen &screen, World &mundo, vec3 &blockSelect,
-                 vec3 &blockFace, bool &colocar) {
+bool detectBlock(Screen &screen, World &mundo, vec3 &blockSelect, vec3 &blockFace, bool &colocar) {
     vec3 pos = screen.getCamera().getPosition();
     vec3 front = screen.getCamera().getFront();
     float x = 0.0;
@@ -17,14 +16,11 @@ bool detectBlock(Screen &screen, World &mundo, vec3 &blockSelect,
         int pz = round(pos.z + front.z * x);
 
         vec3 posibleBloque = {px, py, pz};
-        if (mundo
-                .getBlockSafe(posibleBloque.x, posibleBloque.y, posibleBloque.z)
-                .active) {
+        if (mundo.getBlockSafe(posibleBloque.x, posibleBloque.y, posibleBloque.z).active) {
             blockFace = {prevx, prevy, prevz};
             blockSelect = posibleBloque;
             encontreBloque = true;
-            if (!mundo.getBlockSafe(blockFace.x, blockFace.y, blockFace.z)
-                     .active) {
+            if (!mundo.getBlockSafe(blockFace.x, blockFace.y, blockFace.z).active) {
                 colocar = true;
             }
         }
@@ -65,8 +61,7 @@ int main() {
             screen.renderBlockOutline(blockPos.x, blockPos.y, blockPos.z);
             if (screen.wasRightClicked() && colocar) {
                 Block block = screen.getBlockSelected();
-                world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z,
-                                   block);
+                world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z, block);
             }
             if (screen.wasLeftClicked()) {
                 Block block;
@@ -90,15 +85,11 @@ int main() {
         glm::mat4 view = screen.getCamera().getViewMatrix();
         // Dibujar mundo
         if (screen.isDebugMode()) {
-            world.render(screen.getCamera().getPosition(), view,
-                         screen.getCamera().getProjectionMatrix(),
-                         screen.getDebugCamera().getViewMatrix(),
-                         screen.getDebugCamera().getProjectionMatrix());
+            world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(),
+                         screen.getDebugCamera().getViewMatrix(), screen.getDebugCamera().getProjectionMatrix());
         } else {
-            world.render(screen.getCamera().getPosition(), view,
-                         screen.getCamera().getProjectionMatrix(),
-                         screen.getCamera().getViewMatrix(),
-                         screen.getCamera().getProjectionMatrix());
+            world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(),
+                         screen.getCamera().getViewMatrix(), screen.getCamera().getProjectionMatrix());
         }
         // Renderizar menu
         screen.renderMenu();

@@ -27,9 +27,7 @@ void Camera::updateCameraVectors() {
     up = glm::normalize(glm::cross(right, front));
 }
 void Camera::moveForward(float amount) { position += frontHorizontal * amount; }
-void Camera::moveBackward(float amount) {
-    position -= frontHorizontal * amount;
-}
+void Camera::moveBackward(float amount) { position -= frontHorizontal * amount; }
 void Camera::moveLeft(float amount) { position -= right * amount; }
 
 void Camera::moveRight(float amount) { position += right * amount; }
@@ -58,14 +56,8 @@ void Camera::processMouse(float xoffset, float yoffset) {
     // Actualizar vectores con los nuevos ángulos
     updateCameraVectors();
 }
-mat4 Camera::getViewMatrix() {
-    return glm::lookAt(position, position + front, up);
-}
+mat4 Camera::getViewMatrix() { return glm::lookAt(position, position + front, up); }
 
 vec3 Camera::getPosition() { return position; }
-mat4 Camera::getProjectionMatrix() {
-    return perspective(radians(fov), aspect, nearPlane, farPlane);
-}
-void Camera::setAspectRatio(float width, float height) {
-    aspect = width / height;
-}
+mat4 Camera::getProjectionMatrix() { return perspective(radians(fov), aspect, nearPlane, farPlane); }
+void Camera::setAspectRatio(float width, float height) { aspect = width / height; }

@@ -31,10 +31,8 @@ class Chunk {
     int vertexCount;
     mutex mutexVertex;
     atomic<bool> needsBufferUpdate{true};
-    void cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo,
-                        int tipoBloque, vector<float> &vData,
-                        vector<unsigned int> &iData, unsigned int &vCount,
-                        int &carasLocal);
+    void cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo, int tipoBloque, vector<float> &vData,
+                        vector<unsigned int> &iData, unsigned int &vCount, int &carasLocal);
 
   public:
     unique_ptr<ChunkBuffer> chunkBuffer;

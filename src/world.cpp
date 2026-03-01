@@ -20,12 +20,10 @@ World::World() {
     detailNoise.SetFrequency(0.01f);
     detailNoise.SetFractalOctaves(1);
 }
-bool World::canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight,
-                         int canopyRadius) {
+bool World::canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight, int canopyRadius) {
     // Verificar que el suelo es válido (hierba/tierra)
     Block groundBlock = getBlockSafe(worldX, groundY, worldZ);
-    if (!groundBlock.active ||
-        (groundBlock.type != 4 && groundBlock.type != 3)) {
+    if (!groundBlock.active || (groundBlock.type != 4 && groundBlock.type != 3)) {
         return false;
     }
 
@@ -64,8 +62,7 @@ void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
                 if (dist > leafRadius + 0.5f)
                     continue;
                 // esquinas con probabilidad para hacerlo más orgánico
-                if (abs(dx) == currentRadius && abs(dz) == currentRadius &&
-                    rand() % 100 < 40)
+                if (abs(dx) == currentRadius && abs(dz) == currentRadius && rand() % 100 < 40)
                     continue;
                 if (dx == dz && dx == 0 && dy != 1) {
                     continue;
@@ -92,8 +89,7 @@ void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
                     futureBlock.y = y;
                     futureBlock.z = localZ;
                     lock_guard<mutex> lock(mutexPendingBlocks);
-                    pendingBlocks[chunkPos.x][chunkPos.y].push_back(
-                        futureBlock);
+                    pendingBlocks[chunkPos.x][chunkPos.y].push_back(futureBlock);
                 }
             }
         }
@@ -143,8 +139,7 @@ int World::getTerrainHeight(int worldX, int worldZ) {
 
     if (finalNoise < 0.12f) {
         // Océano profundo
-        return OCEAN_FLOOR +
-               (int)((SHALLOW_WATER - OCEAN_FLOOR) * (finalNoise / 0.12f));
+        return OCEAN_FLOOR + (int)((SHALLOW_WATER - OCEAN_FLOOR) * (finalNoise / 0.12f));
     } else if (finalNoise < 0.2f) {
         // Plataforma continental / aguas someras
         float t = (finalNoise - 0.12f) / 0.08f;
@@ -462,15 +457,13 @@ void World::createChunk(int cx, int cz) {
                     int dy = y - (groundY + trunkHeight);
                     int currentRadius = leafRadius - abs(dy);
                     for (int dx = -currentRadius; dx <= currentRadius; dx++) {
-                        for (int dz = -currentRadius; dz <= currentRadius;
-                             dz++) {
+                        for (int dz = -currentRadius; dz <= currentRadius; dz++) {
                             float dist = sqrt(dx * dx + dz * dz + dy * dy);
                             if (dist > leafRadius + 0.5f)
                                 continue;
                             // esquinas con probabilidad para hacerlo más
                             // orgánico
-                            if (abs(dx) == currentRadius &&
-                                abs(dz) == currentRadius && rand() % 100 < 40)
+                            if (abs(dx) == currentRadius && abs(dz) == currentRadius && rand() % 100 < 40)
                                 continue;
                             if (dx == dz && dx == 0 && dy != 1) {
                                 continue;
@@ -481,10 +474,8 @@ void World::createChunk(int cx, int cz) {
 
                             int localX = x + dx;
                             int localZ = z + dz;
-                            if (localX < 0 || localX >= 16 || localZ < 0 ||
-                                localZ >= 16) {
-                                ivec2 pos =
-                                    getChunkPos({worldX + dx, y, worldZ + dz});
+                            if (localX < 0 || localX >= 16 || localZ < 0 || localZ >= 16) {
+                                ivec2 pos = getChunkPos({worldX + dx, y, worldZ + dz});
                                 int chunkX = pos.x;
                                 int chunkZ = pos.y;
                                 int futureLocalX = worldX + dx - chunkX * 16;
@@ -495,8 +486,7 @@ void World::createChunk(int cx, int cz) {
                                     chunkFuture = getChunk(pos.x, pos.y);
                                 }
                                 if (chunkFuture) {
-                                    chunkFuture->setBlock(futureLocalX, y,
-                                                          futureLocalZ, leaf);
+                                    chunkFuture->setBlock(futureLocalX, y, futureLocalZ, leaf);
                                 } else {
                                     pendingBlock futureBlock;
                                     futureBlock.block = leaf;
@@ -504,8 +494,7 @@ void World::createChunk(int cx, int cz) {
                                     futureBlock.y = y;
                                     futureBlock.z = futureLocalZ;
                                     lock_guard<mutex> lock(mutexPendingBlocks);
-                                    pendingBlocks[chunkX][chunkZ].push_back(
-                                        futureBlock);
+                                    pendingBlocks[chunkX][chunkZ].push_back(futureBlock);
                                 }
                             } else {
                                 chunk->setBlock(localX, y, localZ, leaf);
@@ -601,8 +590,7 @@ void World::insertChunks() {
         int cz = chunk->getNroChunkZ();
         chunks[cx][cz] = std::move(chunk);
         // Vecinos a actualizar (incluido el propio chunk)
-        vector<pair<int, int>> vecinos = {
-            {cx, cz}, {cx + 1, cz}, {cx - 1, cz}, {cx, cz + 1}, {cx, cz - 1}};
+        vector<pair<int, int>> vecinos = {{cx, cz}, {cx + 1, cz}, {cx - 1, cz}, {cx, cz + 1}, {cx, cz - 1}};
         {
             for (auto [nx, nz] : vecinos) {
                 auto chunk = getChunk(nx, nz);
@@ -625,8 +613,7 @@ void World::insertChunks() {
         lockResult.lock();
     }
 }
-void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
-                   mat4 renderProjection) {
+void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
     insertChunks();
     ivec2 centerChunk = getChunkPos(cameraPos);
     int renderDist = 16;
@@ -653,8 +640,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
 
             } else {
                 lock_guard<mutex> lock(setChunkRequestMutex);
-                if (requestedChunks.find({chunkX, chunkZ}) ==
-                    requestedChunks.end()) {
+                if (requestedChunks.find({chunkX, chunkZ}) == requestedChunks.end()) {
                     {
                         lock_guard<mutex> lock(mutexChunkRequest);
                         chunkRequestQueue.push({chunkX, chunkZ});
@@ -687,8 +673,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView,
                             chunk->render();
                         } else if (cantChunks < maxChunksPerFrame) {
                             lock_guard<mutex> lock(setChunkRequestMutex);
-                            if (requestedChunks.find({chunkX, chunkZ}) ==
-                                requestedChunks.end()) {
+                            if (requestedChunks.find({chunkX, chunkZ}) == requestedChunks.end()) {
                                 {
                                     lock_guard<mutex> lock(mutexChunkRequest);
                                     chunkRequestQueue.push({chunkX, chunkZ});
@@ -733,9 +718,7 @@ void World::startCreationThread() {
 void World::loopCreation() {
     while (threadRunning) {
         unique_lock<mutex> lock(mutexChunkRequest);
-        RequestCV.wait(lock, [this] {
-            return !chunkRequestQueue.empty() || !threadRunning;
-        });
+        RequestCV.wait(lock, [this] { return !chunkRequestQueue.empty() || !threadRunning; });
         if (!threadRunning)
             break;
         auto [x, z] = chunkRequestQueue.top();
@@ -747,9 +730,7 @@ void World::loopCreation() {
 void World::loopMesh() {
     while (threadRunning) {
         unique_lock<mutex> lock(mutexChunkUpdateRequest);
-        meshCV.wait(lock, [this] {
-            return !chunkRequestUpdateQueue.empty() || !threadRunning;
-        });
+        meshCV.wait(lock, [this] { return !chunkRequestUpdateQueue.empty() || !threadRunning; });
         if (!threadRunning)
             break;
         auto [x, z] = chunkRequestUpdateQueue.front();
