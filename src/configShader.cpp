@@ -1,6 +1,6 @@
 #include "../include/configShader.h"
+#include "../include/UIShader.h"
 #include "../include/stb_image.h"
-#include "lineShader.h"
 #include <iostream>
 using namespace std;
 unsigned int cargarTextura(const char *ruta) {
@@ -16,11 +16,10 @@ unsigned int cargarTextura(const char *ruta) {
 
     if (data) {
         // Asumimos que el atlas es RGBA (4 canales)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
-        cout << "Textura cargada: " << ruta << " (" << width << "x" << height
-             << ", " << nrChannels << " canales)" << endl;
+        cout << "Textura cargada: " << ruta << " (" << width << "x" << height << ", " << nrChannels << " canales)"
+             << endl;
     } else {
         cout << "ERROR: No se pudo cargar la textura: " << ruta << endl;
     }
@@ -37,8 +36,7 @@ Shader::Shader() {
     glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(vs, 512, NULL, infoLog);
-        cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-             << infoLog << endl;
+        cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
     }
     // El otro shader
     unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
@@ -48,8 +46,7 @@ Shader::Shader() {
     glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(fs, 512, NULL, infoLog);
-        cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-             << infoLog << endl;
+        cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << endl;
     }
     // Crear programa
     shaderProgram = glCreateProgram();
@@ -86,8 +83,7 @@ Shader::Shader() {
                     GL_NEAREST); //
     glUniform1i(glGetUniformLocation(shaderProgram, "textureBlock"), 0);
     float textureSize = 1 / 16.0f;
-    glUniform1f(glGetUniformLocation(shaderProgram, "textureSize"),
-                textureSize);
+    glUniform1f(glGetUniformLocation(shaderProgram, "textureSize"), textureSize);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -100,19 +96,12 @@ void Shader::use() {
     glBindTexture(GL_TEXTURE_2D, getTextureID());
     setUseTexture(true);
 }
-void Shader::setModelMatrix(const float *matrix) {
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
-}
+void Shader::setModelMatrix(const float *matrix) { glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix); }
 
-void Shader::setViewMatrix(const float *matrix) {
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, matrix);
-}
+void Shader::setViewMatrix(const float *matrix) { glUniformMatrix4fv(viewLoc, 1, GL_FALSE, matrix); }
 
-void Shader::setProjectionMatrix(const float *matrix) {
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix);
-}
+void Shader::setProjectionMatrix(const float *matrix) { glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix); }
 
-// Implementacion de la clase chunkBuffer
 ChunkBuffer::ChunkBuffer() : indexCount(0) {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -123,38 +112,31 @@ ChunkBuffer::~ChunkBuffer() {
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 }
-void ChunkBuffer::uploadData(const std::vector<float> &vertices,
-                             const std::vector<unsigned int> &indices) {
+void ChunkBuffer::uploadData(const std::vector<float> &vertices, const std::vector<unsigned int> &indices) {
     indexCount = indices.size();
     glBindVertexArray(VAO);
     // VBO - datos de vértices
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
-                 vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
     // EBO - índices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
-                 indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     // Posición (3 floats) - location 0
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
-                          (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
     // Color (3 floats) - location 1
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
-                          (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     // Coordenadas de textura (2 floats) - location 2
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
-                          (void *)(6 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
     // Offset de textura (2 floats) - location 3
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float),
-                          (void *)(8 * sizeof(float)));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(8 * sizeof(float)));
     glEnableVertexAttribArray(3);
 
     // Verificación opcional

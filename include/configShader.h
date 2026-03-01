@@ -81,8 +81,7 @@ class ChunkBuffer {
     ChunkBuffer();
     ~ChunkBuffer();
     void render();
-    void uploadData(const std::vector<float> &vertices,
-                    const std::vector<unsigned int> &indices);
+    void uploadData(const std::vector<float> &vertices, const std::vector<unsigned int> &indices);
     void cleanup() {
         if (VAO != 0) {
             glDeleteVertexArrays(1, &VAO);
