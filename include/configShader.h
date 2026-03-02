@@ -11,7 +11,7 @@ class Shader {
     unsigned int textureID;
     unsigned int useTextureLoc;
     // Shaders como strings privados (noentendi esto)
-    const char *vertexShaderSrc = R"(
+    const char* vertexShaderSrc = R"(
         #version 330 core
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aColor;        
@@ -33,7 +33,7 @@ class Shader {
             textureCoordOffset = aTexCoordOffset;
         }
     )";
-    const char *fragmentShaderSrc = R"(
+    const char* fragmentShaderSrc = R"(
         #version 330 core
         out vec4 FragColor;
 
@@ -66,11 +66,15 @@ class Shader {
     Shader();
     ~Shader();
     void use();
-    void setModelMatrix(const float *);
-    void setViewMatrix(const float *);
-    void setProjectionMatrix(const float *);
-    void setUseTexture(bool use) { glUniform1i(useTextureLoc, use ? 1 : 0); }
-    unsigned int getTextureID() const { return textureID; }
+    void setModelMatrix(const float*);
+    void setViewMatrix(const float*);
+    void setProjectionMatrix(const float*);
+    void setUseTexture(bool use) {
+        glUniform1i(useTextureLoc, use ? 1 : 0);
+    }
+    unsigned int getTextureID() const {
+        return textureID;
+    }
 };
 class ChunkBuffer {
   private:
@@ -81,7 +85,7 @@ class ChunkBuffer {
     ChunkBuffer();
     ~ChunkBuffer();
     void render();
-    void uploadData(const std::vector<float> &vertices, const std::vector<unsigned int> &indices);
+    void uploadData(const std::vector<float>& vertices, const std::vector<unsigned int>& indices);
     void cleanup() {
         if (VAO != 0) {
             glDeleteVertexArrays(1, &VAO);

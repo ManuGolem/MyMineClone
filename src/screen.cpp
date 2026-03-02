@@ -8,8 +8,7 @@ Screen::Screen() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    window = SDL_CreateWindow("Prueba", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight,
-                              SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Prueba", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     context = SDL_GL_CreateContext(window);
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         std::cout << "GLAD failed\n";
@@ -17,7 +16,7 @@ Screen::Screen() {
     uiShader = new UIShader();
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::StyleColorsDark();
     ImGui::GetStyle().WindowRounding = 0.0f;
@@ -36,7 +35,9 @@ Screen::Screen() {
     openMenu = false;
     resize();
 }
-void Screen::resize() { camera.setAspectRatio(windowWidth, windowHeight); }
+void Screen::resize() {
+    camera.setAspectRatio(windowWidth, windowHeight);
+}
 Screen::~Screen() {
     // Limpiar ImGui
     ImGui_ImplOpenGL3_Shutdown();
@@ -48,9 +49,13 @@ Screen::~Screen() {
     SDL_Quit();
 }
 
-Camera &Screen::getCamera() { return camera; }
+Camera& Screen::getCamera() {
+    return camera;
+}
 
-bool Screen::isRunning() { return running; }
+bool Screen::isRunning() {
+    return running;
+}
 
 void Screen::poll(float deltaTime) {
     SDL_Event e;
@@ -153,7 +158,9 @@ Block Screen::getBlockSelected() {
     block.active = block.type != 0;
     return block;
 }
-void Screen::swap() { SDL_GL_SwapWindow(window); }
+void Screen::swap() {
+    SDL_GL_SwapWindow(window);
+}
 void Screen::renderUI() {
     GLint previousProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
@@ -166,8 +173,7 @@ void Screen::renderUI() {
     glDisable(GL_DEPTH_TEST);
     if (crosshairVisible) {
         // Render Crosshair
-        uiShader->drawCrosshair(windowWidth, windowHeight, crosshairSize, crosshairColor[0], crosshairColor[1],
-                                crosshairColor[2]);
+        uiShader->drawCrosshair(windowWidth, windowHeight, crosshairSize, crosshairColor[0], crosshairColor[1], crosshairColor[2]);
     }
     if (hotbarVisible) {
         // Render hotbar
@@ -183,7 +189,7 @@ void Screen::renderUI() {
         glUseProgram(previousProgram);
     }
 }
-void Screen::renderDebugAxes(const glm::mat4 &view, const glm::mat4 &projection) {
+void Screen::renderDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
     // Guardar shader activo
     GLint previousProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);

@@ -36,10 +36,11 @@ class World {
     mutex mutexChunkResult;
     mutex mutexChunkRequest;
     mutex mutexChunkUpdateRequest;
-    stack<pair<int, int>> chunkRequestQueue;
-    queue<pair<int, int>> chunkRequestUpdateQueue;
+    queue<pair<int, int>> chunkRequestQueue;           // cola de chunks listos para insertar
+    queue<pair<int, int>> chunkRequestUpdateLowQueue;  // cola de chunks para generar la mesh de forma secundaria
+    queue<pair<int, int>> chunkRequestUpdateHighQueue; // cola de chunks para generar mesh que estan en el frustrum de la camara
     set<pair<int, int>> requestedChunks;
-    set<pair<int, int>> requestedUpdateChunks;
+    set<pair<int, int>> requestedUpdateChunks; // conjunto de chunks en cola para generar la mesh.
     mutex setUpdateChunk;
     mutex setChunkRequestMutex;
     queue<shared_ptr<Chunk>> chunkResultQueue;

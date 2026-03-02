@@ -263,7 +263,7 @@ void World::generateFlatWorld(int width, int depth) {
     for (int cx = 0; cx < chunksInX; cx++) {
         for (int cz = 0; cz < chunksInZ; cz++) {
             chunks[cx][cz] = make_shared<Chunk>();
-            Chunk &chunk = *chunks[cx][cz];
+            Chunk& chunk = *chunks[cx][cz];
             chunk.setNroChunk(cx, cz);
             chunk.setWorld(this);
             for (int x = 0; x < 16; x++) {
@@ -291,8 +291,8 @@ void World::generateFlatWorld(int width, int depth) {
     }
 }
 void World::deleteWorld() {
-    for (auto &xPair : chunks) {
-        for (auto &zPair : xPair.second) {
+    for (auto& xPair : chunks) {
+        for (auto& zPair : xPair.second) {
             if (zPair.second)
                 zPair.second->cleanup();
         }
@@ -439,8 +439,8 @@ void World::createChunk(int cx, int cz) {
                 continue;
             float random = (hash & 0xFFFFFF) / float(0xFFFFFF);
 
-            if (random < 0.002f) {                  // 0.2% probabilidad
-                int trunkHeight = 4 + (rand() % 3); // 4–6
+            if (random < 0.002f) {                // 0.2% probabilidad
+                int trunkHeight = 4 + (hash % 3); // 4–6
 
                 int leafRadius = 2;
                 int leafStart = groundY + trunkHeight - 2;
@@ -463,7 +463,7 @@ void World::createChunk(int cx, int cz) {
                                 continue;
                             // esquinas con probabilidad para hacerlo más
                             // orgánico
-                            if (abs(dx) == currentRadius && abs(dz) == currentRadius && rand() % 100 < 40)
+                            if (abs(dx) == currentRadius && abs(dz) == currentRadius && hash % 100 < 40)
                                 continue;
                             if (dx == dz && dx == 0 && dy != 1) {
                                 continue;
@@ -518,7 +518,7 @@ struct Plane {
     vec3 normal;
     float d;
 };
-void extractFrustumPlanes(Plane planes[6], const mat4 &m) {
+void extractFrustumPlanes(Plane planes[6], const mat4& m) {
     // Left
     planes[0].normal.x = m[0][3] + m[0][0];
     planes[0].normal.y = m[1][3] + m[1][0];
@@ -562,7 +562,7 @@ void extractFrustumPlanes(Plane planes[6], const mat4 &m) {
         planes[i].d /= length;
     }
 }
-bool isBoxVisible(const Plane planes[6], const vec3 &min, const vec3 &max) {
+bool isBoxVisible(const Plane planes[6], const vec3& min, const vec3& max) {
 
     for (int i = 0; i < 6; i++) {
 
@@ -582,6 +582,7 @@ bool isBoxVisible(const Plane planes[6], const vec3 &min, const vec3 &max) {
 void World::insertChunks() {
     unique_lock<mutex> lockResult(mutexChunkResult);
     lock_guard<mutex> lockMap(mapChunks);
+
     while (!chunkResultQueue.empty()) {
         auto chunk = std::move(chunkResultQueue.front());
         chunkResultQueue.pop();
@@ -617,7 +618,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
     insertChunks();
     ivec2 centerChunk = getChunkPos(cameraPos);
     int renderDist = 16;
-    int generateDist = renderDist + 3;
+    int generateDist = renderDist;
     int cantChunks = 0;
     int maxChunksPerFrame = 5;
     Chunk::sharedShader->use();
@@ -711,9 +712,9 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
 
 void World::startCreationThread() {
     creationThread = thread(&World::loopCreation, this);
-    creationThread2 = thread(&World::loopCreation, this);
+    // creationThread2 = thread(&World::loopCreation, this);
     meshThread = thread(&World::loopMesh, this);
-    meshThread2 = thread(&World::loopMesh, this);
+    // meshThread2 = thread(&World::loopMesh, this);
 }
 void World::loopCreation() {
     while (threadRunning) {
@@ -721,13 +722,14 @@ void World::loopCreation() {
         RequestCV.wait(lock, [this] { return !chunkRequestQueue.empty() || !threadRunning; });
         if (!threadRunning)
             break;
-        auto [x, z] = chunkRequestQueue.top();
+        auto [x, z] = chunkRequestQueue.front();
+        cout << "Creo chunk en: " << x << "," << z << endl;
         chunkRequestQueue.pop();
         lock.unlock();
         createChunk(x, z);
     }
 }
-void World::loopMesh() {
+void World::loopMeshHighPriority() {
     while (threadRunning) {
         unique_lock<mutex> lock(mutexChunkUpdateRequest);
         meshCV.wait(lock, [this] { return !chunkRequestUpdateQueue.empty() || !threadRunning; });
@@ -747,7 +749,28 @@ void World::loopMesh() {
         }
     }
 }
-void World::update() {}
+void World::loopMeshLowPriority() {
+    while (threadRunning) {
+        unique_lock<mutex> lock(mutexChunkUpdateRequest);
+        meshCV.wait(lock, [this] { return !chunkRequestUpdateQueue.empty() || !threadRunning; });
+        if (!threadRunning)
+            break;
+        auto [x, z] = chunkRequestUpdateQueue.front();
+        chunkRequestUpdateQueue.pop();
+        lock.unlock();
+        shared_ptr<Chunk> chunk;
+        {
+            lock_guard<mutex> lock(mapChunks);
+            chunk = getChunk(x, z);
+        }
+        if (chunk) {
+            chunk->generateMesh();
+            chunk->isUpdating = false;
+        }
+    }
+}
+void World::update() {
+}
 World::~World() {
     threadRunning = false;
     RequestCV.notify_one();

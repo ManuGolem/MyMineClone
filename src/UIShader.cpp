@@ -9,7 +9,7 @@ unsigned int UIShader::outlinesVBO = 0;
 unsigned int UIShader::crosshairVAO = 0;
 unsigned int UIShader::crosshairVBO = 0;
 UIShader::UIShader() {
-    const char *uiVertexSrc = R"(
+    const char* uiVertexSrc = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
     layout (location = 1) in vec2 aTexCoord;
@@ -26,7 +26,7 @@ UIShader::UIShader() {
     }
     )";
 
-    const char *uiFragmentSrc = R"(
+    const char* uiFragmentSrc = R"(
     #version 330 core
     out vec4 FragColor;
     
@@ -39,7 +39,7 @@ UIShader::UIShader() {
         FragColor = texture(uiTexture, TexCoord) * color;
     }
     )";
-    const char *vertexSrc = R"(
+    const char* vertexSrc = R"(
             #version 330 core
             layout (location = 0) in vec3 aPos;
             
@@ -52,7 +52,7 @@ UIShader::UIShader() {
             }
         )";
 
-    const char *fragmentSrc = R"(
+    const char* fragmentSrc = R"(
             #version 330 core
             out vec4 FragColor;
             
@@ -100,7 +100,7 @@ UIShader::UIShader() {
     glBindBuffer(GL_ARRAY_BUFFER, axesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Outlines
@@ -108,7 +108,7 @@ UIShader::UIShader() {
     glGenBuffers(1, &outlinesVBO);
     glBindVertexArray(outlinesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Crosshair
@@ -116,7 +116,7 @@ UIShader::UIShader() {
     glGenBuffers(1, &crosshairVBO);
     glBindVertexArray(crosshairVAO);
     glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -163,9 +163,9 @@ UIShader::UIShader() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, uiEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uiIndices), uiIndices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -191,7 +191,7 @@ UIShader::UIShader() {
     loadHotbarTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
     loadHotbarTexture("../textures/creativeInventory/scroller_disabled.png", scrollerDisabledTextureID);
 }
-void UIShader::drawDebugAxes(const glm::mat4 &view, const glm::mat4 &projection) {
+void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
     glUseProgram(shaderProgram);
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
@@ -217,7 +217,7 @@ void UIShader::drawDebugAxes(const glm::mat4 &view, const glm::mat4 &projection)
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
 }
-void UIShader::drawOutline(int x, int y, int z, const glm::mat4 &view, const glm::mat4 &projection) {
+void UIShader::drawOutline(int x, int y, int z, const glm::mat4& view, const glm::mat4& projection) {
     glUseProgram(shaderProgram);
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
@@ -226,19 +226,16 @@ void UIShader::drawOutline(int x, int y, int z, const glm::mat4 &view, const glm
     setModelMatrix(glm::value_ptr(model));
     // 12 aristas del cubo (24 vértices)
     float vertices[] = {// Cara inferior
-                        x - 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f,
-                        x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f,
-                        x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z - 0.5f,
+                        x - 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y - 1.0f,
+                        z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z - 0.5f,
 
                         // Cara superior
-                        x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f,
-                        x + 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f,
-                        x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z - 0.5f,
+                        x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y + 0.0f,
+                        z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z - 0.5f,
 
                         // Aristas verticales
-                        x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f,
-                        x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f,
-                        x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f};
+                        x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f, y - 1.0f,
+                        z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f};
 
     glBindVertexArray(outlinesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
@@ -249,10 +246,10 @@ void UIShader::drawOutline(int x, int y, int z, const glm::mat4 &view, const glm
     glDrawArrays(GL_LINES, 0, 24);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-void UIShader::loadHotbarTexture(const char *path, unsigned int &textureID) {
+void UIShader::loadHotbarTexture(const char* path, unsigned int& textureID) {
     // Cargar textura de la hotbar completa
     int width, height, channels;
-    unsigned char *data = stbi_load(path, &width, &height, &channels, 4);
+    unsigned char* data = stbi_load(path, &width, &height, &channels, 4);
     if (data) {
         glGenTextures(1, &textureID);
         glBindTexture(GL_TEXTURE_2D, textureID);
@@ -262,8 +259,7 @@ void UIShader::loadHotbarTexture(const char *path, unsigned int &textureID) {
         stbi_image_free(data);
     }
 }
-void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory,
-                                     int tabTopSelected, vector<int> blockInHotbar) {
+void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabTopSelected, vector<int> blockInHotbar) {
     glUseProgram(uiShaderProgram);
     glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
     glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
