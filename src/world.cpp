@@ -1,4 +1,5 @@
 #include "../include/world.h"
+#include <chrono>
 #include <cstdlib>
 #include <glm/geometric.hpp>
 #include <memory>
@@ -514,10 +515,7 @@ void World::createChunk(int cx, int cz) {
         chunkResultQueue.push(std::move(chunk));
     }
 }
-struct Plane {
-    vec3 normal;
-    float d;
-};
+
 void extractFrustumPlanes(Plane planes[6], const mat4& m) {
     // Left
     planes[0].normal.x = m[0][3] + m[0][0];
@@ -579,7 +577,7 @@ bool isBoxVisible(const Plane planes[6], const vec3& min, const vec3& max) {
 
     return true;
 }
-void World::insertChunks() {
+void World::insertChunks(Plane planes[6]) {
     unique_lock<mutex> lockResult(mutexChunkResult);
     lock_guard<mutex> lockMap(mapChunks);
 
@@ -602,31 +600,42 @@ void World::insertChunks() {
                     if (!chunk->isUpdating) {
                         chunk->needsUpdate = true;
                         chunk->isUpdating = true;
-                        {
-                            lock_guard<mutex> lock(mutexChunkUpdateRequest);
-                            chunkRequestUpdateQueue.push({nx, nz});
+                        vec3 min(nx << 4, 0, nz << 4);
+                        vec3 max(min.x + 15, 256, min.z + 15);
+                        int cantChunkHigh = 0;
+                        if (isBoxVisible(planes, min, max)) {
+                            {
+                                lock_guard<mutex> lock(mutexChunkUpdateHighRequest);
+                                chunkRequestUpdateHighQueue.push({nx, nz});
+                            }
+                            meshHighCV.notify_one();
+                        } else {
+                            {
+                                lock_guard<mutex> lock(mutexChunkUpdateLowRequest);
+                                chunkRequestUpdateLowQueue.push({nx, nz});
+                            }
+                            meshLowCV.notify_one();
                         }
-                        meshCV.notify_one();
                     }
                 }
             }
+            lockResult.lock();
         }
-        lockResult.lock();
     }
 }
 void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
-    insertChunks();
     ivec2 centerChunk = getChunkPos(cameraPos);
-    int renderDist = 16;
-    int generateDist = renderDist;
+    int renderDist = 64;
+    int generateDist = renderDist + 3;
     int cantChunks = 0;
-    int maxChunksPerFrame = 5;
+    int maxChunksPerFrame = 1;
     Chunk::sharedShader->use();
     Chunk::sharedShader->setProjectionMatrix(value_ptr(renderProjection));
     Chunk::sharedShader->setViewMatrix(glm::value_ptr(renderView));
     mat4 vp = projection * view;
     Plane planes[6];
     extractFrustumPlanes(planes, vp);
+    insertChunks(planes);
     for (int nivel = 0; nivel <= generateDist; nivel++) {
         if (nivel == 0) {
             int chunkX = centerChunk.x;
@@ -712,9 +721,8 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
 
 void World::startCreationThread() {
     creationThread = thread(&World::loopCreation, this);
-    // creationThread2 = thread(&World::loopCreation, this);
-    meshThread = thread(&World::loopMesh, this);
-    // meshThread2 = thread(&World::loopMesh, this);
+    meshThread2 = thread(&World::loopMeshHighPriority, this);
+    meshThread5 = thread(&World::loopMeshLowPriority, this);
 }
 void World::loopCreation() {
     while (threadRunning) {
@@ -723,7 +731,6 @@ void World::loopCreation() {
         if (!threadRunning)
             break;
         auto [x, z] = chunkRequestQueue.front();
-        cout << "Creo chunk en: " << x << "," << z << endl;
         chunkRequestQueue.pop();
         lock.unlock();
         createChunk(x, z);
@@ -731,12 +738,13 @@ void World::loopCreation() {
 }
 void World::loopMeshHighPriority() {
     while (threadRunning) {
-        unique_lock<mutex> lock(mutexChunkUpdateRequest);
-        meshCV.wait(lock, [this] { return !chunkRequestUpdateQueue.empty() || !threadRunning; });
+        unique_lock<mutex> lock(mutexChunkUpdateHighRequest);
+        meshHighCV.wait(lock, [this] { return !chunkRequestUpdateHighQueue.empty() || !threadRunning; });
         if (!threadRunning)
             break;
-        auto [x, z] = chunkRequestUpdateQueue.front();
-        chunkRequestUpdateQueue.pop();
+
+        auto [x, z] = chunkRequestUpdateHighQueue.front();
+        chunkRequestUpdateHighQueue.pop();
         lock.unlock();
         shared_ptr<Chunk> chunk;
         {
@@ -751,12 +759,13 @@ void World::loopMeshHighPriority() {
 }
 void World::loopMeshLowPriority() {
     while (threadRunning) {
-        unique_lock<mutex> lock(mutexChunkUpdateRequest);
-        meshCV.wait(lock, [this] { return !chunkRequestUpdateQueue.empty() || !threadRunning; });
+        unique_lock<mutex> lock(mutexChunkUpdateLowRequest);
+        meshLowCV.wait(lock, [this] { return !chunkRequestUpdateLowQueue.empty() || !threadRunning; });
         if (!threadRunning)
             break;
-        auto [x, z] = chunkRequestUpdateQueue.front();
-        chunkRequestUpdateQueue.pop();
+
+        auto [x, z] = chunkRequestUpdateLowQueue.front();
+        chunkRequestUpdateLowQueue.pop();
         lock.unlock();
         shared_ptr<Chunk> chunk;
         {
@@ -774,18 +783,33 @@ void World::update() {
 World::~World() {
     threadRunning = false;
     RequestCV.notify_one();
-    meshCV.notify_one();
+    meshHighCV.notify_one();
+    meshLowCV.notify_one();
     if (creationThread.joinable()) {
         creationThread.join();
-    }
-
-    if (creationThread2.joinable()) {
-        creationThread2.join();
     }
     if (meshThread.joinable()) {
         meshThread.join();
     }
     if (meshThread2.joinable()) {
         meshThread2.join();
+    }
+    if (meshThread3.joinable()) {
+        meshThread3.join();
+    }
+    if (meshThread4.joinable()) {
+        meshThread4.join();
+    }
+    if (meshThread5.joinable()) {
+        meshThread5.join();
+    }
+    if (meshThread6.joinable()) {
+        meshThread6.join();
+    }
+    if (meshThread7.joinable()) {
+        meshThread7.join();
+    }
+    if (meshThread8.joinable()) {
+        meshThread8.join();
     }
 }
