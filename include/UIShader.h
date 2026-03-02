@@ -40,7 +40,6 @@ class UIShader {
 
   public:
     UIShader();
-
     void setModelMatrix(const float* matrix) {
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
     }

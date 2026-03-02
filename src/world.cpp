@@ -625,7 +625,7 @@ void World::insertChunks(Plane planes[6]) {
 }
 void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
     ivec2 centerChunk = getChunkPos(cameraPos);
-    int renderDist = 64;
+    int renderDist = 32;
     int generateDist = renderDist + 3;
     int cantChunks = 0;
     int maxChunksPerFrame = 1;
@@ -721,8 +721,8 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
 
 void World::startCreationThread() {
     creationThread = thread(&World::loopCreation, this);
-    meshThread2 = thread(&World::loopMeshHighPriority, this);
-    meshThread5 = thread(&World::loopMeshLowPriority, this);
+    meshThread = thread(&World::loopMeshHighPriority, this);
+    meshThread2 = thread(&World::loopMeshLowPriority, this);
 }
 void World::loopCreation() {
     while (threadRunning) {
@@ -793,23 +793,5 @@ World::~World() {
     }
     if (meshThread2.joinable()) {
         meshThread2.join();
-    }
-    if (meshThread3.joinable()) {
-        meshThread3.join();
-    }
-    if (meshThread4.joinable()) {
-        meshThread4.join();
-    }
-    if (meshThread5.joinable()) {
-        meshThread5.join();
-    }
-    if (meshThread6.joinable()) {
-        meshThread6.join();
-    }
-    if (meshThread7.joinable()) {
-        meshThread7.join();
-    }
-    if (meshThread8.joinable()) {
-        meshThread8.join();
     }
 }

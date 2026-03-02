@@ -38,16 +38,6 @@ Screen::Screen() {
 void Screen::resize() {
     camera.setAspectRatio(windowWidth, windowHeight);
 }
-Screen::~Screen() {
-    // Limpiar ImGui
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
-
-    SDL_GL_DeleteContext(context);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-}
 
 Camera& Screen::getCamera() {
     return camera;
@@ -289,4 +279,15 @@ void Screen::renderMenu() {
     // Renderizar ImGui
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+Screen::~Screen() {
+    delete uiShader;
+    // Limpiar ImGui
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+
+    SDL_GL_DeleteContext(context);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }

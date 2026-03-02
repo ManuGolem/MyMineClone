@@ -453,6 +453,7 @@ void UIShader::drawCrosshair(int screenWidth, int screenHeight, int size, float 
 UIShader::~UIShader() {
     glDeleteProgram(shaderProgram);
     glDeleteProgram(uiShaderProgram);
+
     glDeleteVertexArrays(1, &axesVAO);
     glDeleteBuffers(1, &axesVBO);
     glDeleteVertexArrays(1, &outlinesVAO);
@@ -462,6 +463,25 @@ UIShader::~UIShader() {
     glDeleteVertexArrays(1, &uiVAO);
     glDeleteBuffers(1, &uiVBO);
     glDeleteBuffers(1, &uiEBO);
+
+    // Eliminar texturas individuales del mapa
     glDeleteTextures(1, &hotbarTextureID);
     glDeleteTextures(1, &selectorTextureID);
+    glDeleteTextures(1, &tabItemsTextureID);
+    glDeleteTextures(1, &tabTopUnselectedTextureID);
+    glDeleteTextures(1, &tabTopSelectedLeftTextureID);
+    glDeleteTextures(1, &tabTopSelectedRightTextureID);
+    glDeleteTextures(1, &tabTopSelectedMidTextureID);
+    glDeleteTextures(1, &scrollerTextureID);
+    glDeleteTextures(1, &scrollerDisabledTextureID);
+
+    // ELIMINAR TODAS LAS TEXTURAS DEL MAPA
+    for (auto& pair : iconTexturesID) {
+        if (pair.second != 0) {
+            glDeleteTextures(1, &pair.second);
+        }
+    }
+
+    // Limpiar el mapa (esto libera la memoria interna del unordered_map)
+    iconTexturesID.clear();
 }
