@@ -625,7 +625,7 @@ void World::insertChunks(Plane planes[6]) {
 }
 void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
     ivec2 centerChunk = getChunkPos(cameraPos);
-    int renderDist = 32;
+    int renderDist = 1;
     int generateDist = renderDist + 3;
     int cantChunks = 0;
     int maxChunksPerFrame = 1;

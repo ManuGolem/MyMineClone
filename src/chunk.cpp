@@ -1,5 +1,6 @@
 #include "../include/chunk.h"
 #include "../include/world.h"
+#include <chrono>
 #include <memory>
 #include <mutex>
 bool esTransparent(int type) {
@@ -60,7 +61,7 @@ Chunk::Chunk() : world(nullptr), needsUpdate(true) {
     }
 }
 void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int tipo_bloque, vector<float>& vData, vector<unsigned int>& iData,
-                           unsigned int& vCount, int& carasLocal) {
+                           unsigned int& vCount) {
     float base = vCount;
     float offsetX = nroChunkX * 16.0f;
     float offsetZ = nroChunkZ * 16.0f;
@@ -205,7 +206,6 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
             iData.push_back(base);     // 0: Inf izq
         }
     }
-    carasLocal++;
     vCount += 4;
 }
 void Chunk::generateMesh() {
@@ -213,7 +213,6 @@ void Chunk::generateMesh() {
     std::vector<float> newVertexData;
     std::vector<unsigned int> newIndexData;
     unsigned int newVertexCount = 0;
-    int newCaras = 0;
     // CARAS EN X
     for (int x = 0; x < 16; x++) {
         int capasIzquierdas[256][16] = {0};
@@ -248,12 +247,12 @@ void Chunk::generateMesh() {
         }
         vector<Rectangulo> rectsDer = formarRectangulos(capasDerechas);
         for (const Rectangulo& r : rectsDer) {
-            cargarVertices(r, 0, 1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount, newCaras);
+            cargarVertices(r, 0, 1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
         vector<Rectangulo> rectsIzq = formarRectangulos(capasIzquierdas);
 
         for (const Rectangulo& r : rectsIzq) {
-            cargarVertices(r, 0, -1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount, newCaras);
+            cargarVertices(r, 0, -1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
     }
     for (int y = 0; y < 256; y++) {
@@ -275,12 +274,12 @@ void Chunk::generateMesh() {
         }
         vector<Rectangulo> rectsInf = formarRectangulos(capasInferiores);
         for (const Rectangulo& r : rectsInf) {
-            cargarVertices(r, 1, -1, y, r.tipoBloque, newVertexData, newIndexData, newVertexCount, newCaras);
+            cargarVertices(r, 1, -1, y, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
         vector<Rectangulo> rectsSup = formarRectangulos(capasSuperiores);
 
         for (const Rectangulo& r : rectsSup) {
-            cargarVertices(r, 1, 1, y, r.tipoBloque, newVertexData, newIndexData, newVertexCount, newCaras);
+            cargarVertices(r, 1, 1, y, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
     }
     for (int z = 0; z < 16; z++) {
@@ -318,12 +317,12 @@ void Chunk::generateMesh() {
 
         vector<Rectangulo> rectsFrontal = formarRectangulos(capasFrontal);
         for (const Rectangulo& r : rectsFrontal) {
-            cargarVertices(r, 2, 1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount, newCaras);
+            cargarVertices(r, 2, 1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
 
         vector<Rectangulo> rectsTrasera = formarRectangulos(capasTrasera);
         for (const Rectangulo& r : rectsTrasera) {
-            cargarVertices(r, 2, -1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount, newCaras);
+            cargarVertices(r, 2, -1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
     }
 
@@ -332,7 +331,6 @@ void Chunk::generateMesh() {
         vertexData.swap(newVertexData);
         indexData.swap(newIndexData);
         vertexCount = newVertexCount;
-        caras = newCaras;
     }
     needsUpdate = false;
     needsBufferUpdate.store(true);
@@ -377,7 +375,6 @@ void Chunk::cleanup() {
     // Limpiar datos
     vertexData.clear();
     indexData.clear();
-    caras = 0;
     vertexCount = 0;
     needsUpdate = true;
 

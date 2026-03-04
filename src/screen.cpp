@@ -57,18 +57,18 @@ void Screen::poll(float deltaTime) {
         // Teclas
         if (e.type == SDL_KEYDOWN) {
             if (e.key.keysym.sym == SDLK_ESCAPE) {
-                openMenu = !openMenu;
+                if (!inventoryOpen)
+                    openMenu = !openMenu;
                 inventoryOpen = false;
                 SDL_SetRelativeMouseMode(openMenu ? SDL_FALSE : SDL_TRUE);
             }
             if (e.key.keysym.sym == SDLK_e) {
-
                 inventoryOpen = !inventoryOpen && !openMenu;
                 SDL_SetRelativeMouseMode(inventoryOpen ? SDL_FALSE : SDL_TRUE);
             }
         }
         // Mouse
-        if (e.type == SDL_MOUSEBUTTONDOWN && !openMenu && !debugMode) {
+        if (e.type == SDL_MOUSEBUTTONDOWN && !openMenu && !debugMode && !inventoryOpen) {
             SDL_SetRelativeMouseMode(SDL_TRUE);
 
             if (e.button.button == SDL_BUTTON_RIGHT) {
@@ -203,7 +203,7 @@ void Screen::renderBlockOutline(int x, int y, int z) {
         glUseProgram(previousProgram);
     }
 }
-void Screen::renderMenu() {
+void Screen::renderMenu() { // Todo era para probar la biblioteca, la tengo que eliminar ya que prefiero implementar de 0 las funciones que me dan imgui.
     if (!openMenu)
         return;
 
