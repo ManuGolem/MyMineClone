@@ -11,12 +11,12 @@ using namespace std;
 using namespace glm;
 class World;
 struct Block {
-    bool active;
-    int type;
+    bool active = false;
+    int type = 0;
 };
 struct Rectangulo {
     int x1, x2, y1, y2;
-    int tipoBloque;
+    int tipoBloque = 0;
 };
 
 class Chunk {
@@ -27,12 +27,13 @@ class Chunk {
     vector<unsigned int> indexData;
     int nroChunkX;
     int nroChunkZ;
-    int caras;
     int vertexCount;
     mutex mutexVertex;
     atomic<bool> needsBufferUpdate{true};
-    void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int tipoBloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount,
-                        int& carasLocal);
+    Rectangulo processFaceX(int x, int i, int j, bool (&procesado)[256][16], int globalX, int globalZ, int tipoActual, int dir);
+    Rectangulo processFaceZ(int z, int i, int j, bool (&procesado)[16][256], int globalX, int globalZ, int tipoActual, int dir);
+    Rectangulo processFaceY(int y, int i, int j, bool (&procesado)[16][16], int tipoActual, int dir);
+    void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int tipoBloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount);
 
   public:
     unique_ptr<ChunkBuffer> chunkBuffer;
@@ -47,9 +48,6 @@ class Chunk {
     bool isEmpty() const;
     void setNroChunk(int, int);
     void generateMesh();
-    int getCaras() const {
-        return caras;
-    }
     int getNroChunkX() const {
         return nroChunkX;
     }
