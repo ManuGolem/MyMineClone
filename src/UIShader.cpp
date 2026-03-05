@@ -1,7 +1,7 @@
 #include "../include/UIShader.h"
 #include "../include/chunk.h"
+#include "../include/configShader.h"
 #include "../include/stb_image.h"
-#include "configShader.h"
 unsigned int UIShader::axesVAO = 0;
 unsigned int UIShader::axesVBO = 0;
 unsigned int UIShader::outlinesVAO = 0;
@@ -170,26 +170,59 @@ UIShader::UIShader() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     // Cargar texturas
-    loadHotbarTexture("../textures/Hotbar.png", hotbarTextureID);
-    loadHotbarTexture("../textures/Hotbar_selector.png", selectorTextureID);
-    loadHotbarTexture("../textures/icons/dirt.png", iconTexturesID[3]);
-    loadHotbarTexture("../textures/icons/stone.png", iconTexturesID[2]);
-    loadHotbarTexture("../textures/icons/grass_block.png", iconTexturesID[4]);
-    loadHotbarTexture("../textures/icons/brick.png", iconTexturesID[8]);
-    loadHotbarTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
-    loadHotbarTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
-    loadHotbarTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);
-    loadHotbarTexture("../textures/icons/redstone.png", iconTexturesID[258]);
-    loadHotbarTexture("../textures/icons/compass.png", iconTexturesID[259]);
-    loadHotbarTexture("../textures/creativeInventory/tab_items.png", tabItemsTextureID);
-    loadHotbarTexture("../textures/creativeInventory/tab_top_unselected.png", tabTopUnselectedTextureID);
+    loadTexture("../textures/Hotbar.png", hotbarTextureID);
+    loadTexture("../textures/Hotbar_selector.png", selectorTextureID);
+    loadTexture("../textures/icons/dirt.png", iconTexturesID[3]);
+    loadTexture("../textures/icons/stone.png", iconTexturesID[2]);
+    loadTexture("../textures/icons/grass_block.png", iconTexturesID[4]);
+    loadTexture("../textures/icons/brick.png", iconTexturesID[8]);
+    loadTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
+    loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
+    loadTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);
+    loadTexture("../textures/icons/redstone.png", iconTexturesID[258]);
+    loadTexture("../textures/icons/compass.png", iconTexturesID[259]);
+    loadTexture("../textures/creativeInventory/tab_items.png", tabItemsTextureID);
+    loadTexture("../textures/creativeInventory/tab_top_unselected.png", tabTopUnselectedTextureID);
 
     vector<int> posTextures = {8, 210, 4, 257, 258, 36, 259};
-    loadHotbarTexture("../textures/creativeInventory/tab_top_selected_left.png", tabTopSelectedLeftTextureID);
-    loadHotbarTexture("../textures/creativeInventory/tab_top_selected_right.png", tabTopSelectedRightTextureID);
-    loadHotbarTexture("../textures/creativeInventory/tab_top_selected_middle.png", tabTopSelectedMidTextureID);
-    loadHotbarTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
-    loadHotbarTexture("../textures/creativeInventory/scroller_disabled.png", scrollerDisabledTextureID);
+    loadTexture("../textures/creativeInventory/tab_top_selected_left.png", tabTopSelectedLeftTextureID);
+    loadTexture("../textures/creativeInventory/tab_top_selected_right.png", tabTopSelectedRightTextureID);
+    loadTexture("../textures/creativeInventory/tab_top_selected_middle.png", tabTopSelectedMidTextureID);
+    loadTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
+    loadTexture("../textures/creativeInventory/scroller_disabled.png", scrollerDisabledTextureID);
+}
+void UIShader::makeClickeableAreas(int width, int height) {
+    // Primero las del tabTopItems;
+    float itemTabWidth = 194.0f * 2.0f;
+    float itemTabHeight = 135.0f * 2.0f;
+    float posX = (width - itemTabWidth) / 2.0f;
+    float posY = (height - itemTabHeight) / 2.0f;
+    float posYTop = posY + itemTabHeight - 8;
+    float tabTopHeight = 60;
+    float tabTopWidth = 52.0f;
+    vector<float> pos = {0.0f,
+                         2.0f + tabTopWidth,
+                         2 * (2.0f + tabTopWidth),
+                         3 * (2.0f + tabTopWidth),
+                         4 * (2.0f + tabTopWidth),
+                         5 * (2.0f + tabTopWidth) + 12.0f,
+                         itemTabWidth - tabTopWidth};
+    for (int i = 0; i < 7; i++) {
+        elemClickeable n;
+        n.x1 = posX + pos[i];
+        n.x2 = posX + pos[i] + tabTopWidth;
+        n.y1 = posYTop;
+        n.y2 = posYTop + tabTopHeight;
+        tabTopItemsClickeables.push_back(n);
+    }
+}
+int UIShader::isTabTopClicked(int x, int y) {
+    for (int i = 0; i < tabTopItemsClickeables.size(); i++) {
+        if (tabTopItemsClickeables[i].isClickeable(x, y)) {
+            return i + 1;
+        }
+    }
+    return -1;
 }
 void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
     glUseProgram(shaderProgram);
@@ -246,7 +279,7 @@ void UIShader::drawOutline(int x, int y, int z, const glm::mat4& view, const glm
     glDrawArrays(GL_LINES, 0, 24);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-void UIShader::loadHotbarTexture(const char* path, unsigned int& textureID) {
+void UIShader::loadTexture(const char* path, unsigned int& textureID) {
     // Cargar textura de la hotbar completa
     int width, height, channels;
     unsigned char* data = stbi_load(path, &width, &height, &channels, 4);
@@ -275,6 +308,7 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     float posX = (screenWidth - itemTabWidth) / 2.0f;
     float posY = (screenHeight - itemTabHeight) / 2.0f;
     // Dibujar tabTop
+
     float tabTopHeight = 60;
     float tabTopWidth = 52.0f;
     float posYTop = posY + itemTabHeight - 10;

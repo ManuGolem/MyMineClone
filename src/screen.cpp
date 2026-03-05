@@ -14,6 +14,7 @@ Screen::Screen() {
         std::cout << "GLAD failed\n";
     }
     uiShader = new UIShader();
+    uiShader->makeClickeableAreas(windowWidth, windowHeight);
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -57,25 +58,37 @@ void Screen::poll(float deltaTime) {
         // Teclas
         if (e.type == SDL_KEYDOWN) {
             if (e.key.keysym.sym == SDLK_ESCAPE) {
-                if (!inventoryOpen)
+                if (inventoryOpen)
+                    inventoryOpen = false;
+                else
                     openMenu = !openMenu;
-                inventoryOpen = false;
                 SDL_SetRelativeMouseMode(openMenu ? SDL_FALSE : SDL_TRUE);
             }
             if (e.key.keysym.sym == SDLK_e) {
-                inventoryOpen = !inventoryOpen && !openMenu;
-                SDL_SetRelativeMouseMode(inventoryOpen ? SDL_FALSE : SDL_TRUE);
+                if (!openMenu) {
+                    inventoryOpen = !inventoryOpen;
+                    SDL_SetRelativeMouseMode(inventoryOpen ? SDL_FALSE : SDL_TRUE);
+                }
             }
         }
         // Mouse
-        if (e.type == SDL_MOUSEBUTTONDOWN && !openMenu && !debugMode && !inventoryOpen) {
-            SDL_SetRelativeMouseMode(SDL_TRUE);
+        if (e.type == SDL_MOUSEBUTTONDOWN) {
+            if (!openMenu && !debugMode && !inventoryOpen) {
+                SDL_SetRelativeMouseMode(SDL_TRUE);
 
-            if (e.button.button == SDL_BUTTON_RIGHT) {
-                rightClicked = true;
+                if (e.button.button == SDL_BUTTON_RIGHT) {
+                    rightClicked = true;
+                }
+                if (e.button.button == SDL_BUTTON_LEFT) {
+                    leftClicked = true;
+                }
             }
-            if (e.button.button == SDL_BUTTON_LEFT) {
-                leftClicked = true;
+            if (inventoryOpen) {
+                if (e.button.button == SDL_BUTTON_LEFT) {
+                    int tabClicked = uiShader->isTabTopClicked(e.button.x, windowHeight - e.button.y);
+                    if (tabClicked != -1)
+                        tabTopSelected = tabClicked;
+                }
             }
         }
     }
@@ -224,7 +237,7 @@ void Screen::renderMenu() { // Todo era para probar la biblioteca, la tengo que 
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
 
-    ImGui::Begin("PAUSA", &openMenu, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGui::Begin("PAUSA", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
     // Título
     ImGui::SetWindowFontScale(2.0f);
