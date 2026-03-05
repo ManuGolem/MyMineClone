@@ -1,6 +1,5 @@
 #pragma once
 #include "FastNoiseLite.h"
-#include "camera.h"
 #include "chunk.h"
 #include <atomic>
 #include <condition_variable>
@@ -8,7 +7,6 @@
 #include <mutex>
 #include <queue>
 #include <set>
-#include <stack>
 #include <thread>
 #include <utility>
 struct pendingBlock {
@@ -41,8 +39,10 @@ class World {
     mutex mutexChunkUpdateLowRequest;
     mutex mutexChunkUpdateHighRequest;
     queue<pair<int, int>> chunkRequestQueue;           // cola de chunks listos para insertar
-    queue<pair<int, int>> chunkRequestUpdateLowQueue;  // cola de chunks para generar la mesh de forma secundaria
-    queue<pair<int, int>> chunkRequestUpdateHighQueue; // cola de chunks para generar mesh que estan en el frustrum de la camara
+    queue<pair<int, int>> chunkRequestUpdateLowQueue;  // cola de chunks para generar la mesh de
+                                                       // forma secundaria
+    queue<pair<int, int>> chunkRequestUpdateHighQueue; // cola de chunks para generar mesh que estan
+                                                       // en el frustrum de la camara
     set<pair<int, int>> requestedChunks;
     mutex setUpdateChunk;
     mutex setChunkRequestMutex;

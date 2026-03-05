@@ -1,6 +1,4 @@
 #include "../include/UIShader.h"
-#include "../include/chunk.h"
-#include "../include/configShader.h"
 #include "../include/stb_image.h"
 unsigned int UIShader::axesVAO = 0;
 unsigned int UIShader::axesVBO = 0;

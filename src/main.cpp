@@ -1,4 +1,3 @@
-#include "../include/configShader.h"
 #include "../include/screen.h"
 #include "../include/world.h"
 bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFace, bool& colocar) {
@@ -85,9 +84,11 @@ int main() {
         glm::mat4 view = screen.getCamera().getViewMatrix();
         // Dibujar mundo
         if (screen.isDebugMode()) {
-            world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getDebugCamera().getViewMatrix(), screen.getDebugCamera().getProjectionMatrix());
+            world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getDebugCamera().getViewMatrix(),
+                         screen.getDebugCamera().getProjectionMatrix());
         } else {
-            world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getCamera().getViewMatrix(), screen.getCamera().getProjectionMatrix());
+            world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getCamera().getViewMatrix(),
+                         screen.getCamera().getProjectionMatrix());
         }
         // Renderizar menu
         screen.renderMenu();

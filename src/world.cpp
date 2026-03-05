@@ -1,5 +1,4 @@
 #include "../include/world.h"
-#include <chrono>
 #include <cstdlib>
 #include <glm/geometric.hpp>
 #include <memory>

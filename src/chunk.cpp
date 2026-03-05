@@ -1,6 +1,5 @@
 #include "../include/chunk.h"
 #include "../include/world.h"
-#include <chrono>
 #include <memory>
 #include <mutex>
 bool esTransparent(int type) {
