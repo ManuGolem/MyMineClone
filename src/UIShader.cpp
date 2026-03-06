@@ -173,54 +173,32 @@ UIShader::UIShader() {
     loadTexture("../textures/icons/dirt.png", iconTexturesID[3]);
     loadTexture("../textures/icons/stone.png", iconTexturesID[2]);
     loadTexture("../textures/icons/grass_block.png", iconTexturesID[4]);
-    loadTexture("../textures/icons/brick.png", iconTexturesID[8]);
+    loadTexture("../textures/icons/bricks.png", iconTexturesID[8]);
     loadTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
     loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
     loadTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);
     loadTexture("../textures/icons/redstone.png", iconTexturesID[258]);
     loadTexture("../textures/icons/compass.png", iconTexturesID[259]);
-    loadTexture("../textures/creativeInventory/tab_items.png", tabItemsTextureID);
-    loadTexture("../textures/creativeInventory/tab_top_unselected.png", tabTopUnselectedTextureID);
+    loadTexture("../textures/icons/diamond_pickaxe.png", iconTexturesID[260]);
+    loadTexture("../textures/icons/netherite_sword.png", iconTexturesID[261]);
+    loadTexture("../textures/icons/golden_apple.png", iconTexturesID[262]);
+    loadTexture("../textures/icons/iron_ingot.png", iconTexturesID[263]);
+    loadTexture("../textures/icons/creeper_spawn_egg.png", iconTexturesID[264]);
+    loadTexture("../textures/icons/chest.png", iconTexturesID[265]);
 
-    vector<int> posTextures = {8, 210, 4, 257, 258, 36, 259};
+    loadTexture("../textures/creativeInventory/tab_items.png", tabItemsTextureID);
+    loadTexture("../textures/creativeInventory/tab_inventory.png", tabCreativeInventoryTextureID);
+    loadTexture("../textures/creativeInventory/tab_item_search.png", tabItemSearchTextureID);
+    loadTexture("../textures/creativeInventory/tab_top_unselected.png", tabTopUnselectedTextureID);
     loadTexture("../textures/creativeInventory/tab_top_selected_left.png", tabTopSelectedLeftTextureID);
     loadTexture("../textures/creativeInventory/tab_top_selected_right.png", tabTopSelectedRightTextureID);
+    loadTexture("../textures/creativeInventory/tab_bottom_selected_right.png", tabBotSelectedRightTextureID);
+    loadTexture("../textures/creativeInventory/tab_bottom_unselected.png", tabBotUnselectedTextureID);
+    loadTexture("../textures/creativeInventory/tab_bottom_selected_middle.png", tabBotSelectedMidTextureID);
+    loadTexture("../textures/creativeInventory/tab_bottom_selected_left.png", tabBotSelectedLeftTextureID);
     loadTexture("../textures/creativeInventory/tab_top_selected_middle.png", tabTopSelectedMidTextureID);
     loadTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
     loadTexture("../textures/creativeInventory/scroller_disabled.png", scrollerDisabledTextureID);
-}
-void UIShader::makeClickeableAreas(int width, int height) {
-    // Primero las del tabTopItems;
-    float itemTabWidth = 194.0f * 2.0f;
-    float itemTabHeight = 135.0f * 2.0f;
-    float posX = (width - itemTabWidth) / 2.0f;
-    float posY = (height - itemTabHeight) / 2.0f;
-    float posYTop = posY + itemTabHeight - 8;
-    float tabTopHeight = 60;
-    float tabTopWidth = 52.0f;
-    vector<float> pos = {0.0f,
-                         2.0f + tabTopWidth,
-                         2 * (2.0f + tabTopWidth),
-                         3 * (2.0f + tabTopWidth),
-                         4 * (2.0f + tabTopWidth),
-                         5 * (2.0f + tabTopWidth) + 12.0f,
-                         itemTabWidth - tabTopWidth};
-    for (int i = 0; i < 7; i++) {
-        elemClickeable n;
-        n.x1 = posX + pos[i];
-        n.x2 = posX + pos[i] + tabTopWidth;
-        n.y1 = posYTop;
-        n.y2 = posYTop + tabTopHeight;
-        tabTopItemsClickeables.push_back(n);
-    }
-}
-int UIShader::isTabTopClicked(int x, int y) {
-    for (int i = 0; i < tabTopItemsClickeables.size(); i++) {
-        if (tabTopItemsClickeables[i].isClickeable(x, y)) {
-            return i + 1;
-        }
-    }
-    return -1;
 }
 void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
     glUseProgram(shaderProgram);
@@ -290,7 +268,7 @@ void UIShader::loadTexture(const char* path, unsigned int& textureID) {
         stbi_image_free(data);
     }
 }
-void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabTopSelected, vector<int> blockInHotbar) {
+void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabSelected, vector<int> blockInHotbar) {
     glUseProgram(uiShaderProgram);
     glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
     glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -300,13 +278,12 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
-    float iconSize = 30;
+    float iconSize = 32;
     float itemTabWidth = 194.0f * 2.0f;
-    float itemTabHeight = 135.0f * 2.0f;
+    float itemTabHeight = 136.0f * 2.0f;
     float posX = (screenWidth - itemTabWidth) / 2.0f;
     float posY = (screenHeight - itemTabHeight) / 2.0f;
-    // Dibujar tabTop
-
+    // Dibujar tabUnselected
     float tabTopHeight = 60;
     float tabTopWidth = 52.0f;
     float posYTop = posY + itemTabHeight - 10;
@@ -323,7 +300,7 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
                          itemTabWidth - tabTopWidth};
     glm::mat4 model;
     for (int i = 0; i < 7; i++) {
-        if (i == tabTopSelected - 1)
+        if (i == tabSelected - 1)
             continue;
         int px = pos[i];
         model = glm::translate(glm::mat4(1.0f), glm::vec3(posX + px, posYTop, 0.0f));
@@ -331,35 +308,85 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
+    glBindTexture(GL_TEXTURE_2D, tabBotUnselectedTextureID);
+    float posYBot = posY - tabTopWidth + 2;
+    for (int i = 7; i < 14; i++) {
+        if (i == tabSelected - 1 || i == 12)
+            continue;
+        int px = pos[i - 7];
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(posX + px, posYBot, 0.0f));
+        model = glm::scale(model, glm::vec3(tabTopWidth, tabTopHeight, 1.0f));
+        glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
     // Dibujo tabItem
-    glBindTexture(GL_TEXTURE_2D, tabItemsTextureID);
+    if (tabSelected == 7) {
+        glBindTexture(GL_TEXTURE_2D, tabItemSearchTextureID);
+    } else { // falta cuando se selecciona el inventario
+        glBindTexture(GL_TEXTURE_2D, tabItemsTextureID);
+    }
     model = glm::translate(glm::mat4(1.0f), glm::vec3(posX, posY, 0.0f));
     model = glm::scale(model, glm::vec3(itemTabWidth, itemTabHeight, 1.0f));
     glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    // Dibujo tab top selected
+    // Dibujo tab selected
     tabTopHeight = 64.0f;
     tabTopWidth = 52.0f;
+    float posYTab;
     posYTop = posY + itemTabHeight - 8;
-    if (tabTopSelected == 1) {
+    posYBot = posY - tabTopHeight + 8;
+    if (tabSelected == 1) {
         glBindTexture(GL_TEXTURE_2D, tabTopSelectedLeftTextureID);
-    } else if (tabTopSelected == 7) {
+        posYTab = posYTop;
+    } else if (tabSelected == 7) {
         glBindTexture(GL_TEXTURE_2D, tabTopSelectedRightTextureID);
+        posYTab = posYTop;
+    } else if (tabSelected == 8) {
+        glBindTexture(GL_TEXTURE_2D, tabBotSelectedLeftTextureID);
+        posYTab = posYBot;
+    } else if (tabSelected == 14) {
+        glBindTexture(GL_TEXTURE_2D, tabBotSelectedRightTextureID);
+        posYTab = posYBot;
+    } else if (tabSelected > 8) {
+        glBindTexture(GL_TEXTURE_2D, tabBotSelectedMidTextureID);
+        posYTab = posYBot;
     } else {
         glBindTexture(GL_TEXTURE_2D, tabTopSelectedMidTextureID);
+        posYTab = posYTop;
     }
-    int px = pos[tabTopSelected - 1];
-    model = glm::translate(glm::mat4(1.0f), glm::vec3(posX + px, posYTop, 0.0f));
+    int px;
+    if (tabSelected > 7) {
+        px = pos[tabSelected - 8];
+    } else {
+        px = pos[tabSelected - 1];
+    }
+    model = glm::translate(glm::mat4(1.0f), glm::vec3(posX + px, posYTab, 0.0f));
     model = glm::scale(model, glm::vec3(tabTopWidth, tabTopHeight, 1.0f));
     glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     // Dibujar iconos en las tabTop
-    vector<int> posTextures = {8, 210, 4, 257, 258, 36, 259};
+    vector<int> posTextures = {8, 210, 4, 257, 258, 36, 259, 260, 261, 262, 263, 264, 265};
     posYTop += 13;
     for (int i = 0; i < 7; i++) {
         glBindTexture(GL_TEXTURE_2D, iconTexturesID[posTextures[i]]);
-        int px = pos[i] + 11.0f;
+        int px = pos[i] + 10.0f;
         model = glm::translate(glm::mat4(1.0f), glm::vec3(posX + px, posYTop, 0.0f));
+        model = glm::scale(model, glm::vec3(iconSize, iconSize, 1.0f));
+        glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
+    posYBot += 16;
+    for (int i = 7; i < 13; i++) {
+        glBindTexture(GL_TEXTURE_2D, iconTexturesID[posTextures[i]]);
+        int px;
+        if (i == 12) {
+            px = pos[i - 6] + 10.0f;
+        } else if (i == 7) {
+            px = pos[i - 7] + 9.0f;
+        } else {
+            px = pos[i - 7] + 10.0f;
+        }
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(posX + px, posYBot, 0.0f));
         model = glm::scale(model, glm::vec3(iconSize, iconSize, 1.0f));
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -367,13 +394,13 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     // Draw items de la hotbar en el inv
     float slotSize = 36.0f;
     posY += 15;
-    posX += 16;
+    posX += 15;
     for (int i = 0; i < blockInHotbar.size(); i++) {
         int blockType = blockInHotbar[i];
         if (iconTexturesID[blockType] == 0)
             continue;
         glBindTexture(GL_TEXTURE_2D, iconTexturesID[blockType]);
-        float slotX = posX + 3 + i * slotSize;
+        float slotX = posX + 2 + i * slotSize;
         glm::mat4 iconModel = glm::translate(glm::mat4(1.0f), glm::vec3(slotX, posY, 0.0f));
         iconModel = glm::scale(iconModel, glm::vec3(iconSize, iconSize, 1.0f));
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
