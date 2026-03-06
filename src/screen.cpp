@@ -14,7 +14,7 @@ Screen::Screen() {
         std::cout << "GLAD failed\n";
     }
     uiShader = new UIShader();
-    uiShader->makeClickeableAreas(windowWidth, windowHeight);
+    makeClickeableAreas(windowWidth, windowHeight);
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -46,6 +46,53 @@ Camera& Screen::getCamera() {
 
 bool Screen::isRunning() {
     return running;
+}
+void Screen::makeClickeableAreas(int width, int height) {
+    // Primero las del tabItems;
+    float itemTabWidth = 194.0f * 2.0f;
+    float itemTabHeight = 136.0f * 2.0f;
+    float posX = (width - itemTabWidth) / 2.0f;
+    float posY = (height - itemTabHeight) / 2.0f;
+    float posYTop = posY + itemTabHeight - 8;
+    float tabTopHeight = 60;
+    float tabTopWidth = 52.0f;
+    vector<float> pos = {0.0f,
+                         2.0f + tabTopWidth,
+                         2 * (2.0f + tabTopWidth),
+                         3 * (2.0f + tabTopWidth),
+                         4 * (2.0f + tabTopWidth),
+                         5 * (2.0f + tabTopWidth) + 12.0f,
+                         itemTabWidth - tabTopWidth};
+    for (int i = 0; i < 7; i++) {
+        elemClickeable n;
+        n.x1 = posX + pos[i];
+        n.x2 = posX + pos[i] + tabTopWidth;
+        n.y1 = posYTop;
+        n.y2 = posYTop + tabTopHeight;
+        tabTopItemsClickeables.push_back(n);
+    }
+    float posYBot = posY - tabTopHeight + 2;
+    for (int i = 7; i < 14; i++) {
+        if (i == 12)
+            continue;
+        elemClickeable n;
+        n.x1 = posX + pos[i - 7];
+        n.x2 = posX + pos[i - 7] + tabTopWidth;
+        n.y1 = posYBot;
+        n.y2 = posYBot + tabTopHeight;
+        tabTopItemsClickeables.push_back(n);
+    }
+}
+int Screen::isTabTopClicked(int x, int y) {
+    for (int i = 0; i < tabTopItemsClickeables.size(); i++) {
+        if (tabTopItemsClickeables[i].isClickeable(x, y)) {
+            if (i != 12)
+                return i + 1;
+            else
+                return i + 2;
+        }
+    }
+    return -1;
 }
 
 void Screen::poll(float deltaTime) {
@@ -85,9 +132,9 @@ void Screen::poll(float deltaTime) {
             }
             if (inventoryOpen) {
                 if (e.button.button == SDL_BUTTON_LEFT) {
-                    int tabClicked = uiShader->isTabTopClicked(e.button.x, windowHeight - e.button.y);
+                    int tabClicked = isTabTopClicked(e.button.x, windowHeight - e.button.y);
                     if (tabClicked != -1)
-                        tabTopSelected = tabClicked;
+                        tabSelected = tabClicked;
                 }
             }
         }
@@ -183,7 +230,7 @@ void Screen::renderUI() {
         uiShader->drawHotbar(windowWidth, windowHeight, hotbarNumSelected, blocksInHotbar);
     }
     if (inventoryOpen) {
-        uiShader->drawCreativeInventory(windowWidth, windowHeight, itemsInInventory, tabTopSelected, blocksInHotbar);
+        uiShader->drawCreativeInventory(windowWidth, windowHeight, itemsInInventory, tabSelected, blocksInHotbar);
     }
     // Restaurar depth test
     if (depthTest)
@@ -252,7 +299,7 @@ void Screen::renderMenu() { // Todo era para probar la biblioteca, la tengo que 
     // Centrar botones
     ImGui::SetCursorPosX((ImGui::GetWindowWidth() - anchoBoton) * 0.5f);
     if (ImGui::Button("Continuar", ImVec2(anchoBoton, alturaBoton))) {
-        openMenu = false;
+        // openMenu = false;
         // juegoEnPausa = false;
         SDL_SetRelativeMouseMode(SDL_TRUE); // Volver a capturar mouse
     }
