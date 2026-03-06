@@ -42,7 +42,6 @@ class UIShader {
     unsigned int tabTopSelectedLeftTextureID;
     unsigned int tabTopSelectedMidTextureID;
     unsigned int scrollerTextureID;
-    unsigned int scrollerDisabledTextureID;
 
   public:
     UIShader();

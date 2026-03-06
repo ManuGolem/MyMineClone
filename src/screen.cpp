@@ -138,6 +138,17 @@ void Screen::poll(float deltaTime) {
                 }
             }
         }
+        if (e.type == SDL_MOUSEWHEEL) {
+            if (e.wheel.y > 0) {
+                hotbarNumSelected--;
+                if (hotbarNumSelected < 1)
+                    hotbarNumSelected = 9;
+            } else if (e.wheel.y < 0) {
+                hotbarNumSelected++;
+                if (hotbarNumSelected > 9)
+                    hotbarNumSelected = 1;
+            }
+        }
     }
     if (teclado[SDL_SCANCODE_P]) {
         debugMode = true;

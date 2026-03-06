@@ -42,7 +42,7 @@ class Screen {
     bool hotbarVisible = true;
     int hotbarNumSelected = 1;
     bool inventoryOpen = false;
-    vector<int> blocksInHotbar = {2, 4, 2, 0, 0, 0, 0, 0, 0};
+    vector<int> blocksInHotbar = {2, 4, 3, 5, 6, 7, 8, 17, 18};
     vector<int> itemsInInventory = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int tabSelected = 8;
     int crosshairSize = 10;

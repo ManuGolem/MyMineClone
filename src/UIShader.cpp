@@ -1,4 +1,5 @@
 #include "../include/UIShader.h"
+#include "../include/blocksRegistry.h"
 #include "../include/stb_image.h"
 unsigned int UIShader::axesVAO = 0;
 unsigned int UIShader::axesVBO = 0;
@@ -170,10 +171,16 @@ UIShader::UIShader() {
     // Cargar texturas
     loadTexture("../textures/Hotbar.png", hotbarTextureID);
     loadTexture("../textures/Hotbar_selector.png", selectorTextureID);
-    loadTexture("../textures/icons/dirt.png", iconTexturesID[3]);
+
     loadTexture("../textures/icons/stone.png", iconTexturesID[2]);
+    loadTexture("../textures/icons/dirt.png", iconTexturesID[3]);
     loadTexture("../textures/icons/grass_block.png", iconTexturesID[4]);
+    loadTexture("../textures/icons/oak_planks.png", iconTexturesID[5]);
+    loadTexture("../textures/icons/smooth_stone_slab.png", iconTexturesID[6]);
+    loadTexture("../textures/icons/smooth_stone.png", iconTexturesID[7]);
     loadTexture("../textures/icons/bricks.png", iconTexturesID[8]);
+    loadTexture("../textures/icons/cobblestone.png", iconTexturesID[17]);
+    loadTexture("../textures/icons/bedrock.png", iconTexturesID[18]);
     loadTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
     loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
     loadTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);
@@ -198,7 +205,6 @@ UIShader::UIShader() {
     loadTexture("../textures/creativeInventory/tab_bottom_selected_left.png", tabBotSelectedLeftTextureID);
     loadTexture("../textures/creativeInventory/tab_top_selected_middle.png", tabTopSelectedMidTextureID);
     loadTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
-    loadTexture("../textures/creativeInventory/scroller_disabled.png", scrollerDisabledTextureID);
 }
 void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
     glUseProgram(shaderProgram);
@@ -279,7 +285,7 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
     float iconSize = 32;
-    float itemTabWidth = 194.0f * 2.0f;
+    float itemTabWidth = 195.0f * 2.0f;
     float itemTabHeight = 136.0f * 2.0f;
     float posX = (screenWidth - itemTabWidth) / 2.0f;
     float posY = (screenHeight - itemTabHeight) / 2.0f;
@@ -322,6 +328,8 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     // Dibujo tabItem
     if (tabSelected == 7) {
         glBindTexture(GL_TEXTURE_2D, tabItemSearchTextureID);
+    } else if (tabSelected == 14) {
+        glBindTexture(GL_TEXTURE_2D, tabCreativeInventoryTextureID);
     } else { // falta cuando se selecciona el inventario
         glBindTexture(GL_TEXTURE_2D, tabItemsTextureID);
     }
@@ -329,7 +337,19 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     model = glm::scale(model, glm::vec3(itemTabWidth, itemTabHeight, 1.0f));
     glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    // Dibujo tab selected
+    // Dibujar scroll bar
+    if (tabSelected != 14) {
+        int scrollWidth = 24;
+        int scrollHeight = 30;
+        glBindTexture(GL_TEXTURE_2D, scrollerTextureID);
+        int px = posX + 350;
+        int py = posY + 236 - scrollHeight;
+        model = glm::translate(glm::mat4(1.0f), glm::vec3(px, py, 0.0f));
+        model = glm::scale(model, glm::vec3(scrollWidth, scrollHeight, 1.0f));
+        glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
+    //  Dibujo tab selected
     tabTopHeight = 64.0f;
     tabTopWidth = 52.0f;
     float posYTab;
@@ -400,13 +420,37 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
         if (iconTexturesID[blockType] == 0)
             continue;
         glBindTexture(GL_TEXTURE_2D, iconTexturesID[blockType]);
-        float slotX = posX + 2 + i * slotSize;
+        float slotX = posX + 3 + i * slotSize;
         glm::mat4 iconModel = glm::translate(glm::mat4(1.0f), glm::vec3(slotX, posY, 0.0f));
         iconModel = glm::scale(iconModel, glm::vec3(iconSize, iconSize, 1.0f));
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
-    //   Restaurar estado
+    // Draw items existentes(Primero voy a renderizar solo en la pestaña de la brujula asi voy metiendo todos los tipos de bloques existentes)
+    if (tabSelected == 7) {
+        int py = posY + 189;
+        auto& blocks = BlockRegistry::get(Category::All);
+        int cantElemnt = blocks.size();
+        int j = 0;
+        for (int i = 0; i < cantElemnt; i++) {
+            int blockType = blocks[i];
+            if (iconTexturesID[blockType] == 0)
+                continue;
+            glBindTexture(GL_TEXTURE_2D, iconTexturesID[blockType]);
+            float slotX = posX + 3 + j * slotSize;
+            glm::mat4 iconModel = glm::translate(glm::mat4(1.0f), glm::vec3(slotX, py, 0.0f));
+            if (j == 8) {
+                j = 0;
+                py -= slotSize;
+            } else {
+                j++;
+            }
+            iconModel = glm::scale(iconModel, glm::vec3(iconSize, iconSize, 1.0f));
+            glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        }
+    }
+    //    Restaurar estado
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -529,11 +573,14 @@ UIShader::~UIShader() {
     glDeleteTextures(1, &tabItemsTextureID);
     glDeleteTextures(1, &tabTopUnselectedTextureID);
     glDeleteTextures(1, &tabTopSelectedLeftTextureID);
+    glDeleteTextures(1, &tabBotSelectedLeftTextureID);
     glDeleteTextures(1, &tabTopSelectedRightTextureID);
+    glDeleteTextures(1, &tabBotSelectedRightTextureID);
     glDeleteTextures(1, &tabTopSelectedMidTextureID);
+    glDeleteTextures(1, &tabBotSelectedMidTextureID);
     glDeleteTextures(1, &scrollerTextureID);
-    glDeleteTextures(1, &scrollerDisabledTextureID);
-
+    glDeleteTextures(1, &tabCreativeInventoryTextureID);
+    glDeleteTextures(1, &tabItemSearchTextureID);
     // ELIMINAR TODAS LAS TEXTURAS DEL MAPA
     for (auto& pair : iconTexturesID) {
         if (pair.second != 0) {
