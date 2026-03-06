@@ -9,6 +9,15 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 using namespace std;
+struct elemClickeable {
+    int x1;
+    int x2;
+    int y1;
+    int y2;
+    bool isClickeable(int x, int y) {
+        return (x >= x1 && x <= x2 && y >= y1 && y <= y2);
+    }
+};
 class UIShader;
 class Screen {
   private:
@@ -35,10 +44,12 @@ class Screen {
     bool inventoryOpen = false;
     vector<int> blocksInHotbar = {2, 4, 2, 0, 0, 0, 0, 0, 0};
     vector<int> itemsInInventory = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    int tabTopSelected = 1;
+    int tabSelected = 8;
     int crosshairSize = 10;
     float crosshairColor[3] = {1.0f, 1.0f, 1.0f};
     UIShader* uiShader;
+    // UI interact
+    vector<elemClickeable> tabTopItemsClickeables;
 
   public:
     Screen();
@@ -52,6 +63,9 @@ class Screen {
     void resize();
     void renderMenu();
     void renderUI();
+    int isTabTopClicked(int x, int y);
+    void makeClickeableAreas(int width, int height);
+
     void renderDebugAxes(const glm::mat4& view, const glm::mat4& projection);
     void renderBlockOutline(int x, int y, int z);
     bool wasRightClicked() const {
