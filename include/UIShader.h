@@ -5,15 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <vector>
-struct elemClickeable {
-    int x1;
-    int x2;
-    int y1;
-    int y2;
-    bool isClickeable(int x, int y) {
-        return (x >= x1 && x <= x2 && y >= y1 && y <= y2);
-    }
-};
+
 using namespace std;
 class UIShader {
   private:
@@ -39,14 +31,18 @@ class UIShader {
     unordered_map<int, unsigned int> iconTexturesID;
     // Textura creativeInventory
     unsigned int tabItemsTextureID;
+    unsigned int tabItemSearchTextureID;
+    unsigned int tabCreativeInventoryTextureID;
     unsigned int tabTopUnselectedTextureID;
+    unsigned int tabBotUnselectedTextureID;
+    unsigned int tabBotSelectedMidTextureID;
+    unsigned int tabBotSelectedLeftTextureID;
+    unsigned int tabBotSelectedRightTextureID;
     unsigned int tabTopSelectedRightTextureID;
     unsigned int tabTopSelectedLeftTextureID;
     unsigned int tabTopSelectedMidTextureID;
     unsigned int scrollerTextureID;
     unsigned int scrollerDisabledTextureID;
-    // UI interact
-    vector<elemClickeable> tabTopItemsClickeables;
 
   public:
     UIShader();
@@ -67,13 +63,11 @@ class UIShader {
     void drawHotbar(int windowWidth, int windowHeight, int hotbarNumSelected, vector<int> blockTypes);
     void drawCreativeInventory(int windowWidth, int windowHeight, vector<int> itemsInInventory, int tabTopSelected, vector<int> blocksInHotbar);
     void loadTexture(const char* path, unsigned int& textureID);
-    int isTabTopClicked(int x, int y);
     void setColor(float r, float g, float b) {
         glUniform3f(colorLoc, r, g, b);
     }
     unsigned int getProgram() const {
         return shaderProgram;
     }
-    void makeClickeableAreas(int width, int height);
     ~UIShader();
 };
