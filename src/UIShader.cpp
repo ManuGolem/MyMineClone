@@ -414,22 +414,22 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     // Draw items de la hotbar en el inv
     float slotSize = 36.0f;
     posY += 15;
-    posX += 15;
+    posX += 18;
     for (int i = 0; i < blockInHotbar.size(); i++) {
         int blockType = blockInHotbar[i];
         if (iconTexturesID[blockType] == 0)
             continue;
         glBindTexture(GL_TEXTURE_2D, iconTexturesID[blockType]);
-        float slotX = posX + 3 + i * slotSize;
+        float slotX = posX + i * slotSize;
         glm::mat4 iconModel = glm::translate(glm::mat4(1.0f), glm::vec3(slotX, posY, 0.0f));
         iconModel = glm::scale(iconModel, glm::vec3(iconSize, iconSize, 1.0f));
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
     // Draw items existentes(Primero voy a renderizar solo en la pestaña de la brujula asi voy metiendo todos los tipos de bloques existentes)
-    if (tabSelected == 7) {
+    if (tabSelected != 6 && tabSelected != 14) {
         int py = posY + 189;
-        auto& blocks = BlockRegistry::get(Category::All);
+        auto& blocks = BlockRegistry::get(BlockRegistry::getCategory(tabSelected));
         int cantElemnt = blocks.size();
         int j = 0;
         for (int i = 0; i < cantElemnt; i++) {
@@ -437,7 +437,7 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
             if (iconTexturesID[blockType] == 0)
                 continue;
             glBindTexture(GL_TEXTURE_2D, iconTexturesID[blockType]);
-            float slotX = posX + 3 + j * slotSize;
+            float slotX = posX + j * slotSize;
             glm::mat4 iconModel = glm::translate(glm::mat4(1.0f), glm::vec3(slotX, py, 0.0f));
             if (j == 8) {
                 j = 0;
