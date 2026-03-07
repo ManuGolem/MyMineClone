@@ -14,7 +14,7 @@ struct elemClickeable {
     int x2;
     int y1;
     int y2;
-    bool isClickeable(int x, int y) {
+    bool isClickIn(int x, int y) {
         return (x >= x1 && x <= x2 && y >= y1 && y <= y2);
     }
 };
@@ -50,6 +50,7 @@ class Screen {
     UIShader* uiShader;
     // UI interact
     vector<elemClickeable> tabTopItemsClickeables;
+    vector<elemClickeable> hotbarItemsClickeables;
 
   public:
     Screen();
@@ -64,6 +65,7 @@ class Screen {
     void renderMenu();
     void renderUI();
     int isTabTopClicked(int x, int y);
+    int isHotbarItemClicked(int x, int y);
     void makeClickeableAreas(int width, int height);
 
     void renderDebugAxes(const glm::mat4& view, const glm::mat4& projection);
