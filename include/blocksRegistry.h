@@ -21,4 +21,41 @@ class BlockRegistry {
     static const std::vector<int>& get(Category category) {
         return categories.at(category);
     }
+    static const Category getCategory(int num) {
+        if (num == 1) {
+            return Category::BuildingBlocks;
+        }
+        if (num == 2) {
+            return Category::ColoredBlocks;
+        }
+        if (num == 3) {
+            return Category::NaturalBlocks;
+        }
+        if (num == 4) {
+            return Category::FunctionalBlocks;
+        }
+        if (num == 5) {
+            return Category::RedstoneBlocks;
+        }
+        if (num == 7) {
+            return Category::All;
+        }
+        if (num == 8) {
+            return Category::ToolsUtilities;
+        }
+        if (num == 9) {
+            return Category::Combat;
+        }
+        if (num == 10) {
+            return Category::FoodDrinks;
+        }
+        if (num == 11) {
+            return Category::Ingredients;
+        }
+        if (num == 12) {
+            return Category::SpawnEggs;
+        }
+
+        return Category::All;
+    }
 };
