@@ -48,7 +48,7 @@ bool Screen::isRunning() {
     return running;
 }
 void Screen::makeClickeableAreas(int width, int height) {
-    // Primero las del tabItems;
+    // TabItems;
     float itemTabWidth = 194.0f * 2.0f;
     float itemTabHeight = 136.0f * 2.0f;
     float posX = (width - itemTabWidth) / 2.0f;
@@ -82,10 +82,21 @@ void Screen::makeClickeableAreas(int width, int height) {
         n.y2 = posYBot + tabTopHeight;
         tabTopItemsClickeables.push_back(n);
     }
+    // HotbarItems
+    posX += 18;
+    posY += 15;
+    for (int i = 0; i < 9; i++) {
+        elemClickeable n;
+        n.x1 = posX + 36 * i;
+        n.x2 = posX + 32 + 36 * i;
+        n.y1 = posY;
+        n.y2 = posY + 32;
+        hotbarItemsClickeables.push_back(n);
+    }
 }
 int Screen::isTabTopClicked(int x, int y) {
     for (int i = 0; i < tabTopItemsClickeables.size(); i++) {
-        if (tabTopItemsClickeables[i].isClickeable(x, y)) {
+        if (tabTopItemsClickeables[i].isClickIn(x, y)) {
             if (i != 12)
                 return i + 1;
             else
@@ -94,7 +105,14 @@ int Screen::isTabTopClicked(int x, int y) {
     }
     return -1;
 }
-
+int Screen::isHotbarItemClicked(int x, int y) {
+    for (int i = 0; i < hotbarItemsClickeables.size(); i++) {
+        if (hotbarItemsClickeables[i].isClickIn(x, y)) {
+            return i + 1;
+        }
+    }
+    return -1;
+}
 void Screen::poll(float deltaTime) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -133,8 +151,11 @@ void Screen::poll(float deltaTime) {
             if (inventoryOpen) {
                 if (e.button.button == SDL_BUTTON_LEFT) {
                     int tabClicked = isTabTopClicked(e.button.x, windowHeight - e.button.y);
+                    int hotbarClicked = isHotbarItemClicked(e.button.x, windowHeight - e.button.y);
                     if (tabClicked != -1)
                         tabSelected = tabClicked;
+                    if (hotbarClicked != -1)
+                        cout << "Clickeastes : " << blocksInHotbar[hotbarClicked - 1] << endl;
                 }
             }
         }
