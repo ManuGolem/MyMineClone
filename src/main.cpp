@@ -69,7 +69,6 @@ int main() {
                 world.setBlockSafe(blockPos.x, blockPos.y, blockPos.z, block);
             }
         }
-
         if (screen.getRegenerate()) {
             world.deleteWorld();
             world.generateWorldWithPerlin();

@@ -31,7 +31,6 @@ Screen::Screen() {
     glEnable(GL_DEPTH_TEST);
     teclado = SDL_GetKeyboardState(NULL);
     SDL_SetRelativeMouseMode(SDL_TRUE);
-    SDL_GetMouseState(&lastMouseX, &lastMouseY);
     running = true;
     openMenu = false;
     resize();
@@ -108,7 +107,7 @@ int Screen::isTabTopClicked(int x, int y) {
 int Screen::isHotbarItemClicked(int x, int y) {
     for (int i = 0; i < hotbarItemsClickeables.size(); i++) {
         if (hotbarItemsClickeables[i].isClickIn(x, y)) {
-            return i + 1;
+            return i;
         }
     }
     return -1;
@@ -151,11 +150,16 @@ void Screen::poll(float deltaTime) {
             if (inventoryOpen) {
                 if (e.button.button == SDL_BUTTON_LEFT) {
                     int tabClicked = isTabTopClicked(e.button.x, windowHeight - e.button.y);
-                    int hotbarClicked = isHotbarItemClicked(e.button.x, windowHeight - e.button.y);
+                    slotClicked = isHotbarItemClicked(e.button.x, windowHeight - e.button.y);
+                    if (slotClicked != -1) {
+                        itemClicked = blocksInHotbar[slotClicked];
+                    }
                     if (tabClicked != -1)
                         tabSelected = tabClicked;
-                    if (hotbarClicked != -1)
-                        cout << "Clickeastes : " << blocksInHotbar[hotbarClicked - 1] << endl;
+                }
+                if (e.button.button == SDL_BUTTON_RIGHT) {
+                    slotClicked = -1;
+                    itemClicked = 0;
                 }
             }
         }
@@ -263,6 +267,11 @@ void Screen::renderUI() {
     }
     if (inventoryOpen) {
         uiShader->drawCreativeInventory(windowWidth, windowHeight, itemsInInventory, tabSelected, blocksInHotbar);
+        if (slotClicked != -1) {
+            SDL_GetMouseState(&mouseX, &mouseY);
+            uiShader->drawBlockClicked(itemClicked, mouseX, windowHeight - mouseY, windowWidth, windowHeight);
+            blocksInHotbar[slotClicked] = 0;
+        }
     }
     // Restaurar depth test
     if (depthTest)

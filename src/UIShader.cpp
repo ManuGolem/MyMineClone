@@ -274,6 +274,32 @@ void UIShader::loadTexture(const char* path, unsigned int& textureID) {
         stbi_image_free(data);
     }
 }
+void UIShader::drawBlockClicked(int type, float posX, float posY, int screenWidth, int screenHeight) {
+    glUseProgram(uiShaderProgram);
+    glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
+    glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    glm::mat4 view(1.0f);
+    glUniformMatrix4fv(uiViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, iconTexturesID[type]);
+    glUniform1i(uiTextureLoc, 0);
+    glUniform4f(uiColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+    glBindVertexArray(uiVAO);
+    float iconSize = 32;
+    cout << type << endl;
+    glm::mat4 model;
+    model = glm::translate(glm::mat4(1.0f), glm::vec3(posX, posY, 0.0f));
+    model = glm::scale(model, glm::vec3(iconSize, iconSize, 1.0f));
+    glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    //    Restaurar estado
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+}
 void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabSelected, vector<int> blockInHotbar) {
     glUseProgram(uiShaderProgram);
     glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);

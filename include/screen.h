@@ -29,8 +29,8 @@ class Screen {
     bool debugMode = false;
     bool ceroPressed = false;
     const Uint8* teclado;
+    Uint32 mouse;
     int mouseX, mouseY;
-    int lastMouseX, lastMouseY;
     bool openMenu = false;
     bool gameInPause = false;
     bool rightClicked = false;
@@ -45,6 +45,8 @@ class Screen {
     vector<int> blocksInHotbar = {2, 4, 3, 5, 6, 7, 8, 17, 18};
     vector<int> itemsInInventory = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int tabSelected = 8;
+    int itemClicked = 0;
+    int slotClicked = -1;
     int crosshairSize = 10;
     float crosshairColor[3] = {1.0f, 1.0f, 1.0f};
     UIShader* uiShader;
