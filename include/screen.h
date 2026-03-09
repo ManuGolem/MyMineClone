@@ -44,7 +44,7 @@ class Screen {
     bool inventoryOpen = false;
     vector<int> blocksInHotbar = {2, 4, 3, 5, 6, 7, 8, 17, 18};
     vector<int> itemsInInventory = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    int tabSelected = 8;
+    int tabSelected = 1;
     int itemClicked = 0;
     int slotClicked = -1;
     int crosshairSize = 10;
@@ -53,6 +53,9 @@ class Screen {
     // UI interact
     vector<elemClickeable> tabTopItemsClickeables;
     vector<elemClickeable> hotbarItemsClickeables;
+    vector<elemClickeable> invItemsClickeables;
+    vector<vector<elemClickeable>> tabItemsClickeables;
+    elemClickeable tabItemClickeable;
 
   public:
     Screen();
@@ -68,6 +71,7 @@ class Screen {
     void renderUI();
     int isTabTopClicked(int x, int y);
     int isHotbarItemClicked(int x, int y);
+    int isInvItemClicked(int x, int y);
     void makeClickeableAreas(int width, int height);
 
     void renderDebugAxes(const glm::mat4& view, const glm::mat4& projection);
