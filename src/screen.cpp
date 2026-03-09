@@ -1,4 +1,5 @@
 #include "../include/screen.h"
+#include "../include/blocksRegistry.h"
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_scancode.h>
@@ -82,16 +83,49 @@ void Screen::makeClickeableAreas(int width, int height) {
         tabTopItemsClickeables.push_back(n);
     }
     // HotbarItems
-    posX += 18;
-    posY += 15;
+    int posXhotbar = posX + 18;
+    int posYhotbar = posY + 16;
     for (int i = 0; i < 9; i++) {
         elemClickeable n;
-        n.x1 = posX + 36 * i;
-        n.x2 = posX + 32 + 36 * i;
-        n.y1 = posY;
-        n.y2 = posY + 32;
+        n.x1 = posXhotbar + 36 * i;
+        n.x2 = posXhotbar + 32 + 36 * i;
+        n.y1 = posYhotbar;
+        n.y2 = posYhotbar + 32;
         hotbarItemsClickeables.push_back(n);
     }
+    // tabItem (la cuadricula completa)
+    int posYtabItem = posY + 60;
+    tabItemClickeable.x1 = posX;
+    tabItemClickeable.x2 = posX + 324;
+    tabItemClickeable.y1 = posYtabItem;
+    tabItemClickeable.y2 = posYtabItem + 178;
+    //  tab items (cada item)
+    int posYItemInv = posY + 204;
+    int posXItemInv = posXhotbar;
+    int slotSize = 32;
+    int j = 0;
+    for (int i = 0; i < 45; i++) {
+        elemClickeable n;
+        n.x1 = posXItemInv + j * 36;
+        n.x2 = n.x1 + slotSize;
+        n.y1 = posYItemInv;
+        n.y2 = n.y1 + slotSize;
+        if (j == 8) {
+            j = 0;
+            posYItemInv -= 36;
+        } else {
+            j++;
+        }
+        invItemsClickeables.push_back(n);
+    }
+}
+int Screen::isInvItemClicked(int x, int y) {
+    for (int i = 0; i < invItemsClickeables.size(); i++) {
+        if (invItemsClickeables[i].isClickIn(x, y)) {
+            return i;
+        }
+    }
+    return -1;
 }
 int Screen::isTabTopClicked(int x, int y) {
     for (int i = 0; i < tabTopItemsClickeables.size(); i++) {
@@ -151,6 +185,7 @@ void Screen::poll(float deltaTime) {
                 if (e.button.button == SDL_BUTTON_LEFT) {
                     int tabClicked = isTabTopClicked(e.button.x, windowHeight - e.button.y);
                     slotClicked = isHotbarItemClicked(e.button.x, windowHeight - e.button.y);
+                    int itemInvClicked = isInvItemClicked(e.button.x, windowHeight - e.button.y);
                     if (slotClicked != -1) {
                         if (itemClicked == 0) {
                             itemClicked = blocksInHotbar[slotClicked];
@@ -161,14 +196,24 @@ void Screen::poll(float deltaTime) {
                             blocksInHotbar[slotClicked] = swap;
                         }
                     } else {
-                        itemClicked = 0;
+                        if (itemClicked != 0) {
+                            if (tabItemClickeable.isClickIn(e.button.x, windowHeight - e.button.y)) {
+                                itemClicked = 0;
+                            }
+                        }
                     }
+                    if (itemInvClicked != -1) {
+                        if (tabSelected != 13) {
+                            Category categoria = BlockRegistry::getCategory(tabSelected);
+                            vector<int> elems = BlockRegistry::get(categoria);
+                            if (itemInvClicked < elems.size()) {
+                                itemClicked = elems[itemInvClicked];
+                            }
+                        }
+                    }
+
                     if (tabClicked != -1)
                         tabSelected = tabClicked;
-                }
-                if (e.button.button == SDL_BUTTON_RIGHT) {
-                    slotClicked = -1;
-                    itemClicked = 0;
                 }
             }
         }
@@ -276,7 +321,7 @@ void Screen::renderUI() {
     }
     if (inventoryOpen) {
         uiShader->drawCreativeInventory(windowWidth, windowHeight, itemsInInventory, tabSelected, blocksInHotbar);
-        if (slotClicked != -1 && itemClicked != 0) {
+        if (itemClicked != 0) {
             SDL_GetMouseState(&mouseX, &mouseY);
             uiShader->drawBlockClicked(itemClicked, mouseX, windowHeight - mouseY, windowWidth, windowHeight);
         }
