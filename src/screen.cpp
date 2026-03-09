@@ -152,7 +152,16 @@ void Screen::poll(float deltaTime) {
                     int tabClicked = isTabTopClicked(e.button.x, windowHeight - e.button.y);
                     slotClicked = isHotbarItemClicked(e.button.x, windowHeight - e.button.y);
                     if (slotClicked != -1) {
-                        itemClicked = blocksInHotbar[slotClicked];
+                        if (itemClicked == 0) {
+                            itemClicked = blocksInHotbar[slotClicked];
+                            blocksInHotbar[slotClicked] = 0;
+                        } else {
+                            int swap = itemClicked;
+                            itemClicked = blocksInHotbar[slotClicked];
+                            blocksInHotbar[slotClicked] = swap;
+                        }
+                    } else {
+                        itemClicked = 0;
                     }
                     if (tabClicked != -1)
                         tabSelected = tabClicked;
@@ -267,10 +276,9 @@ void Screen::renderUI() {
     }
     if (inventoryOpen) {
         uiShader->drawCreativeInventory(windowWidth, windowHeight, itemsInInventory, tabSelected, blocksInHotbar);
-        if (slotClicked != -1) {
+        if (slotClicked != -1 && itemClicked != 0) {
             SDL_GetMouseState(&mouseX, &mouseY);
             uiShader->drawBlockClicked(itemClicked, mouseX, windowHeight - mouseY, windowWidth, windowHeight);
-            blocksInHotbar[slotClicked] = 0;
         }
     }
     // Restaurar depth test

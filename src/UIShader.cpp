@@ -289,9 +289,8 @@ void UIShader::drawBlockClicked(int type, float posX, float posY, int screenWidt
     glUniform4f(uiColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
     glBindVertexArray(uiVAO);
     float iconSize = 32;
-    cout << type << endl;
     glm::mat4 model;
-    model = glm::translate(glm::mat4(1.0f), glm::vec3(posX, posY, 0.0f));
+    model = glm::translate(glm::mat4(1.0f), glm::vec3(posX - iconSize / 2, posY - iconSize / 2, 0.0f));
     model = glm::scale(model, glm::vec3(iconSize, iconSize, 1.0f));
     glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
