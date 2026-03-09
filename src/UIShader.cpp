@@ -453,7 +453,7 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     }
     // Draw items existentes(Primero voy a renderizar solo en la pestaña de la brujula asi voy metiendo todos los tipos de bloques existentes)
     if (tabSelected != 6 && tabSelected != 14) {
-        int py = posY + 189;
+        int py = posY + 188;
         auto& blocks = BlockRegistry::get(BlockRegistry::getCategory(tabSelected));
         int cantElemnt = blocks.size();
         int j = 0;
