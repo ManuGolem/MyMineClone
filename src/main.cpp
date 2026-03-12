@@ -60,7 +60,9 @@ int main() {
             screen.renderBlockOutline(blockPos.x, blockPos.y, blockPos.z);
             if (screen.wasRightClicked() && colocar) {
                 Block block = screen.getBlockSelected();
-                world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z, block);
+                if (block.type < 256) {
+                    world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z, block);
+                }
             }
             if (screen.wasLeftClicked()) {
                 Block block;
