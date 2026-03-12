@@ -124,19 +124,21 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
                 gcolor = 0.8f;
                 bcolor = 0.3f;
                 columna = 8;
-                fila = 2.0f;
+                fila = 2;
             } else {
                 columna = 2;
-                fila = 0.0f;
+                fila = 0;
             }
-            offsetU = columna * tileSize;
-            offsetV = 1.0f - (fila + 1) * tileSize;
         } else if (tipo_bloque == 21) {
             columna = 5;
             fila = 1;
-            offsetU = columna * tileSize;
-            offsetV = 1.0f - (fila + 1) * tileSize;
+        } else if (tipo_bloque == 36) {
+            columna = 4;
+            fila = 0;
         }
+        offsetU = columna * tileSize;
+        offsetV = 1.0f - (fila + 1) * tileSize;
+
         float yPos = fijo + (direccion == 1 ? 0.0f : -1.0f);
         float x1 = offsetX + r.y1 - 0.5f;
         float x2 = offsetX + r.y2 + 0.5f;
