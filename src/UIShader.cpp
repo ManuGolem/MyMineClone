@@ -179,8 +179,18 @@ UIShader::UIShader() {
     loadTexture("../textures/icons/smooth_stone_slab.png", iconTexturesID[6]);
     loadTexture("../textures/icons/smooth_stone.png", iconTexturesID[7]);
     loadTexture("../textures/icons/bricks.png", iconTexturesID[8]);
+    loadTexture("../textures/icons/tnt.png", iconTexturesID[9]);
+    loadTexture("../textures/icons/water_bucket.png", iconTexturesID[15]);
+    loadTexture("../textures/icons/oak_sapling.png", iconTexturesID[16]);
     loadTexture("../textures/icons/cobblestone.png", iconTexturesID[17]);
     loadTexture("../textures/icons/bedrock.png", iconTexturesID[18]);
+    loadTexture("../textures/icons/oak_log.png", iconTexturesID[21]);
+    loadTexture("../textures/icons/iron_block.png", iconTexturesID[23]);
+    loadTexture("../textures/icons/gold_block.png", iconTexturesID[24]);
+    loadTexture("../textures/icons/diamond_block.png", iconTexturesID[25]);
+    loadTexture("../textures/icons/emerald_block.png", iconTexturesID[26]);
+    loadTexture("../textures/icons/redstone_block.png", iconTexturesID[27]);
+
     loadTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
     loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
     loadTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);
@@ -451,7 +461,7 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
-    // Draw items existentes(Primero voy a renderizar solo en la pestaña de la brujula asi voy metiendo todos los tipos de bloques existentes)
+    // Draw items existentes
     if (tabSelected != 6 && tabSelected != 14) {
         int py = posY + 188;
         auto& blocks = BlockRegistry::get(BlockRegistry::getCategory(tabSelected));
@@ -471,6 +481,28 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
                 j++;
             }
             iconModel = glm::scale(iconModel, glm::vec3(iconSize, iconSize, 1.0f));
+            glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        }
+    }
+    // Draw items in inv
+    if (tabSelected == 14) {
+        int py = posY + 116;
+        int j = 0;
+        for (int i = 0; i < 27; i++) {
+            int blockType = itemsInInventory[i];
+            float slotX = posX + j * slotSize;
+            glm::mat4 iconModel = glm::translate(glm::mat4(1.0f), glm::vec3(slotX, py, 0.0f));
+            if (j == 8) {
+                j = 0;
+                py -= slotSize;
+            } else {
+                j++;
+            }
+            iconModel = glm::scale(iconModel, glm::vec3(iconSize, iconSize, 1.0f));
+            if (iconTexturesID[blockType] == 0)
+                continue;
+            glBindTexture(GL_TEXTURE_2D, iconTexturesID[blockType]);
             glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
