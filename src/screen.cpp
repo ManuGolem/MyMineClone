@@ -116,12 +116,38 @@ void Screen::makeClickeableAreas(int width, int height) {
         } else {
             j++;
         }
+        categoryInvItemsClickeables.push_back(n);
+    }
+    // inventario
+    int posYInv = posY + 132;
+    int posXInv = posXhotbar;
+    j = 0;
+    for (int i = 0; i < 27; i++) {
+        elemClickeable n;
+        n.x1 = posXInv + j * 36;
+        n.x2 = n.x1 + slotSize;
+        n.y1 = posYInv;
+        n.y2 = n.y1 + slotSize;
+        if (j == 8) {
+            j = 0;
+            posYInv -= 36;
+        } else {
+            j++;
+        }
         invItemsClickeables.push_back(n);
     }
 }
 int Screen::isInvItemClicked(int x, int y) {
     for (int i = 0; i < invItemsClickeables.size(); i++) {
         if (invItemsClickeables[i].isClickIn(x, y)) {
+            return i;
+        }
+    }
+    return -1;
+}
+int Screen::isCategoryInvItemClicked(int x, int y) {
+    for (int i = 0; i < categoryInvItemsClickeables.size(); i++) {
+        if (categoryInvItemsClickeables[i].isClickIn(x, y)) {
             return i;
         }
     }
@@ -183,9 +209,14 @@ void Screen::poll(float deltaTime) {
             }
             if (inventoryOpen) {
                 if (e.button.button == SDL_BUTTON_LEFT) {
-                    int tabClicked = isTabTopClicked(e.button.x, windowHeight - e.button.y);
-                    slotClicked = isHotbarItemClicked(e.button.x, windowHeight - e.button.y);
-                    int itemInvClicked = isInvItemClicked(e.button.x, windowHeight - e.button.y);
+                    int posx = e.button.x;
+                    int posy = windowHeight - e.button.y;
+                    // handleInvItemClick(posx,posy);
+                    // handleHotbarClick(posx,posy);
+                    // handleCategoryClick(posx,posy);
+                    int tabClicked = isTabTopClicked(posx, posy);
+                    slotClicked = isHotbarItemClicked(posx, posy);
+                    // Select the item in Hotbar
                     if (slotClicked != -1) {
                         if (itemClicked == 0) {
                             itemClicked = blocksInHotbar[slotClicked];
@@ -196,22 +227,38 @@ void Screen::poll(float deltaTime) {
                             blocksInHotbar[slotClicked] = swap;
                         }
                     } else {
-                        if (itemClicked != 0) {
+                        if (tabSelected != 14 && itemClicked != 0) {
                             if (tabItemClickeable.isClickIn(e.button.x, windowHeight - e.button.y)) {
                                 itemClicked = 0;
                             }
                         }
                     }
-                    if (itemInvClicked != -1) {
-                        if (tabSelected != 13) {
+                    if (tabSelected == 14) {
+                        // Select the item in inventory
+                        int invItemClicked = isInvItemClicked(posx, posy);
+                        if (invItemClicked != -1) {
+                            if (itemClicked == 0) {
+                                itemClicked = itemsInInventory[invItemClicked];
+                                itemsInInventory[invItemClicked] = 0;
+                            } else {
+                                int swap = itemClicked;
+                                itemClicked = itemsInInventory[invItemClicked];
+                                itemsInInventory[invItemClicked] = swap;
+                            }
+                        }
+                    } else {
+                        // Select the item in the category inv
+                        int categoryInvItemClicked = isCategoryInvItemClicked(posx, posy);
+                        if (categoryInvItemClicked != -1) {
                             Category categoria = BlockRegistry::getCategory(tabSelected);
                             vector<int> elems = BlockRegistry::get(categoria);
-                            if (itemInvClicked < elems.size()) {
-                                itemClicked = elems[itemInvClicked];
+                            if (categoryInvItemClicked < elems.size()) {
+                                itemClicked = elems[categoryInvItemClicked];
                             }
                         }
                     }
 
+                    // Change the category
                     if (tabClicked != -1)
                         tabSelected = tabClicked;
                 }
