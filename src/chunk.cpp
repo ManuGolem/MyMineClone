@@ -129,7 +129,7 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
                 columna = 2;
                 fila = 0;
             }
-        } else if (tipo_bloque == 21) {
+        } else if (tipo_bloque == 21) { // Oak_log
             columna = 5;
             fila = 1;
         } else if (tipo_bloque == 36) {
