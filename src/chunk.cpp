@@ -1,7 +1,16 @@
 #include "../include/chunk.h"
+#include "../include/blocksRegistry.h"
 #include "../include/world.h"
+#include <chrono>
+#include <cstdint>
+#include <glm/fwd.hpp>
 #include <memory>
 #include <mutex>
+static int LEAVES_OPAQUE = BlockRegistry::getType("leaves_opaque");
+static int OAK_LEAVES = BlockRegistry::getType("oak_leaves");
+static int GRASS_BLOCK = BlockRegistry::getType("grass_block");
+static int OAK_LOG = BlockRegistry::getType("oak_log");
+static int BOOKSHELF = BlockRegistry::getType("bookshelf");
 bool esTransparent(int type) {
     return (type == 53);
 }
@@ -55,6 +64,7 @@ template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(in
 
 Shader* Chunk::sharedShader = nullptr;
 Chunk::Chunk() : world(nullptr), needsUpdate(true) {
+    memset(blocks, 0, sizeof(blocks));
     if (sharedShader == nullptr) {
         sharedShader = new Shader();
     }
@@ -67,8 +77,7 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     float rcolor = 1.0f;
     float gcolor = 1.0f;
     float bcolor = 1.0f;
-    if (tipo_bloque == 54 || tipo_bloque == 53) {
-        // Leaf
+    if (tipo_bloque == LEAVES_OPAQUE || tipo_bloque == OAK_LEAVES) {
         rcolor = 0.3f;
         gcolor = 0.8f;
         bcolor = 0.3f;
@@ -118,7 +127,7 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     } else if (eje == 1) { // CARAS EN Y
         alto = r.x2 - r.x1 + 1;
         ancho = r.y2 - r.y1 + 1;
-        if (tipo_bloque == 4) {
+        if (tipo_bloque == GRASS_BLOCK) {
             if (direccion == 1) {
                 rcolor = 0.3f;
                 gcolor = 0.8f;
@@ -129,10 +138,10 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
                 columna = 2;
                 fila = 0;
             }
-        } else if (tipo_bloque == 21) { // Oak_log
+        } else if (tipo_bloque == OAK_LOG) {
             columna = 5;
             fila = 1;
-        } else if (tipo_bloque == 36) {
+        } else if (tipo_bloque == BOOKSHELF) {
             columna = 4;
             fila = 0;
         }
@@ -210,6 +219,7 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     vCount += 4;
 }
 void Chunk::generateMesh() {
+    auto start = chrono::high_resolution_clock::now();
     lock_guard<mutex> lock(mutexBlocks);
     std::vector<float> newVertexData;
     std::vector<unsigned int> newIndexData;
@@ -220,28 +230,28 @@ void Chunk::generateMesh() {
         int capasDerechas[256][16] = {0};
         for (int i = 0; i < 256; i++) {
             for (int j = 0; j < 16; j++) {
-                if (blocks[x][i][j].active && blocks[x][i][j].type != 0) {
+                if (blocks[x][i][j] != 0) {
                     int globalX = x + nroChunkX * 16;
                     int globalZ = j + nroChunkZ * 16;
                     // Cara derecha (x+)
                     if (x == 15) {
                         if (world) {
-                            Block block = world->getBlockSafe(globalX + 1, i, globalZ);
-                            if (!block.active || esTransparent(block.type))
-                                capasDerechas[i][j] = blocks[x][i][j].type;
+                            int block = world->getBlockSafe(globalX + 1, i, globalZ);
+                            if (block == 0 || esTransparent(block))
+                                capasDerechas[i][j] = blocks[x][i][j];
                         }
-                    } else if (!blocks[x + 1][i][j].active || esTransparent(blocks[x + 1][i][j].type)) {
-                        capasDerechas[i][j] = blocks[x][i][j].type;
+                    } else if (blocks[x + 1][i][j] == 0 || esTransparent(blocks[x + 1][i][j])) {
+                        capasDerechas[i][j] = blocks[x][i][j];
                     }
                     // Cara izquierda (x-)
                     if (x == 0) {
                         if (world) {
-                            Block block = world->getBlockSafe(globalX - 1, i, globalZ);
-                            if (!block.active || esTransparent(block.type))
-                                capasIzquierdas[i][j] = blocks[x][i][j].type;
+                            int block = world->getBlockSafe(globalX - 1, i, globalZ);
+                            if (block == 0 || esTransparent(block))
+                                capasIzquierdas[i][j] = blocks[x][i][j];
                         }
-                    } else if (!blocks[x - 1][i][j].active || esTransparent(blocks[x - 1][i][j].type)) {
-                        capasIzquierdas[i][j] = blocks[x][i][j].type;
+                    } else if (blocks[x - 1][i][j] == 0 || esTransparent(blocks[x - 1][i][j])) {
+                        capasIzquierdas[i][j] = blocks[x][i][j];
                     }
                 }
             }
@@ -261,14 +271,14 @@ void Chunk::generateMesh() {
         int capasInferiores[16][16] = {0};
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
-                if (blocks[i][y][j].active && blocks[i][y][j].type != 0) {
+                if (blocks[i][y][j] != 0) {
                     // Cara inferior (y-)
-                    if ((y == 0) || !blocks[i][y - 1][j].active || esTransparent(blocks[i][y - 1][j].type)) {
-                        capasInferiores[i][j] = blocks[i][y][j].type;
+                    if ((y == 0) || blocks[i][y - 1][j] == 0 || esTransparent(blocks[i][y - 1][j])) {
+                        capasInferiores[i][j] = blocks[i][y][j];
                     }
                     // Cara superior (y+)
-                    if ((y == 255) || !blocks[i][y + 1][j].active || esTransparent(blocks[i][y + 1][j].type)) {
-                        capasSuperiores[i][j] = blocks[i][y][j].type;
+                    if ((y == 255) || blocks[i][y + 1][j] == 0 || esTransparent(blocks[i][y + 1][j])) {
+                        capasSuperiores[i][j] = blocks[i][y][j];
                     }
                 }
             }
@@ -289,28 +299,28 @@ void Chunk::generateMesh() {
 
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 256; j++) {
-                if (blocks[i][j][z].active) {
+                if (blocks[i][j][z] != 0) {
                     int globalX = i + nroChunkX * 16;
                     int globalZ = z + nroChunkZ * 16;
                     // z+
                     if (z == 15) {
                         if (world) {
-                            Block block = world->getBlockSafe(globalX, j, globalZ + 1);
-                            if (!block.active || esTransparent(block.type))
-                                capasFrontal[i][j] = blocks[i][j][z].type;
+                            int block = world->getBlockSafe(globalX, j, globalZ + 1);
+                            if (block == 0 || esTransparent(block))
+                                capasFrontal[i][j] = blocks[i][j][z];
                         }
-                    } else if (!blocks[i][j][z + 1].active || esTransparent(blocks[i][j][z + 1].type)) {
-                        capasFrontal[i][j] = blocks[i][j][z].type;
+                    } else if (blocks[i][j][z + 1] == 0 || esTransparent(blocks[i][j][z + 1])) {
+                        capasFrontal[i][j] = blocks[i][j][z];
                     }
                     // Cara izquierda (Z-)
                     if (z == 0) {
                         if (world) {
-                            Block block = world->getBlockSafe(globalX, j, globalZ - 1);
-                            if (!block.active || esTransparent(block.type))
-                                capasTrasera[i][j] = blocks[i][j][z].type;
+                            int block = world->getBlockSafe(globalX, j, globalZ - 1);
+                            if (block == 0 || esTransparent(block))
+                                capasTrasera[i][j] = blocks[i][j][z];
                         }
-                    } else if (!blocks[i][j][z - 1].active || esTransparent(blocks[i][j][z - 1].type)) {
-                        capasTrasera[i][j] = blocks[i][j][z].type;
+                    } else if (blocks[i][j][z - 1] == 0 || esTransparent(blocks[i][j][z - 1])) {
+                        capasTrasera[i][j] = blocks[i][j][z];
                     }
                 }
             }
@@ -335,16 +345,18 @@ void Chunk::generateMesh() {
     }
     needsUpdate = false;
     needsBufferUpdate.store(true);
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
+    cout << "Tiempo de chunk entero: " << duration.count() << " micro" << endl;
 }
-void Chunk::setBlock(int x, int y, int z, const Block& block) {
+void Chunk::setBlock(int x, int y, int z, const int& block) {
     lock_guard<mutex> lock(mutexBlocks);
     blocks[x][y][z] = block;
     needsUpdate = true;
 }
-Block Chunk::getBlock(int x, int y, int z) const {
-
+int Chunk::getBlock(int x, int y, int z) const {
     if (x < 0 || x >= 16 || z < 0 || z >= 16) {
-        return Block{false, 0};
+        return 0;
     }
     return blocks[x][y][z];
 }

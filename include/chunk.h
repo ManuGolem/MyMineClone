@@ -2,7 +2,9 @@
 #include "configShader.h"
 #include <atomic>
 #include <cmath>
+#include <cstdint>
 #include <glm/ext/vector_int2.hpp>
+#include <glm/fwd.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <memory>
@@ -10,10 +12,6 @@
 using namespace std;
 using namespace glm;
 class World;
-struct Block {
-    bool active = false;
-    int type = 0;
-};
 struct Rectangulo {
     int x1, x2, y1, y2;
     int tipoBloque = 0;
@@ -22,7 +20,7 @@ struct Rectangulo {
 class Chunk {
   private:
     World* world;
-    Block blocks[16][256][16];
+    int blocks[16][256][16];
     vector<float> vertexData;
     vector<unsigned int> indexData;
     int nroChunkX;
@@ -42,8 +40,8 @@ class Chunk {
     atomic<bool> needsUpdate = true;
     static Shader* sharedShader;
     Chunk();
-    void setBlock(int x, int y, int z, const Block& block);
-    Block getBlock(int x, int y, int z) const;
+    void setBlock(int x, int y, int z, const int& block);
+    int getBlock(int x, int y, int z) const;
     void render();
     bool isEmpty() const;
     void setNroChunk(int, int);
