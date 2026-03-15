@@ -1,5 +1,7 @@
 #include "../include/screen.h"
 #include "../include/world.h"
+#include <glm/fwd.hpp>
+#include <sys/types.h>
 bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFace, bool& colocar) {
     vec3 pos = screen.getCamera().getPosition();
     vec3 front = screen.getCamera().getFront();
@@ -15,11 +17,11 @@ bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFac
         int pz = round(pos.z + front.z * x);
 
         vec3 posibleBloque = {px, py, pz};
-        if (mundo.getBlockSafe(posibleBloque.x, posibleBloque.y, posibleBloque.z).active) {
+        if (mundo.getBlockSafe(posibleBloque.x, posibleBloque.y, posibleBloque.z) != 0) {
             blockFace = {prevx, prevy, prevz};
             blockSelect = posibleBloque;
             encontreBloque = true;
-            if (!mundo.getBlockSafe(blockFace.x, blockFace.y, blockFace.z).active) {
+            if (mundo.getBlockSafe(blockFace.x, blockFace.y, blockFace.z) == 0) {
                 colocar = true;
             }
         }
@@ -59,16 +61,13 @@ int main() {
             //   // Renderizar outline del bloque a mirar
             screen.renderBlockOutline(blockPos.x, blockPos.y, blockPos.z);
             if (screen.wasRightClicked() && colocar) {
-                Block block = screen.getBlockSelected();
-                if (block.type < 256) {
+                int block = screen.getBlockSelected();
+                if (block < 256) {
                     world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z, block);
                 }
             }
             if (screen.wasLeftClicked()) {
-                Block block;
-                block.active = false;
-                block.type = 0;
-                world.setBlockSafe(blockPos.x, blockPos.y, blockPos.z, block);
+                world.setBlockSafe(blockPos.x, blockPos.y, blockPos.z, 0);
             }
         }
         if (screen.getRegenerate()) {

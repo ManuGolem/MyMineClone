@@ -3,6 +3,8 @@
 #include "chunk.h"
 #include <atomic>
 #include <condition_variable>
+#include <cstdint>
+#include <glm/fwd.hpp>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -11,7 +13,7 @@
 #include <utility>
 struct pendingBlock {
     int x, y, z;
-    Block block;
+    int block;
 };
 struct Plane {
     vec3 normal;
@@ -68,8 +70,8 @@ class World {
     void loopCreation();
     void loopMeshHighPriority();
     void loopMeshLowPriority();
-    void setBlockSafe(int x, int y, int z, Block block);
-    Block getBlockSafe(int x, int y, int z);
+    void setBlockSafe(int x, int y, int z, int block);
+    int getBlockSafe(int x, int y, int z);
     void processChunk(int chunkX, int chunkZ, int nivel);
     vector<pendingBlock> getPendingBlocksForChunk(int x, int z);
     ~World();

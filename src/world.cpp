@@ -1,5 +1,7 @@
 #include "../include/world.h"
+#include <cstdint>
 #include <cstdlib>
+#include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <memory>
 #include <mutex>
@@ -22,20 +24,20 @@ World::World() {
 }
 bool World::canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight, int canopyRadius) {
     // Verificar que el suelo es válido (hierba/tierra)
-    Block groundBlock = getBlockSafe(worldX, groundY, worldZ);
-    if (!groundBlock.active || (groundBlock.type != 4 && groundBlock.type != 3)) {
+    int groundBlock = getBlockSafe(worldX, groundY, worldZ);
+    if (groundBlock == 0 || (groundBlock != 4 && groundBlock != 3)) {
         return false;
     }
 
     // Verificar espacio para el tronco (que no haya bloques)
     for (int y = 1; y <= treeHeight; y++) {
-        Block block = getBlockSafe(worldX, groundY + y, worldZ);
-        if (block.active) {
+        int block = getBlockSafe(worldX, groundY + y, worldZ);
+        if (block != 0) {
             return false;
         }
     }
-    Block ceilTrunk = getBlockSafe(worldX, groundY + treeHeight + 1, worldZ);
-    if (ceilTrunk.active) {
+    int ceilTrunk = getBlockSafe(worldX, groundY + treeHeight + 1, worldZ);
+    if (ceilTrunk != 0) {
         return false;
     }
     return true;
@@ -47,10 +49,7 @@ void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
     if (!canPlaceTree(worldX, groundY, worldZ, trunkHeight + 2, leafRadius + 1))
         return;
     for (int y = 0; y < trunkHeight; y++) {
-        Block wood;
-        wood.active = true;
-        wood.type = 21;
-        setBlockSafe(worldX, groundY + y + 1, worldZ, wood);
+        setBlockSafe(worldX, groundY + y + 1, worldZ, 21);
     }
     // Hojas
     for (int y = leafStart; y <= groundY + trunkHeight + 1; y++) {
@@ -67,9 +66,7 @@ void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
                 if (dx == dz && dx == 0 && dy != 1) {
                     continue;
                 }
-                Block leaf;
-                leaf.active = true;
-                leaf.type = 53; // Hojas transparentes
+                int leaf = 53;
 
                 int lx = worldX + dx;
                 int ly = y;
@@ -177,18 +174,17 @@ void World::createChunkSingle(int cx, int cz) {
 
             // Generar columna de bloques
             for (int y = 0; y <= continentalHeight; y++) {
-                Block block;
-                block.active = true;
+                int block;
 
                 // Asignar tipos de bloque según altura
                 if (y == continentalHeight) {
-                    block.type = 4; // Hierba en la superficie
+                    block = 4; // Hierba en la superficie
                 } else if (y >= continentalHeight - 4) {
-                    block.type = 3; // Tierra debajo de la hierba
+                    block = 3; // Tierra debajo de la hierba
                 } else if (y == 0) {
-                    block.type = 18; // Bedrock en el fondo
+                    block = 18; // Bedrock en el fondo
                 } else {
-                    block.type = 2; // Piedra en el resto
+                    block = 2; // Piedra en el resto
                 }
 
                 chunk->setBlock(x, y, z, block);
@@ -197,10 +193,7 @@ void World::createChunkSingle(int cx, int cz) {
             // Si la altura es muy baja, generar agua
             if (continentalHeight < 60) {
                 for (int y = continentalHeight + 1; y <= 60; y++) {
-                    Block waterBlock;
-                    waterBlock.active = true;
-                    waterBlock.type = 15; // Agua
-                    chunk->setBlock(x, y, z, waterBlock);
+                    chunk->setBlock(x, y, z, 15); // agua
                 }
             }
         }
@@ -272,15 +265,13 @@ void World::generateFlatWorld(int width, int depth) {
                         int wordlX = cx * 16 + x;
                         int wordlZ = cz * 16 + z;
                         if (wordlX < width && wordlZ < depth) {
-                            Block block;
-                            block.active = true;
+                            int block;
                             if (y < 64) {
-                                block.type = 2;
+                                block = 2;
                             } else if (y == 64) {
-                                block.type = 2;
+                                block = 2;
                             } else {
-                                block.type = 0;
-                                block.active = false;
+                                block = 0;
                             }
                             chunk.setBlock(x, y, z, block);
                         }
@@ -325,21 +316,18 @@ vector<pendingBlock> World::getPendingBlocksForChunk(int x, int z) {
     }
     return blocks;
 }
-Block World::getBlockSafe(int x, int y, int z) {
+int World::getBlockSafe(int x, int y, int z) {
     ivec2 posChunk = getChunkPos(vec3(x, y, z));
     lock_guard<mutex> lock(mapChunks);
     auto chunk = getChunk(posChunk.x, posChunk.y);
     if (!chunk || y > 255 || y < 0) {
-        Block empty;
-        empty.active = false;
-        empty.type = 0;
-        return empty;
+        return 0;
     }
     int offsetX = chunk->getNroChunkX() * 16;
     int offsetZ = chunk->getNroChunkZ() * 16;
     return chunk->getBlock(x - offsetX, y, z - offsetZ);
 }
-void World::setBlockSafe(int x, int y, int z, Block block) {
+void World::setBlockSafe(int x, int y, int z, int block) {
     ivec2 posChunk = getChunkPos(vec3(x, y, z));
     shared_ptr<Chunk> chunk;
     lock_guard<mutex> lock(mapChunks);
@@ -387,18 +375,17 @@ void World::createChunk(int cx, int cz) {
             int continentalHeight = getTerrainHeight(worldX, worldZ);
             // Generar columna de bloques
             for (int y = 0; y <= continentalHeight; y++) {
-                Block block;
-                block.active = true;
+                int block;
 
                 // Asignar tipos de bloque según altura
                 if (y == continentalHeight) {
-                    block.type = 4; // Hierba en la superficie
+                    block = 4; // Hierba en la superficie
                 } else if (y >= continentalHeight - 4) {
-                    block.type = 3; // Tierra debajo de la hierba
+                    block = 3; // Tierra debajo de la hierba
                 } else if (y == 0) {
-                    block.type = 18; // Bedrock en el fondo
+                    block = 18; // Bedrock en el fondo
                 } else {
-                    block.type = 2; // Piedra en el resto
+                    block = 2; // Piedra en el resto
                 }
 
                 chunk->setBlock(x, y, z, block);
@@ -407,11 +394,7 @@ void World::createChunk(int cx, int cz) {
             // Si la altura es muy baja, generar agua
             if (continentalHeight < 60) {
                 for (int y = continentalHeight; y <= 60; y++) {
-                    Block waterBlock;
-                    waterBlock.active = true;
-                    waterBlock.type = 15; // Agua
-
-                    chunk->setBlock(x, y, z, waterBlock);
+                    chunk->setBlock(x, y, z, 15); // Agua
                 }
             }
         }
@@ -435,7 +418,7 @@ void World::createChunk(int cx, int cz) {
             int groundY = getTerrainHeight(worldX, worldZ);
             uint32_t hash = worldX * 374761393u + worldZ * 668265263u;
             hash = (hash ^ (hash >> 13)) * 1274126177u;
-            if (chunk->getBlock(x, groundY, z).type != 4)
+            if (chunk->getBlock(x, groundY, z) != 4)
                 continue;
             float random = (hash & 0xFFFFFF) / float(0xFFFFFF);
 
@@ -446,10 +429,7 @@ void World::createChunk(int cx, int cz) {
                 int leafStart = groundY + trunkHeight - 2;
 
                 for (int y = 0; y < trunkHeight; y++) {
-                    Block wood;
-                    wood.active = true;
-                    wood.type = 21;
-                    chunk->setBlock(x, groundY + y + 1, z, wood);
+                    chunk->setBlock(x, groundY + y + 1, z, 21); // wood
                 }
 
                 // Hojas
@@ -468,9 +448,7 @@ void World::createChunk(int cx, int cz) {
                             if (dx == dz && dx == 0 && dy != 1) {
                                 continue;
                             }
-                            Block leaf;
-                            leaf.active = true;
-                            leaf.type = 53; // Hojas transparentes
+                            int leaf = 53; // Hojas transparentes
 
                             int localX = x + dx;
                             int localZ = z + dz;

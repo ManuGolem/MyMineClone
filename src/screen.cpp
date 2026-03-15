@@ -3,6 +3,8 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_scancode.h>
+#include <cstdint>
+#include <glm/fwd.hpp>
 
 Screen::Screen() {
     SDL_Init(SDL_INIT_VIDEO);
@@ -339,11 +341,8 @@ void Screen::clear() {
     glClearColor(0.1f, 0.15f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-Block Screen::getBlockSelected() {
-    Block block;
-    block.type = blocksInHotbar[hotbarNumSelected - 1];
-    block.active = block.type != 0;
-    return block;
+int Screen::getBlockSelected() {
+    return blocksInHotbar[hotbarNumSelected - 1];
 }
 void Screen::swap() {
     SDL_GL_SwapWindow(window);

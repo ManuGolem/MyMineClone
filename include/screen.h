@@ -80,7 +80,7 @@ class Screen {
     bool wasRightClicked() const {
         return rightClicked;
     }
-    Block getBlockSelected();
+    int getBlockSelected();
     bool wasLeftClicked() const {
         return leftClicked;
     }
