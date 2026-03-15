@@ -1,8 +1,6 @@
 #include "../include/chunk.h"
 #include "../include/blocksRegistry.h"
 #include "../include/world.h"
-#include <chrono>
-#include <cstdint>
 #include <glm/fwd.hpp>
 #include <memory>
 #include <mutex>
@@ -219,7 +217,6 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     vCount += 4;
 }
 void Chunk::generateMesh() {
-    auto start = chrono::high_resolution_clock::now();
     lock_guard<mutex> lock(mutexBlocks);
     std::vector<float> newVertexData;
     std::vector<unsigned int> newIndexData;
@@ -345,9 +342,6 @@ void Chunk::generateMesh() {
     }
     needsUpdate = false;
     needsBufferUpdate.store(true);
-    auto end = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
-    cout << "Tiempo de chunk entero: " << duration.count() << " micro" << endl;
 }
 void Chunk::setBlock(int x, int y, int z, const int& block) {
     lock_guard<mutex> lock(mutexBlocks);
