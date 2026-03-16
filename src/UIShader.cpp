@@ -190,9 +190,10 @@ UIShader::UIShader() {
     loadTexture("../textures/icons/diamond_block.png", iconTexturesID[25]);
     loadTexture("../textures/icons/emerald_block.png", iconTexturesID[26]);
     loadTexture("../textures/icons/redstone_block.png", iconTexturesID[27]);
+    loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
+    loadTexture("../textures/icons/oak_leaves.png", iconTexturesID[53]);
 
     loadTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
-    loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
     loadTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);
     loadTexture("../textures/icons/redstone.png", iconTexturesID[258]);
     loadTexture("../textures/icons/compass.png", iconTexturesID[259]);
