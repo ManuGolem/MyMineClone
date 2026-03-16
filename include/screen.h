@@ -42,8 +42,8 @@ class Screen {
     bool hotbarVisible = true;
     int hotbarNumSelected = 1;
     bool inventoryOpen = false;
-    vector<int> blocksInHotbar = {2, 4, 3, 5, 6, 7, 8, 17, 18};
-    vector<int> itemsInInventory = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    vector<int> blocksInHotbar = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    vector<int> itemsInInventory = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int tabSelected = 1;
     int itemClicked = 0;
     int slotClicked = -1;
