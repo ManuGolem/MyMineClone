@@ -4,7 +4,6 @@
 #include <glm/fwd.hpp>
 #include <memory>
 #include <mutex>
-static int LEAVES_OPAQUE = BlockRegistry::getType("leaves_opaque");
 static int OAK_LEAVES = BlockRegistry::getType("oak_leaves");
 static int GRASS_BLOCK = BlockRegistry::getType("grass_block");
 static int OAK_LOG = BlockRegistry::getType("oak_log");
@@ -75,7 +74,7 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     float rcolor = 1.0f;
     float gcolor = 1.0f;
     float bcolor = 1.0f;
-    if (tipo_bloque == LEAVES_OPAQUE || tipo_bloque == OAK_LEAVES) {
+    if (tipo_bloque == OAK_LEAVES) {
         rcolor = 0.3f;
         gcolor = 0.8f;
         bcolor = 0.3f;
