@@ -61,7 +61,7 @@ template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(in
 }
 
 Shader* Chunk::sharedShader = nullptr;
-Chunk::Chunk() : world(nullptr), needsUpdate(true) {
+Chunk::Chunk() : world(nullptr), needsUpdate(true), isUpdating(false) {
     memset(blocks, 0, sizeof(blocks));
     if (sharedShader == nullptr) {
         sharedShader = new Shader();
@@ -280,7 +280,7 @@ void Chunk::generateMesh() {
                         capasInferiores[i][j] = blocks[i][y][j];
                     }
                     // Cara superior (y+)
-                    if ((y == 255) || blocks[i][y + 1][j] == 0 || esTransparent(blocks[i][y + 1][j])) {
+                    if ((y == 512) || blocks[i][y + 1][j] == 0 || esTransparent(blocks[i][y + 1][j])) {
                         capasSuperiores[i][j] = blocks[i][y][j];
                     }
                 }
@@ -347,7 +347,7 @@ void Chunk::generateMesh() {
         vertexCount = newVertexCount;
     }
     needsUpdate = false;
-    needsBufferUpdate.store(true);
+    needsBufferUpdate = true;
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     //
@@ -372,14 +372,11 @@ void Chunk::setNroChunk(int chunkx, int chunkz) {
     nroChunkZ = chunkz;
 }
 void Chunk::render() {
-    if (needsBufferUpdate.exchange(false)) {
-        lock_guard<mutex> lock(mutexVertex);
-        if (!vertexData.empty()) {
-            chunkBuffer->uploadData(vertexData, indexData);
-        }
-    }
     if (needsUpdate && !isUpdating) {
         generateMesh();
+    }
+    if (needsBufferUpdate) {
+        lock_guard<mutex> lock(mutexVertex);
         if (!vertexData.empty()) {
             chunkBuffer->uploadData(vertexData, indexData);
         }
