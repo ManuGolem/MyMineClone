@@ -22,34 +22,20 @@ World::World() {
     detailNoise.SetFrequency(0.01f);
     detailNoise.SetFractalOctaves(1);
 }
-bool World::canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight, int canopyRadius) {
-    // Verificar que el suelo es válido (hierba/tierra)
-    int groundBlock = getBlockSafe(worldX, groundY, worldZ);
-    if (groundBlock == 0 || (groundBlock != 4 && groundBlock != 3)) {
-        return false;
-    }
 
-    // Verificar espacio para el tronco (que no haya bloques)
-    for (int y = 1; y <= treeHeight; y++) {
-        int block = getBlockSafe(worldX, groundY + y, worldZ);
-        if (block != 0) {
-            return false;
-        }
-    }
-    int ceilTrunk = getBlockSafe(worldX, groundY + treeHeight + 1, worldZ);
-    if (ceilTrunk != 0) {
-        return false;
-    }
-    return true;
-}
-void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
-    int trunkHeight = 4 + (rand() % 3); // 4–6
+void World::generateTree(shared_ptr<Chunk> chunk, int posX, int groundY, int posZ, int worldX, int worldZ, uint32_t hash, int treeType) {
+    int trunkHeight = 4 + (hash % 3); // 4–6
     int leafRadius = 2;
     int leafStart = groundY + trunkHeight - 2;
-    if (!canPlaceTree(worldX, groundY, worldZ, trunkHeight + 2, leafRadius + 1))
+    if (chunk->getBlock(posX, groundY, posZ) != 4)
         return;
+    for (int y = 1; y <= trunkHeight + 1; y++) {
+        if (chunk->getBlock(posX, groundY + y, posZ) != 0) {
+            return;
+        }
+    }
     for (int y = 0; y < trunkHeight; y++) {
-        setBlockSafe(worldX, groundY + y + 1, worldZ, 21);
+        chunk->setBlock(posX, groundY + y + 1, posZ, 21);
     }
     // Hojas
     for (int y = leafStart; y <= groundY + trunkHeight + 1; y++) {
@@ -68,25 +54,41 @@ void World::generateTree(int worldX, int groundY, int worldZ, int treeType) {
                 }
                 int leaf = 53;
 
-                int lx = worldX + dx;
-                int ly = y;
-                int lz = worldZ + dz;
-
-                ivec2 chunkPos = getChunkPos(vec3(lx, ly, lz));
-                auto chunk = getChunk(chunkPos.x, chunkPos.y);
-
-                int localX = lx - chunkPos.x * 16;
-                int localZ = lz - chunkPos.y * 16;
-                if (chunk) {
-                    chunk->setBlock(localX, ly, localZ, leaf);
+                int localX = posX + dx;
+                int localZ = posZ + dz;
+                if (localX < 0 || localX >= 16 || localZ < 0 || localZ >= 16) {
+                    ivec2 pos = getChunkPos({worldX + dx, y, worldZ + dz});
+                    int chunkX = pos.x;
+                    int chunkZ = pos.y;
+                    int futureLocalX = worldX + dx - chunkX * 16;
+                    int futureLocalZ = worldZ + dz - chunkZ * 16;
+                    shared_ptr<Chunk> chunkFuture;
+                    {
+                        lock_guard<mutex> lock(mapChunks);
+                        chunkFuture = getChunk(pos.x, pos.y);
+                    }
+                    if (chunkFuture) {
+                        chunkFuture->setBlock(futureLocalX, y, futureLocalZ, leaf);
+                        if (!chunkFuture->isUpdating) {
+                            chunkFuture->isUpdating = true;
+                            {
+                                lock_guard<mutex> lock(mutexChunkUpdate);
+                                chunkRequestUpdate.push({pos.x, pos.y});
+                            }
+                            meshCV.notify_one();
+                        }
+                    } else {
+                        pendingBlock futureBlock;
+                        futureBlock.block = leaf;
+                        futureBlock.x = futureLocalX;
+                        futureBlock.y = y;
+                        futureBlock.z = futureLocalZ;
+                        lock_guard<mutex> lock(mutexPendingBlocks);
+                        pendingBlocks[chunkX][chunkZ].push_back(futureBlock);
+                    }
                 } else {
-                    pendingBlock futureBlock;
-                    futureBlock.block = leaf;
-                    futureBlock.x = localX;
-                    futureBlock.y = y;
-                    futureBlock.z = localZ;
-                    lock_guard<mutex> lock(mutexPendingBlocks);
-                    pendingBlocks[chunkPos.x][chunkPos.y].push_back(futureBlock);
+                    if (chunk->getBlock(localX, y, localZ) == 0)
+                        chunk->setBlock(localX, y, localZ, leaf);
                 }
             }
         }
@@ -154,66 +156,6 @@ int World::getTerrainHeight(int worldX, int worldZ) {
         return LAND_HIGH + (int)((PEAK - LAND_HIGH) * t);
     }
 }
-void World::createChunkSingle(int cx, int cz) {
-    auto chunk = make_shared<Chunk>();
-    chunk->chunkBuffer = make_unique<ChunkBuffer>();
-    chunk->setNroChunk(cx, cz);
-    chunk->setWorld(this);
-    // Generar terreno
-    for (int x = 0; x < 16; x++) {
-        for (int z = 0; z < 16; z++) {
-            int worldX = cx * 16 + x;
-            int worldZ = cz * 16 + z;
-
-            int continentalHeight = getTerrainHeight(worldX, worldZ);
-
-            // Generar columna de bloques
-            for (int y = 0; y <= continentalHeight; y++) {
-                int block;
-
-                // Asignar tipos de bloque según altura
-                if (y == continentalHeight) {
-                    block = 4; // Hierba en la superficie
-                } else if (y >= continentalHeight - 4) {
-                    block = 3; // Tierra debajo de la hierba
-                } else if (y == 0) {
-                    block = 18; // Bedrock en el fondo
-                } else {
-                    block = 2; // Piedra en el resto
-                }
-
-                chunk->setBlock(x, y, z, block);
-            }
-
-            // Si la altura es muy baja, generar agua
-            if (continentalHeight < 60) {
-                for (int y = continentalHeight + 1; y <= 60; y++) {
-                    chunk->setBlock(x, y, z, 15); // agua
-                }
-            }
-        }
-    }
-    chunks[cx][cz] = std::move(chunk);
-    for (int x = 0; x < 16; x++) {
-        for (int z = 0; z < 16; z++) {
-            int worldX = cx * 16 + x;
-            int worldZ = cz * 16 + z;
-
-            // Obtener altura del terreno en esta posición
-            int groundY = getTerrainHeight(worldX, worldZ);
-            uint32_t hash = worldX * 374761393u + worldZ * 668265263u;
-            hash = (hash ^ (hash >> 13)) * 1274126177u;
-
-            float random = (hash & 0xFFFFFF) / float(0xFFFFFF);
-
-            if (random < 0.002f) {
-                generateTree(worldX, groundY, worldZ, 0);
-            }
-        }
-    }
-    auto chunkReal = getChunk(cx, cz);
-    chunkReal->generateMesh();
-}
 void World::generateWorldWithPerlin() {
     srand(time(NULL));
     int newSeed1 = rand();
@@ -241,8 +183,7 @@ void World::generateWorldWithPerlin() {
 
     float gain = 0.3f + (rand() % 40) / 100.0f;
     terrainNoise.SetFractalGain(gain);
-
-    createChunkSingle(0, 0);
+    createChunk(0, 0);
 }
 
 void World::generateFlatWorld(int width, int depth) {
@@ -256,7 +197,7 @@ void World::generateFlatWorld(int width, int depth) {
             chunk.setWorld(this);
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
-                    for (int y = 0; y < 255; y++) {
+                    for (int y = 0; y < 512; y++) {
                         int wordlX = cx * 16 + x;
                         int wordlZ = cz * 16 + z;
                         if (wordlX < width && wordlZ < depth) {
@@ -315,7 +256,7 @@ int World::getBlockSafe(int x, int y, int z) {
     ivec2 posChunk = getChunkPos(vec3(x, y, z));
     lock_guard<mutex> lock(mapChunks);
     auto chunk = getChunk(posChunk.x, posChunk.y);
-    if (!chunk || y > 255 || y < 0) {
+    if (!chunk || y > 512 || y < 0) {
         return 0;
     }
     int offsetX = chunk->getNroChunkX() * 16;
@@ -394,6 +335,7 @@ void World::createChunk(int cx, int cz) {
             }
         }
     }
+    // Cargar hojas pendientes de chunks vecinos.
     vector<pendingBlock> leafs;
     {
         lock_guard<mutex> lock(mutexPendingBlocks);
@@ -402,8 +344,10 @@ void World::createChunk(int cx, int cz) {
     while (!leafs.empty()) {
         pendingBlock leaf = std::move(leafs.back());
         leafs.pop_back();
-        chunk->setBlock(leaf.x, leaf.y, leaf.z, leaf.block);
+        if (chunk->getBlock(leaf.x, leaf.y, leaf.z) == 0)
+            chunk->setBlock(leaf.x, leaf.y, leaf.z, leaf.block);
     }
+    // Generar arboles.
     for (int x = 0; x < 16; x++) {
         for (int z = 0; z < 16; z++) {
             int worldX = cx * 16 + x;
@@ -411,70 +355,13 @@ void World::createChunk(int cx, int cz) {
 
             // Obtener altura del terreno en esta posición
             int groundY = getTerrainHeight(worldX, worldZ);
-            uint32_t hash = worldX * 374761393u + worldZ * 668265263u;
-            hash = (hash ^ (hash >> 13)) * 1274126177u;
-            if (chunk->getBlock(x, groundY, z) != 4)
-                continue;
+            // Para hacerlo "aleatorio" multiplico por un primo de 9 digitos y despues mezclo bajos con altos (XOR).
+            uint32_t hash = worldX * 475363961u + worldZ * 374761393u;
+            hash = (hash ^ (hash >> 16)) * 1274126177u;
             float random = (hash & 0xFFFFFF) / float(0xFFFFFF);
 
-            if (random < 0.002f) {                // 0.2% probabilidad
-                int trunkHeight = 4 + (hash % 3); // 4–6
-
-                int leafRadius = 2;
-                int leafStart = groundY + trunkHeight - 2;
-
-                for (int y = 0; y < trunkHeight; y++) {
-                    chunk->setBlock(x, groundY + y + 1, z, 21); // wood
-                }
-
-                // Hojas
-                for (int y = leafStart; y <= groundY + trunkHeight + 1; y++) {
-                    int dy = y - (groundY + trunkHeight);
-                    int currentRadius = leafRadius - abs(dy);
-                    for (int dx = -currentRadius; dx <= currentRadius; dx++) {
-                        for (int dz = -currentRadius; dz <= currentRadius; dz++) {
-                            float dist = sqrt(dx * dx + dz * dz + dy * dy);
-                            if (dist > leafRadius + 0.5f)
-                                continue;
-                            // esquinas con probabilidad para hacerlo más
-                            // orgánico
-                            if (abs(dx) == currentRadius && abs(dz) == currentRadius && hash % 100 < 40)
-                                continue;
-                            if (dx == dz && dx == 0 && dy != 1) {
-                                continue;
-                            }
-                            int leaf = 53; // Hojas transparentes
-
-                            int localX = x + dx;
-                            int localZ = z + dz;
-                            if (localX < 0 || localX >= 16 || localZ < 0 || localZ >= 16) {
-                                ivec2 pos = getChunkPos({worldX + dx, y, worldZ + dz});
-                                int chunkX = pos.x;
-                                int chunkZ = pos.y;
-                                int futureLocalX = worldX + dx - chunkX * 16;
-                                int futureLocalZ = worldZ + dz - chunkZ * 16;
-                                shared_ptr<Chunk> chunkFuture;
-                                {
-                                    lock_guard<mutex> lock(mapChunks);
-                                    chunkFuture = getChunk(pos.x, pos.y);
-                                }
-                                if (chunkFuture) {
-                                    chunkFuture->setBlock(futureLocalX, y, futureLocalZ, leaf);
-                                } else {
-                                    pendingBlock futureBlock;
-                                    futureBlock.block = leaf;
-                                    futureBlock.x = futureLocalX;
-                                    futureBlock.y = y;
-                                    futureBlock.z = futureLocalZ;
-                                    lock_guard<mutex> lock(mutexPendingBlocks);
-                                    pendingBlocks[chunkX][chunkZ].push_back(futureBlock);
-                                }
-                            } else {
-                                chunk->setBlock(localX, y, localZ, leaf);
-                            }
-                        }
-                    }
-                }
+            if (random < 0.002f) { // 0.2% probabilidad
+                generateTree(chunk, x, groundY, z, worldX, worldZ, hash, 0);
             }
         }
     }
@@ -549,7 +436,7 @@ bool isBoxVisible(const Plane planes[6], const vec3& min, const vec3& max) {
 
     return true;
 }
-void World::insertChunks(Plane planes[6]) {
+void World::insertChunks() {
     unique_lock<mutex> lockResult(mutexChunkResult);
     lock_guard<mutex> lockMap(mapChunks);
 
@@ -570,19 +457,12 @@ void World::insertChunks(Plane planes[6]) {
                         chunk->chunkBuffer = make_unique<ChunkBuffer>();
                     }
                     if (!chunk->isUpdating) {
-                        chunk->needsUpdate = true;
                         chunk->isUpdating = true;
-                        vec3 min(nx << 4, 0, nz << 4);
-                        vec3 max(min.x + 15, 512, min.z + 15);
-                        if (isBoxVisible(planes, min, max)) {
-                            {
-                                lock_guard<mutex> lock(mutexChunkUpdate);
-                                chunkRequestUpdate.push({nx, nz});
-                            }
-                            meshCV.notify_one();
-                        } else {
-                            continue;
+                        {
+                            lock_guard<mutex> lock(mutexChunkUpdate);
+                            chunkRequestUpdate.push({nx, nz});
                         }
+                        meshCV.notify_one();
                     }
                 }
             }
@@ -602,7 +482,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
     mat4 vp = projection * view;
     Plane planes[6];
     extractFrustumPlanes(planes, vp);
-    insertChunks(planes);
+    insertChunks();
     for (int nivel = 0; nivel <= generateDist; nivel++) {
         if (nivel == 0) {
             int chunkX = centerChunk.x;
