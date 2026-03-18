@@ -54,15 +54,13 @@ class World {
     shared_ptr<Chunk> getChunk(int chunkX, int chunkZ);
     void generateFlatWorld(int width, int depth);
     void generateWorldWithPerlin();
-    void insertChunks(Plane planes[6]);
+    void insertChunks();
     void render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection);
     int getTerrainHeight(int worldX, int worldZ);
     void deleteWorld();
     void createChunk(int, int);
-    void createChunkSingle(int, int);
     void update();
-    void generateTree(int x, int y, int z, int treeType);
-    bool canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight, int canopyRadius);
+    void generateTree(shared_ptr<Chunk> chunk, int x, int y, int z, int wx, int wz, uint32_t hash, int treeType);
     void startCreationThread();
     void loopCreation();
     void loopMesh();
