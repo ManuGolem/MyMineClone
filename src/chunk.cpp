@@ -1,6 +1,7 @@
 #include "../include/chunk.h"
 #include "../include/blocksRegistry.h"
 #include "../include/world.h"
+#include <chrono>
 #include <glm/fwd.hpp>
 #include <memory>
 #include <mutex>
@@ -215,20 +216,26 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     }
     vCount += 4;
 }
+void Chunk::generateMeshTest() {
+    auto start = std::chrono::high_resolution_clock::now();
+}
 void Chunk::generateMesh() {
+    auto start = std::chrono::high_resolution_clock::now();
     lock_guard<mutex> lock(mutexBlocks);
     std::vector<float> newVertexData;
     std::vector<unsigned int> newIndexData;
     unsigned int newVertexCount = 0;
     // CARAS EN X
+    int baseX = nroChunkX * 16;
+    int baseZ = nroChunkZ * 16;
     for (int x = 0; x < 16; x++) {
-        int capasIzquierdas[256][16] = {0};
-        int capasDerechas[256][16] = {0};
-        for (int i = 0; i < 256; i++) {
+        int capasIzquierdas[512][16] = {0};
+        int capasDerechas[512][16] = {0};
+        for (int i = 0; i < 512; i++) {
             for (int j = 0; j < 16; j++) {
                 if (blocks[x][i][j] != 0) {
-                    int globalX = x + nroChunkX * 16;
-                    int globalZ = j + nroChunkZ * 16;
+                    int globalX = x + baseX;
+                    int globalZ = j + baseZ;
                     // Cara derecha (x+)
                     if (x == 15) {
                         if (world) {
@@ -262,7 +269,7 @@ void Chunk::generateMesh() {
             cargarVertices(r, 0, -1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
     }
-    for (int y = 0; y < 256; y++) {
+    for (int y = 0; y < 512; y++) {
         int capasSuperiores[16][16] = {0};
         int capasInferiores[16][16] = {0};
         for (int i = 0; i < 16; i++) {
@@ -290,14 +297,14 @@ void Chunk::generateMesh() {
         }
     }
     for (int z = 0; z < 16; z++) {
-        int capasFrontal[16][256] = {0};
-        int capasTrasera[16][256] = {0};
+        int capasFrontal[16][512] = {0};
+        int capasTrasera[16][512] = {0};
 
         for (int i = 0; i < 16; i++) {
-            for (int j = 0; j < 256; j++) {
+            for (int j = 0; j < 512; j++) {
                 if (blocks[i][j][z] != 0) {
-                    int globalX = i + nroChunkX * 16;
-                    int globalZ = z + nroChunkZ * 16;
+                    int globalX = i + baseX;
+                    int globalZ = z + baseZ;
                     // z+
                     if (z == 15) {
                         if (world) {
@@ -341,6 +348,10 @@ void Chunk::generateMesh() {
     }
     needsUpdate = false;
     needsBufferUpdate.store(true);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    //
+    // std::cout << "generateMesh() tomó: " << duration.count() << " µs (" << duration.count() / 1000.0 << " ms)" << std::endl;
 }
 void Chunk::setBlock(int x, int y, int z, const int& block) {
     lock_guard<mutex> lock(mutexBlocks);

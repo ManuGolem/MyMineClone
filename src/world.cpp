@@ -103,14 +103,12 @@ int World::getTerrainHeight(int worldX, int worldZ) {
     float nErosion = (erosion + 1.0f) * 0.5f;
     float nDetail = (detail + 1.0f) * 0.5f;
 
-    // 1. CURVA DE DISTRIBUCIÓN para tener más control
-    // Esto hace que los valores alrededor de 0.5 sean más comunes
     float shaped;
     if (nContinent < 0.3f) {
         // Océanos (30% del mapa)
-        shaped = nContinent * 0.4f; // Comprime océanos
+        shaped = nContinent * 0.4f;
     } else if (nContinent < 0.7f) {
-        // Tierras (40% del mapa) - EXPANDIMOS este rango
+        // Tierras (40% del mapa)
         float t = (nContinent - 0.3f) / 0.4f;
         shaped = 0.12f + t * 0.56f; // Mapea a [0.12, 0.68]
     } else {
@@ -119,20 +117,17 @@ int World::getTerrainHeight(int worldX, int worldZ) {
         shaped = 0.68f + t * 0.32f; // Mapea a [0.68, 1.0]
     }
 
-    // 2. AÑADIR EROSIÓN (20% influencia)
     float withErosion = shaped * 0.8f + nErosion * 0.2f;
 
-    // 3. AÑADIR DETALLE (10% influencia)
     float finalNoise = withErosion * 0.9f + nDetail * 0.1f;
 
-    // 4. MAPEO A ALTURAS MÁS REALISTAS
-    const int OCEAN_FLOOR = 38;   // Fondo marino
-    const int SHALLOW_WATER = 54; // Aguas poco profundas
-    const int BEACH = 58;         // Costa
-    const int LAND_LOW = 62;      // Tierra baja
-    const int LAND_MID = 75;      // Colinas suaves
-    const int LAND_HIGH = 100;    // Montañas
-    const int PEAK = 170;         // Picos
+    const int OCEAN_FLOOR = 38;
+    const int SHALLOW_WATER = 54;
+    const int BEACH = 64;
+    const int LAND_LOW = 85;
+    const int LAND_MID = 150;
+    const int LAND_HIGH = 300;
+    const int PEAK = 480;
 
     if (finalNoise < 0.12f) {
         // Océano profundo
@@ -578,20 +573,15 @@ void World::insertChunks(Plane planes[6]) {
                         chunk->needsUpdate = true;
                         chunk->isUpdating = true;
                         vec3 min(nx << 4, 0, nz << 4);
-                        vec3 max(min.x + 15, 256, min.z + 15);
-                        int cantChunkHigh = 0;
+                        vec3 max(min.x + 15, 512, min.z + 15);
                         if (isBoxVisible(planes, min, max)) {
                             {
-                                lock_guard<mutex> lock(mutexChunkUpdateHighRequest);
-                                chunkRequestUpdateHighQueue.push({nx, nz});
+                                lock_guard<mutex> lock(mutexChunkUpdate);
+                                chunkRequestUpdate.push({nx, nz});
                             }
-                            meshHighCV.notify_one();
+                            meshCV.notify_one();
                         } else {
-                            {
-                                lock_guard<mutex> lock(mutexChunkUpdateLowRequest);
-                                chunkRequestUpdateLowQueue.push({nx, nz});
-                            }
-                            meshLowCV.notify_one();
+                            continue;
                         }
                     }
                 }
@@ -602,7 +592,7 @@ void World::insertChunks(Plane planes[6]) {
 }
 void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
     ivec2 centerChunk = getChunkPos(cameraPos);
-    int renderDist = 10;
+    int renderDist = 32;
     int generateDist = renderDist + 3;
     int cantChunks = 0;
     int maxChunksPerFrame = 1;
@@ -648,7 +638,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
                 int chunkX = centerChunk.x + x;
                 int chunkZ = centerChunk.y + z;
                 vec3 min(chunkX << 4, 0, chunkZ << 4);
-                vec3 max(min.x + 15, 256, min.z + 15);
+                vec3 max(min.x + 15, 512, min.z + 15);
                 if (isBoxVisible(planes, min, max)) {
                     shared_ptr<Chunk> chunk;
                     {
@@ -698,8 +688,10 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
 
 void World::startCreationThread() {
     creationThread = thread(&World::loopCreation, this);
-    meshThread = thread(&World::loopMeshHighPriority, this);
-    meshThread2 = thread(&World::loopMeshLowPriority, this);
+    meshThread = thread(&World::loopMesh, this);
+    meshThread2 = thread(&World::loopMesh, this);
+    meshThread3 = thread(&World::loopMesh, this);
+    meshThread4 = thread(&World::loopMesh, this);
 }
 void World::loopCreation() {
     while (threadRunning) {
@@ -713,36 +705,15 @@ void World::loopCreation() {
         createChunk(x, z);
     }
 }
-void World::loopMeshHighPriority() {
+void World::loopMesh() {
     while (threadRunning) {
-        unique_lock<mutex> lock(mutexChunkUpdateHighRequest);
-        meshHighCV.wait(lock, [this] { return !chunkRequestUpdateHighQueue.empty() || !threadRunning; });
+        unique_lock<mutex> lock(mutexChunkUpdate);
+        meshCV.wait(lock, [this] { return !chunkRequestUpdate.empty() || !threadRunning; });
         if (!threadRunning)
             break;
 
-        auto [x, z] = chunkRequestUpdateHighQueue.front();
-        chunkRequestUpdateHighQueue.pop();
-        lock.unlock();
-        shared_ptr<Chunk> chunk;
-        {
-            lock_guard<mutex> lock(mapChunks);
-            chunk = getChunk(x, z);
-        }
-        if (chunk) {
-            chunk->generateMesh();
-            chunk->isUpdating = false;
-        }
-    }
-}
-void World::loopMeshLowPriority() {
-    while (threadRunning) {
-        unique_lock<mutex> lock(mutexChunkUpdateLowRequest);
-        meshLowCV.wait(lock, [this] { return !chunkRequestUpdateLowQueue.empty() || !threadRunning; });
-        if (!threadRunning)
-            break;
-
-        auto [x, z] = chunkRequestUpdateLowQueue.front();
-        chunkRequestUpdateLowQueue.pop();
+        auto [x, z] = chunkRequestUpdate.front();
+        chunkRequestUpdate.pop();
         lock.unlock();
         shared_ptr<Chunk> chunk;
         {
@@ -760,8 +731,7 @@ void World::update() {
 World::~World() {
     threadRunning = false;
     RequestCV.notify_one();
-    meshHighCV.notify_one();
-    meshLowCV.notify_one();
+    meshCV.notify_one();
     if (creationThread.joinable()) {
         creationThread.join();
     }
@@ -770,5 +740,11 @@ World::~World() {
     }
     if (meshThread2.joinable()) {
         meshThread2.join();
+    }
+    if (meshThread3.joinable()) {
+        meshThread3.join();
+    }
+    if (meshThread4.joinable()) {
+        meshThread4.join();
     }
 }

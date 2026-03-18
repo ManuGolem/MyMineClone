@@ -20,7 +20,7 @@ struct Rectangulo {
 class Chunk {
   private:
     World* world;
-    int blocks[16][256][16];
+    int blocks[16][512][16];
     vector<float> vertexData;
     vector<unsigned int> indexData;
     int nroChunkX;
@@ -28,9 +28,6 @@ class Chunk {
     int vertexCount;
     mutex mutexVertex;
     atomic<bool> needsBufferUpdate{true};
-    Rectangulo processFaceX(int x, int i, int j, bool (&procesado)[256][16], int globalX, int globalZ, int tipoActual, int dir);
-    Rectangulo processFaceZ(int z, int i, int j, bool (&procesado)[16][256], int globalX, int globalZ, int tipoActual, int dir);
-    Rectangulo processFaceY(int y, int i, int j, bool (&procesado)[16][16], int tipoActual, int dir);
     void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int tipoBloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount);
 
   public:
@@ -46,6 +43,7 @@ class Chunk {
     bool isEmpty() const;
     void setNroChunk(int, int);
     void generateMesh();
+    void generateMeshTest();
     int getNroChunkX() const {
         return nroChunkX;
     }

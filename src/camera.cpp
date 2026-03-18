@@ -2,7 +2,7 @@
 #include <glm/ext/matrix_clip_space.hpp>
 
 Camera::Camera() {
-    position = vec3(1.0f, 70.0f, 3.0f);
+    position = vec3(1.0f, 80.0f, 3.0f);
     worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     yaw = -90.0f;
     pitch = 45.0f;

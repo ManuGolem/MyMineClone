@@ -30,6 +30,8 @@ class World {
     thread creationThread;
     thread meshThread;
     thread meshThread2;
+    thread meshThread3;
+    thread meshThread4;
     atomic<bool> threadRunning = true;
 
   public:
@@ -38,20 +40,15 @@ class World {
     mutex mutexPendingBlocks;
     mutex mutexChunkResult;
     mutex mutexChunkRequest;
-    mutex mutexChunkUpdateLowRequest;
-    mutex mutexChunkUpdateHighRequest;
-    queue<pair<int, int>> chunkRequestQueue;           // cola de chunks listos para insertar
-    queue<pair<int, int>> chunkRequestUpdateLowQueue;  // cola de chunks para generar la mesh de
-                                                       // forma secundaria
-    queue<pair<int, int>> chunkRequestUpdateHighQueue; // cola de chunks para generar mesh que estan
-                                                       // en el frustrum de la camara
+    mutex mutexChunkUpdate;
+    queue<pair<int, int>> chunkRequestQueue;  // cola de chunks listos para insertar
+    queue<pair<int, int>> chunkRequestUpdate; // cola de chunks para generar mesh
     set<pair<int, int>> requestedChunks;
     mutex setUpdateChunk;
     mutex setChunkRequestMutex;
     queue<shared_ptr<Chunk>> chunkResultQueue;
     condition_variable RequestCV;
-    condition_variable meshHighCV;
-    condition_variable meshLowCV;
+    condition_variable meshCV;
     World();
     ivec2 getChunkPos(vec3 worldPos);
     shared_ptr<Chunk> getChunk(int chunkX, int chunkZ);
@@ -68,8 +65,7 @@ class World {
     bool canPlaceTree(int worldX, int groundY, int worldZ, int treeHeight, int canopyRadius);
     void startCreationThread();
     void loopCreation();
-    void loopMeshHighPriority();
-    void loopMeshLowPriority();
+    void loopMesh();
     void setBlockSafe(int x, int y, int z, int block);
     int getBlockSafe(int x, int y, int z);
     void processChunk(int chunkX, int chunkZ, int nivel);
