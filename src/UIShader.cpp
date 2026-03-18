@@ -184,6 +184,7 @@ UIShader::UIShader() {
     loadTexture("../textures/icons/oak_sapling.png", iconTexturesID[16]);
     loadTexture("../textures/icons/cobblestone.png", iconTexturesID[17]);
     loadTexture("../textures/icons/bedrock.png", iconTexturesID[18]);
+    loadTexture("../textures/icons/sand.png", iconTexturesID[19]);
     loadTexture("../textures/icons/oak_log.png", iconTexturesID[21]);
     loadTexture("../textures/icons/iron_block.png", iconTexturesID[23]);
     loadTexture("../textures/icons/gold_block.png", iconTexturesID[24]);
@@ -192,6 +193,7 @@ UIShader::UIShader() {
     loadTexture("../textures/icons/redstone_block.png", iconTexturesID[27]);
     loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
     loadTexture("../textures/icons/oak_leaves.png", iconTexturesID[53]);
+    loadTexture("../textures/icons/snow_block.png", iconTexturesID[67]);
 
     loadTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
     loadTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);

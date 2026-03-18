@@ -15,6 +15,12 @@ struct pendingBlock {
     int x, y, z;
     int block;
 };
+enum BiomeType {
+    ocean,
+    mountains,
+    plains,
+    desert,
+};
 struct Plane {
     vec3 normal;
     float d;
@@ -26,6 +32,8 @@ class World {
     FastNoiseLite terrainNoise;
     FastNoiseLite erosionNoise;
     FastNoiseLite detailNoise;
+    FastNoiseLite temperatureNoise;
+    FastNoiseLite humidityNoise;
     ivec2 chunkAnterior = ivec2(9999, 9999);
     thread creationThread;
     thread meshThread;
@@ -57,6 +65,7 @@ class World {
     void insertChunks();
     void render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection);
     int getTerrainHeight(int worldX, int worldZ);
+    BiomeType getBiome(int worldX, int worldZ, int height);
     void deleteWorld();
     void createChunk(int, int);
     void update();

@@ -1,4 +1,5 @@
 #include "../include/world.h"
+#include "../include/blocksRegistry.h"
 #include <cstdint>
 #include <cstdlib>
 #include <glm/fwd.hpp>
@@ -7,7 +8,7 @@
 #include <mutex>
 #include <thread>
 World::World() {
-    // Configurar ruidos
+    // Configurar ruidos para altura
     terrainNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     terrainNoise.SetFrequency(0.02f);
     terrainNoise.SetFractalType(FastNoiseLite::FractalType_FBm);
@@ -21,6 +22,12 @@ World::World() {
     detailNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     detailNoise.SetFrequency(0.01f);
     detailNoise.SetFractalOctaves(1);
+
+    // Configurar ruidos para biomas
+    temperatureNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    temperatureNoise.SetFrequency(0.0005f);
+    humidityNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    humidityNoise.SetFrequency(0.0008f);
 }
 
 void World::generateTree(shared_ptr<Chunk> chunk, int posX, int groundY, int posZ, int worldX, int worldZ, uint32_t hash, int treeType) {
@@ -94,6 +101,36 @@ void World::generateTree(shared_ptr<Chunk> chunk, int posX, int groundY, int pos
         }
     }
 }
+BiomeType World::getBiome(int worldX, int worldZ, int height) {
+    float rawTemp = temperatureNoise.GetNoise((float)worldX, (float)worldZ);
+    float rawHumidity = humidityNoise.GetNoise((float)worldX, (float)worldZ);
+    float temp = (rawTemp + 1.0f) * 0.5f;
+    float hum = (rawHumidity + 1.0f) * 0.5f;
+
+    // Aca diminuyo temperatura con la altura
+    float tempHeight = height / 500.0f;
+    temp -= tempHeight * 0.4f;
+    hum -= tempHeight * 0.2f;
+    if (height > 350) {
+        return mountains;
+    } else if (height < 62) {
+        return ocean;
+    }
+    // Valores totalmente de prueba
+    if (temp < 0.2f) {
+        if (hum < 0.4f)
+            return mountains;
+        else
+            return plains;
+    } else if (temp > 0.5f) {
+        if (hum < 0.2f)
+            return desert;
+        else
+            return plains;
+    } else {
+        return desert;
+    }
+}
 int World::getTerrainHeight(int worldX, int worldZ) {
     // Combinar los tres ruidos para un terreno más natural
     float continent = terrainNoise.GetNoise((float)worldX, (float)worldZ);
@@ -106,22 +143,25 @@ int World::getTerrainHeight(int worldX, int worldZ) {
     float nDetail = (detail + 1.0f) * 0.5f;
 
     float shaped;
+    // Formula usada aca : (value-min)/((max-min)=prob/100)
     if (nContinent < 0.3f) {
-        // Océanos (30% del mapa)
+        // 30% Océanos
         shaped = nContinent * 0.4f;
-    } else if (nContinent < 0.7f) {
-        // Tierras (40% del mapa)
-        float t = (nContinent - 0.3f) / 0.4f;
-        shaped = 0.12f + t * 0.56f; // Mapea a [0.12, 0.68]
+    } else if (nContinent < 0.80f) {
+        // 50% Tierras
+        float t = (nContinent - 0.3f) / 0.5f;
+        t = pow(t, 1.3f);
+        shaped = 0.08f + t * 0.35f;
     } else {
-        // Montañas (30% del mapa)
-        float t = (nContinent - 0.7f) / 0.3f;
-        shaped = 0.68f + t * 0.32f; // Mapea a [0.68, 1.0]
+        // 20 % Montañas 
+        float t = (nContinent - 0.8f) / 0.2f;
+        t = pow(t, 1.5f);
+        shaped = 0.45f + t * 0.25f;
     }
+    float mountainMask = pow(1.0f - nErosion, 2.0f);
+    float withErosion = shaped + mountainMask * 0.15f;
 
-    float withErosion = shaped * 0.8f + nErosion * 0.2f;
-
-    float finalNoise = withErosion * 0.9f + nDetail * 0.1f;
+    float finalNoise = withErosion + (nDetail - 0.5f) * 0.05f;
 
     const int OCEAN_FLOOR = 38;
     const int SHALLOW_WATER = 54;
@@ -161,10 +201,14 @@ void World::generateWorldWithPerlin() {
     int newSeed1 = rand();
     int newSeed2 = rand();
     int newSeed3 = rand();
+    int newSeed4 = rand();
+    int newSeed5 = rand();
 
     terrainNoise.SetSeed(newSeed1);
     erosionNoise.SetSeed(newSeed2);
     detailNoise.SetSeed(newSeed3);
+    temperatureNoise.SetSeed(newSeed4);
+    humidityNoise.SetSeed(newSeed5);
     float freq1 = 0.0005f + (rand() % 100) / 10000.0f;
     terrainNoise.SetFrequency(freq1);
 
@@ -174,12 +218,18 @@ void World::generateWorldWithPerlin() {
     float freq3 = 0.005f + (rand() % 45) / 1000.0f;
     detailNoise.SetFrequency(freq3);
 
+    float freqTemp = 0.0003f + (rand() % 50) / 100000.0f;
+    temperatureNoise.SetFrequency(freqTemp);
+    float freqHum = 0.0003f + (rand() % 50) / 100000.0f;
+    humidityNoise.SetFrequency(freqHum);
     int octavas1 = 2 + rand() % 3;
     int octavas2 = 1 + rand() % 3;
     int octavas3 = 1 + rand() % 2;
     terrainNoise.SetFractalOctaves(octavas1);
     erosionNoise.SetFractalOctaves(octavas2);
     detailNoise.SetFractalOctaves(octavas3);
+    temperatureNoise.SetFractalOctaves(1);
+    humidityNoise.SetFractalOctaves(1);
 
     float gain = 0.3f + (rand() % 40) / 100.0f;
     terrainNoise.SetFractalGain(gain);
@@ -309,19 +359,36 @@ void World::createChunk(int cx, int cz) {
             int worldZ = cz * 16 + z;
 
             int continentalHeight = getTerrainHeight(worldX, worldZ);
+            BiomeType biome = getBiome(worldX, worldZ, continentalHeight);
             // Generar columna de bloques
             for (int y = 0; y <= continentalHeight; y++) {
                 int block;
 
                 // Asignar tipos de bloque según altura
                 if (y == continentalHeight) {
-                    block = 4; // Hierba en la superficie
-                } else if (y >= continentalHeight - 4) {
-                    block = 3; // Tierra debajo de la hierba
-                } else if (y == 0) {
-                    block = 18; // Bedrock en el fondo
-                } else {
-                    block = 2; // Piedra en el resto
+                    if (biome == plains) {
+                        block = 4;
+                    } else if (biome == desert) {
+                        block = BlockRegistry::getType("sand");
+                    } else if (biome == ocean) {
+                        block = BlockRegistry::getType("water");
+                    } else if (biome == mountains) {
+                        block = BlockRegistry::getType("snow_block");
+                    }
+                } else if (y >= continentalHeight - 4) { // tierra debajo
+                    if (biome == plains) {
+                        block = BlockRegistry::getType("dirt");
+                    } else if (biome == desert) {
+                        block = BlockRegistry::getType("sand");
+                    } else if (biome == ocean) {
+                        block = BlockRegistry::getType("water");
+                    } else if (biome == mountains) {
+                        block = BlockRegistry::getType("snow_block");
+                    }
+                } else if (y == 0) { // Bedrock
+                    block = 18;
+                } else { // Stone
+                    block = 2;
                 }
 
                 chunk->setBlock(x, y, z, block);
