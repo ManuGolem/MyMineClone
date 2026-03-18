@@ -62,7 +62,7 @@ int main() {
             screen.renderBlockOutline(blockPos.x, blockPos.y, blockPos.z);
             if (screen.wasRightClicked() && colocar) {
                 int block = screen.getBlockSelected();
-                if (block < 256) {
+                if (block < 512) {
                     world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z, block);
                 }
             }
