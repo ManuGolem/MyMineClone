@@ -13,7 +13,7 @@ class Camera {
     float yaw;
     float pitch;
 
-    float fov = 120;
+    float fov = 110;
     float aspect;
     float nearPlane = 0.1f;
     float farPlane = 500.0f;
