@@ -107,132 +107,86 @@ BiomeType World::getBiome(int worldX, int worldZ, int height) {
     float temp = (rawTemp + 1.0f) * 0.5f;
     float hum = (rawHumidity + 1.0f) * 0.5f;
 
-    // Aca diminuyo temperatura con la altura
-    float tempHeight = height / 500.0f;
-    temp -= tempHeight * 0.4f;
-    hum -= tempHeight * 0.2f;
-    if (height > 350) {
-        return mountains;
-    } else if (height < 62) {
-        return ocean;
+    // Aca diminuyo temperatura con la altura si esta suficientemente alto
+    if (height > 120) {
+        float heightFactor = (height - 120) / 392.0f;
+        temp -= heightFactor * 0.6f;
+        hum -= heightFactor * 0.2f;
     }
     // Valores totalmente de prueba
-    if (temp < 0.2f) {
-        if (hum < 0.4f)
-            return mountains;
-        else
+    if (height < 62) {
+        return ocean;
+    }
+    if (temp < 0.25f) {
+        return mountains;
+    }
+    if (temp < 0.6f) {
+        if (hum < 0.3f) {
+            return plains; // Aca seria taiga o algo asi
+        } else {
             return plains;
-    } else if (temp > 0.5f) {
-        if (hum < 0.2f)
-            return desert;
-        else
-            return plains;
-    } else {
+        }
+    }
+    if (hum < 0.2f) {
         return desert;
+    } else {
+        return plains; // aca seria sabana
     }
 }
 int World::getTerrainHeight(int worldX, int worldZ) {
-    // Combinar los tres ruidos para un terreno más natural
-    float continent = terrainNoise.GetNoise((float)worldX, (float)worldZ);
-    float erosion = erosionNoise.GetNoise((float)worldX, (float)worldZ);
-    float detail = detailNoise.GetNoise((float)worldX, (float)worldZ);
+    float continent = (terrainNoise.GetNoise((float)worldX, (float)worldZ) + 1.0f) * 0.5f;
+    float erosion = (erosionNoise.GetNoise((float)worldX, (float)worldZ) + 1.0f) * 0.5f;
+    float detail = (detailNoise.GetNoise((float)worldX, (float)worldZ) + 1.0f) * 0.5f;
 
-    // Normalizar cada uno a [0,1]
-    float nContinent = (continent + 1.0f) * 0.5f;
-    float nErosion = (erosion + 1.0f) * 0.5f;
-    float nDetail = (detail + 1.0f) * 0.5f;
+    float baseHeight;
 
-    float shaped;
-    // Formula usada aca : (value-min)/((max-min)=prob/100)
-    if (nContinent < 0.3f) {
-        // 30% Océanos
-        shaped = nContinent * 0.4f;
-    } else if (nContinent < 0.80f) {
-        // 50% Tierras
-        float t = (nContinent - 0.3f) / 0.5f;
-        t = pow(t, 1.3f);
-        shaped = 0.08f + t * 0.35f;
+    if (continent < 0.3f) {
+        // Océano (38-60)
+        baseHeight = 38 + (continent / 0.3f) * 22;
+    } else if (continent < 0.6f) {
+        // Tierra baja (60-90)
+        float t = (continent - 0.3f) / 0.3f;
+        baseHeight = 60 + t * 30;
+    } else if (continent < 0.8f) {
+        // Colinas (90-150)
+        float t = (continent - 0.6f) / 0.2f;
+        baseHeight = 90 + t * 60;
     } else {
-        // 20 % Montañas 
-        float t = (nContinent - 0.8f) / 0.2f;
-        t = pow(t, 1.5f);
-        shaped = 0.45f + t * 0.25f;
+        // Montañas (150-450)
+        float t = (continent - 0.8f) / 0.2f;
+        t = t * t;
+        baseHeight = 150 + t * 300;
     }
-    float mountainMask = pow(1.0f - nErosion, 2.0f);
-    float withErosion = shaped + mountainMask * 0.15f;
-
-    float finalNoise = withErosion + (nDetail - 0.5f) * 0.05f;
-
-    const int OCEAN_FLOOR = 38;
-    const int SHALLOW_WATER = 54;
-    const int BEACH = 64;
-    const int LAND_LOW = 85;
-    const int LAND_MID = 150;
-    const int LAND_HIGH = 300;
-    const int PEAK = 480;
-
-    if (finalNoise < 0.12f) {
-        // Océano profundo
-        return OCEAN_FLOOR + (int)((SHALLOW_WATER - OCEAN_FLOOR) * (finalNoise / 0.12f));
-    } else if (finalNoise < 0.2f) {
-        // Plataforma continental / aguas someras
-        float t = (finalNoise - 0.12f) / 0.08f;
-        return SHALLOW_WATER + (int)((BEACH - SHALLOW_WATER) * t);
-    } else if (finalNoise < 0.35f) {
-        // Costa / tierra baja
-        float t = (finalNoise - 0.2f) / 0.15f;
-        return BEACH + (int)((LAND_LOW - BEACH) * t);
-    } else if (finalNoise < 0.55f) {
-        // Tierras medias / colinas suaves
-        float t = (finalNoise - 0.35f) / 0.2f;
-        return LAND_LOW + (int)((LAND_MID - LAND_LOW) * t);
-    } else if (finalNoise < 0.75f) {
-        // Colinas altas / montañas bajas
-        float t = (finalNoise - 0.55f) / 0.2f;
-        return LAND_MID + (int)((LAND_HIGH - LAND_MID) * t);
-    } else {
-        // Montañas altas / picos
-        float t = (finalNoise - 0.75f) / 0.25f;
-        return LAND_HIGH + (int)((PEAK - LAND_HIGH) * t);
-    }
+    // Valores totalmente de prueba
+    float erosionEffect = (erosion - 0.5f) * 20;
+    float detailEffect = (detail - 0.5f) * 8;
+    float height = baseHeight + erosionEffect + detailEffect;
+    return (int)height;
 }
 void World::generateWorldWithPerlin() {
     srand(time(NULL));
-    int newSeed1 = rand();
-    int newSeed2 = rand();
-    int newSeed3 = rand();
-    int newSeed4 = rand();
-    int newSeed5 = rand();
+    int newSeed = rand();
 
-    terrainNoise.SetSeed(newSeed1);
-    erosionNoise.SetSeed(newSeed2);
-    detailNoise.SetSeed(newSeed3);
-    temperatureNoise.SetSeed(newSeed4);
-    humidityNoise.SetSeed(newSeed5);
-    float freq1 = 0.0005f + (rand() % 100) / 10000.0f;
-    terrainNoise.SetFrequency(freq1);
+    terrainNoise.SetSeed(newSeed);
+    terrainNoise.SetFrequency(0.005);
+    terrainNoise.SetFractalOctaves(4);
 
-    float freq2 = 0.001f + (rand() % 90) / 10000.0f;
-    erosionNoise.SetFrequency(freq2);
+    erosionNoise.SetSeed(newSeed + 1);
+    erosionNoise.SetFrequency(0.001f);
+    erosionNoise.SetFractalOctaves(3);
 
-    float freq3 = 0.005f + (rand() % 45) / 1000.0f;
-    detailNoise.SetFrequency(freq3);
+    detailNoise.SetSeed(newSeed + 2);
+    detailNoise.SetFrequency(0.008f);
+    detailNoise.SetFractalOctaves(2);
 
-    float freqTemp = 0.0003f + (rand() % 50) / 100000.0f;
-    temperatureNoise.SetFrequency(freqTemp);
-    float freqHum = 0.0003f + (rand() % 50) / 100000.0f;
-    humidityNoise.SetFrequency(freqHum);
-    int octavas1 = 2 + rand() % 3;
-    int octavas2 = 1 + rand() % 3;
-    int octavas3 = 1 + rand() % 2;
-    terrainNoise.SetFractalOctaves(octavas1);
-    erosionNoise.SetFractalOctaves(octavas2);
-    detailNoise.SetFractalOctaves(octavas3);
+    temperatureNoise.SetSeed(newSeed + 3);
+    temperatureNoise.SetFrequency(0.001);
     temperatureNoise.SetFractalOctaves(1);
+
+    humidityNoise.SetSeed(newSeed + 4);
+    humidityNoise.SetFrequency(0.001);
     humidityNoise.SetFractalOctaves(1);
 
-    float gain = 0.3f + (rand() % 40) / 100.0f;
-    terrainNoise.SetFractalGain(gain);
     createChunk(0, 0);
 }
 
@@ -367,7 +321,7 @@ void World::createChunk(int cx, int cz) {
                 // Asignar tipos de bloque según altura
                 if (y == continentalHeight) {
                     if (biome == plains) {
-                        block = 4;
+                        block = BlockRegistry::getType("grass_block");
                     } else if (biome == desert) {
                         block = BlockRegistry::getType("sand");
                     } else if (biome == ocean) {
@@ -395,7 +349,7 @@ void World::createChunk(int cx, int cz) {
             }
 
             // Si la altura es muy baja, generar agua
-            if (continentalHeight < 60) {
+            if (continentalHeight < 60 && biome != desert) {
                 for (int y = continentalHeight; y <= 60; y++) {
                     chunk->setBlock(x, y, z, 15); // Agua
                 }
@@ -539,7 +493,7 @@ void World::insertChunks() {
 }
 void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
     ivec2 centerChunk = getChunkPos(cameraPos);
-    int renderDist = 32;
+    int renderDist = 16;
     int generateDist = renderDist + 3;
     int cantChunks = 0;
     int maxChunksPerFrame = 1;
@@ -668,7 +622,7 @@ void World::loopMesh() {
             chunk = getChunk(x, z);
         }
         if (chunk) {
-            chunk->generateMesh();
+            chunk->generateMeshTest();
             chunk->isUpdating = false;
         }
     }

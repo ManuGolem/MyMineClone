@@ -218,6 +218,13 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
 }
 void Chunk::generateMeshTest() {
     auto start = std::chrono::high_resolution_clock::now();
+
+    needsUpdate = false;
+    needsBufferUpdate = true;
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "generateMeshTest() tomó: " << duration.count() << " µs (" << duration.count() / 1000.0 << " ms)" << std::endl;
 }
 void Chunk::generateMesh() {
     auto start = std::chrono::high_resolution_clock::now();
@@ -350,8 +357,7 @@ void Chunk::generateMesh() {
     needsBufferUpdate = true;
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    //
-    // std::cout << "generateMesh() tomó: " << duration.count() << " µs (" << duration.count() / 1000.0 << " ms)" << std::endl;
+    std::cout << "generateMesh() tomó: " << duration.count() << " µs (" << duration.count() / 1000.0 << " ms)" << std::endl;
 }
 void Chunk::setBlock(int x, int y, int z, const int& block) {
     lock_guard<mutex> lock(mutexBlocks);
