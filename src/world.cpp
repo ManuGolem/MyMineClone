@@ -256,7 +256,38 @@ vector<pendingBlock> World::getPendingBlocksForChunk(int x, int z) {
     }
     return blocks;
 }
-int World::getBlockSafe(int x, int y, int z) {
+array<array<int16_t, 16>, 512> World::getFaceInXSafe(int nroChunkX, int nroChunkZ, int facex) {
+    array<array<int16_t, 16>, 512> facesInX;
+    lock_guard<mutex> lock(mapChunks);
+    auto chunk = getChunk(nroChunkX, nroChunkZ);
+    if (!chunk)
+        return facesInX;
+
+    for (int y = 0; y < 512; y++) {
+        for (int z = 0; z < 16; z++) {
+            facesInX[y][z] = chunk->getBlock(facex, y, z);
+        }
+    }
+
+    return facesInX;
+}
+
+std::array<std::array<int16_t, 512>, 16> World::getFaceInZSafe(int nroChunkX, int nroChunkZ, int facez) {
+    std::array<std::array<int16_t, 512>, 16> faceInZ;
+    lock_guard<mutex> lock(mapChunks);
+    auto chunk = getChunk(nroChunkX, nroChunkZ);
+    if (!chunk)
+        return faceInZ;
+
+    for (int x = 0; x < 16; x++) {
+        for (int y = 0; y < 512; y++) {
+            faceInZ[x][y] = chunk->getBlock(x, y, facez);
+        }
+    }
+
+    return faceInZ;
+}
+int16_t World::getBlockSafe(int x, int y, int z) {
     ivec2 posChunk = getChunkPos(vec3(x, y, z));
     lock_guard<mutex> lock(mapChunks);
     auto chunk = getChunk(posChunk.x, posChunk.y);
@@ -493,7 +524,7 @@ void World::insertChunks() {
 }
 void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
     ivec2 centerChunk = getChunkPos(cameraPos);
-    int renderDist = 16;
+    int renderDist = 32;
     int generateDist = renderDist + 3;
     int cantChunks = 0;
     int maxChunksPerFrame = 1;

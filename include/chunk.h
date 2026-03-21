@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <glm/ext/vector_int2.hpp>
 #include <glm/fwd.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -20,7 +21,7 @@ struct Rectangulo {
 class Chunk {
   private:
     World* world;
-    int blocks[16][512][16];
+    int16_t blocks[16][512][16];
     vector<float> vertexData;
     vector<unsigned int> indexData;
     int nroChunkX;
@@ -28,7 +29,8 @@ class Chunk {
     int vertexCount;
     mutex mutexVertex;
     atomic<bool> needsBufferUpdate{true};
-    void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int tipoBloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount);
+    void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int16_t tipoBloque, vector<float>& vData, vector<unsigned int>& iData,
+                        unsigned int& vCount);
 
   public:
     unique_ptr<ChunkBuffer> chunkBuffer;
@@ -37,8 +39,8 @@ class Chunk {
     atomic<bool> needsUpdate = true;
     static Shader* sharedShader;
     Chunk();
-    void setBlock(int x, int y, int z, const int& block);
-    int getBlock(int x, int y, int z) const;
+    void setBlock(int x, int y, int z, const int16_t& block);
+    int16_t getBlock(int x, int y, int z) const;
     void render();
     bool isEmpty() const;
     void setNroChunk(int, int);

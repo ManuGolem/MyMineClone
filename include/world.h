@@ -74,7 +74,9 @@ class World {
     void loopCreation();
     void loopMesh();
     void setBlockSafe(int x, int y, int z, int block);
-    int getBlockSafe(int x, int y, int z);
+    int16_t getBlockSafe(int x, int y, int z);
+    array<array<int16_t, 16>, 512> getFaceInXSafe(int chunkX, int chunkZ, int faceX);
+    array<array<int16_t, 512>, 16> getFaceInZSafe(int chunkX, int chunkZ, int faceZ);
     void processChunk(int chunkX, int chunkZ, int nivel);
     vector<pendingBlock> getPendingBlocksForChunk(int x, int z);
     ~World();

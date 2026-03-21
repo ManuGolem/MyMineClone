@@ -1,6 +1,7 @@
 #include "../include/chunk.h"
 #include "../include/blocksRegistry.h"
 #include "../include/world.h"
+#include <array>
 #include <chrono>
 #include <glm/fwd.hpp>
 #include <memory>
@@ -9,10 +10,10 @@ static int OAK_LEAVES = BlockRegistry::getType("oak_leaves");
 static int GRASS_BLOCK = BlockRegistry::getType("grass_block");
 static int OAK_LOG = BlockRegistry::getType("oak_log");
 static int BOOKSHELF = BlockRegistry::getType("bookshelf");
-bool esTransparent(int type) {
-    return (type == 53);
+bool esTransparent(int16_t type) {
+    return (type == 53 || type == 0);
 }
-template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(int (&tipos)[FILAS][COLUMNAS]) {
+template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(int16_t (&tipos)[FILAS][COLUMNAS]) {
     vector<Rectangulo> rectangulos;
     bool procesado[FILAS][COLUMNAS] = {false};
 
@@ -67,7 +68,7 @@ Chunk::Chunk() : world(nullptr), needsUpdate(true), isUpdating(false) {
         sharedShader = new Shader();
     }
 }
-void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int tipo_bloque, vector<float>& vData, vector<unsigned int>& iData,
+void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int16_t tipo_bloque, vector<float>& vData, vector<unsigned int>& iData,
                            unsigned int& vCount) {
     float base = vCount;
     float offsetX = nroChunkX * 16.0f;
@@ -217,8 +218,126 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     vCount += 4;
 }
 void Chunk::generateMeshTest() {
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = chrono::high_resolution_clock::now();
+    vector<float> newVertexData;
+    vector<unsigned int> newIndexData;
+    unsigned int newVertexCount = 0;
+    int baseX = nroChunkX * 16;
+    int baseZ = nroChunkZ * 16;
+    array<array<array<int16_t, 16>, 512>, 2> blocksInX;
+    array<array<array<int16_t, 512>, 16>, 2> blocksInZ;
+    blocksInX[0] = world->getFaceInXSafe(nroChunkX - 1, nroChunkZ, 15);
+    blocksInX[1] = world->getFaceInXSafe(nroChunkX + 1, nroChunkZ, 0);
+    blocksInZ[0] = world->getFaceInZSafe(nroChunkX, nroChunkZ - 1, 15);
+    blocksInZ[1] = world->getFaceInZSafe(nroChunkX, nroChunkZ + 1, 0);
+    lock_guard<mutex> lock(mutexBlocks);
+    for (int x = 0; x < 16; x++) {
+        int16_t capasIzquierdas[512][16] = {0};
+        int16_t capasDerechas[512][16] = {0};
+        for (int i = 0; i < 512; i++) {
+            for (int j = 0; j < 16; j++) {
+                if (blocks[x][i][j] != 0) {
+                    int globalX = x + baseX;
+                    int globalZ = j + baseZ;
+                    // Cara derecha (x+)
+                    if (x == 15) {
+                        if (esTransparent(blocksInX[1][i][j]))
+                            capasDerechas[i][j] = blocks[x][i][j];
+                    } else if (esTransparent(blocks[x + 1][i][j])) {
+                        capasDerechas[i][j] = blocks[x][i][j];
+                    }
+                    // Cara izquierda (x-)
+                    if (x == 0) {
+                        if (esTransparent(blocksInX[0][i][j]))
+                            capasIzquierdas[i][j] = blocks[x][i][j];
 
+                    } else if (esTransparent(blocks[x - 1][i][j])) {
+                        capasIzquierdas[i][j] = blocks[x][i][j];
+                    }
+                }
+            }
+        }
+        vector<Rectangulo> rectsDer = formarRectangulos(capasDerechas);
+        for (const Rectangulo& r : rectsDer) {
+            cargarVertices(r, 0, 1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
+        }
+        vector<Rectangulo> rectsIzq = formarRectangulos(capasIzquierdas);
+
+        for (const Rectangulo& r : rectsIzq) {
+            cargarVertices(r, 0, -1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
+        }
+    }
+    for (int y = 0; y < 512; y++) {
+        int16_t capasSuperiores[16][16] = {0};
+        int16_t capasInferiores[16][16] = {0};
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
+                if (blocks[i][y][j] != 0) {
+                    // Cara inferior (y-)
+                    if ((y == 0) || esTransparent(blocks[i][y - 1][j])) {
+                        capasInferiores[i][j] = blocks[i][y][j];
+                    }
+                    // Cara superior (y+)
+                    if ((y == 512) || esTransparent(blocks[i][y + 1][j])) {
+                        capasSuperiores[i][j] = blocks[i][y][j];
+                    }
+                }
+            }
+        }
+        vector<Rectangulo> rectsInf = formarRectangulos(capasInferiores);
+        for (const Rectangulo& r : rectsInf) {
+            cargarVertices(r, 1, -1, y, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
+        }
+        vector<Rectangulo> rectsSup = formarRectangulos(capasSuperiores);
+
+        for (const Rectangulo& r : rectsSup) {
+            cargarVertices(r, 1, 1, y, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
+        }
+    }
+    for (int z = 0; z < 16; z++) {
+        int16_t capasFrontal[16][512] = {0};
+        int16_t capasTrasera[16][512] = {0};
+
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 512; j++) {
+                if (blocks[i][j][z] != 0) {
+                    int globalX = i + baseX;
+                    int globalZ = z + baseZ;
+                    // z+
+                    if (z == 15) {
+                        if (esTransparent(blocksInZ[1][i][j]))
+                            capasFrontal[i][j] = blocks[i][j][z];
+                    } else if (esTransparent(blocks[i][j][z + 1])) {
+                        capasFrontal[i][j] = blocks[i][j][z];
+                    }
+                    // Cara izquierda (Z-)
+                    if (z == 0) {
+                        if (esTransparent(blocksInZ[0][i][j]))
+                            capasTrasera[i][j] = blocks[i][j][z];
+                    } else if (esTransparent(blocks[i][j][z - 1])) {
+                        capasTrasera[i][j] = blocks[i][j][z];
+                    }
+                }
+            }
+        }
+
+        vector<Rectangulo> rectsFrontal = formarRectangulos(capasFrontal);
+        for (const Rectangulo& r : rectsFrontal) {
+            cargarVertices(r, 2, 1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
+        }
+
+        vector<Rectangulo> rectsTrasera = formarRectangulos(capasTrasera);
+        for (const Rectangulo& r : rectsTrasera) {
+            cargarVertices(r, 2, -1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutexVertex);
+        vertexData.swap(newVertexData);
+        indexData.swap(newIndexData);
+        vertexCount = newVertexCount;
+    }
     needsUpdate = false;
     needsBufferUpdate = true;
 
@@ -229,15 +348,15 @@ void Chunk::generateMeshTest() {
 void Chunk::generateMesh() {
     auto start = std::chrono::high_resolution_clock::now();
     lock_guard<mutex> lock(mutexBlocks);
-    std::vector<float> newVertexData;
-    std::vector<unsigned int> newIndexData;
+    vector<float> newVertexData;
+    vector<unsigned int> newIndexData;
     unsigned int newVertexCount = 0;
     // CARAS EN X
     int baseX = nroChunkX * 16;
     int baseZ = nroChunkZ * 16;
     for (int x = 0; x < 16; x++) {
-        int capasIzquierdas[512][16] = {0};
-        int capasDerechas[512][16] = {0};
+        int16_t capasIzquierdas[512][16] = {0};
+        int16_t capasDerechas[512][16] = {0};
         for (int i = 0; i < 512; i++) {
             for (int j = 0; j < 16; j++) {
                 if (blocks[x][i][j] != 0) {
@@ -277,8 +396,8 @@ void Chunk::generateMesh() {
         }
     }
     for (int y = 0; y < 512; y++) {
-        int capasSuperiores[16][16] = {0};
-        int capasInferiores[16][16] = {0};
+        int16_t capasSuperiores[16][16] = {0};
+        int16_t capasInferiores[16][16] = {0};
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 if (blocks[i][y][j] != 0) {
@@ -304,8 +423,8 @@ void Chunk::generateMesh() {
         }
     }
     for (int z = 0; z < 16; z++) {
-        int capasFrontal[16][512] = {0};
-        int capasTrasera[16][512] = {0};
+        int16_t capasFrontal[16][512] = {0};
+        int16_t capasTrasera[16][512] = {0};
 
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 512; j++) {
@@ -359,12 +478,12 @@ void Chunk::generateMesh() {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "generateMesh() tomó: " << duration.count() << " µs (" << duration.count() / 1000.0 << " ms)" << std::endl;
 }
-void Chunk::setBlock(int x, int y, int z, const int& block) {
+void Chunk::setBlock(int x, int y, int z, const int16_t& block) {
     lock_guard<mutex> lock(mutexBlocks);
     blocks[x][y][z] = block;
     needsUpdate = true;
 }
-int Chunk::getBlock(int x, int y, int z) const {
+int16_t Chunk::getBlock(int x, int y, int z) const {
     if (x < 0 || x >= 16 || z < 0 || z >= 16) {
         return 0;
     }

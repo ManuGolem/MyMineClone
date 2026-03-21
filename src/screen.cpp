@@ -312,7 +312,7 @@ void Screen::poll(float deltaTime) {
         }
         float velocidad = 4.317f * deltaTime;
         if (teclado[SDL_SCANCODE_LCTRL])
-            velocidad = 100.0f * deltaTime;
+            velocidad = 300.0f * deltaTime;
         if (teclado[SDL_SCANCODE_W])
             camera.moveForward(velocidad);
         if (teclado[SDL_SCANCODE_S])
