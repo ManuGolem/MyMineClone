@@ -15,8 +15,8 @@ class Camera {
 
     float fov = 110;
     float aspect;
-    float nearPlane = 0.1f;
-    float farPlane = 500.0f;
+    float nearPlane = 0.2f;
+    float farPlane = 5000.0f;
 
   public:
     Camera();

@@ -52,7 +52,7 @@ class Shader {
                 vec2 finalCoord = scaledCoord + textureCoordOffset;
 
                 vec4 texColor = texture(textureBlock, finalCoord);
-                if(texColor.a<0.1)
+                if(texColor.a<0.6)
                     discard;
                 FragColor = texColor * vec4(vertexColor, 1.0); 
             }else{

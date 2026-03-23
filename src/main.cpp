@@ -63,7 +63,7 @@ int main() {
             if (screen.wasRightClicked() && colocar) {
                 int block = screen.getBlockSelected();
                 int blockBase = world.getBlockSafe(blockPos.x, blockPos.y, blockPos.z);
-                if (block < 512 && (block != 71 || (block == 71 && (blockBase == 19 || blockBase == 71) && blockFace.y > blockPos.y))) {
+                if (block < 256 && (block != 71 || (block == 71 && (blockBase == 19 || blockBase == 71) && blockFace.y > blockPos.y))) {
                     world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z, block);
                 }
             }

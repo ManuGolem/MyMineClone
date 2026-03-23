@@ -36,8 +36,8 @@ class Screen {
     bool rightClicked = false;
     bool leftClicked = false;
     bool regenerateWorld = false;
-    int windowWidth = 1920;
-    int windowHeight = 1080;
+    int windowWidth = 1280;
+    int windowHeight = 720;
     bool crosshairVisible = true;
     bool hotbarVisible = true;
     int hotbarNumSelected = 1;

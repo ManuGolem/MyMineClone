@@ -29,20 +29,33 @@ World::World() {
     humidityNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     humidityNoise.SetFrequency(0.0008f);
 }
-
 void World::generateTree(shared_ptr<Chunk> chunk, int posX, int groundY, int posZ, int worldX, int worldZ, uint32_t hash, int treeType) {
-    int trunkHeight = 4 + (hash % 3); // 4–6
+    int trunkHeight;
     int leafRadius = 2;
-    int leafStart = groundY + trunkHeight - 2;
-    if (chunk->getBlock(posX, groundY, posZ) != 4)
+    int baseBlock;
+    int leafStart;
+    if (treeType == 21) {
+        trunkHeight = 4 + (hash % 3);
+        leafStart = groundY + trunkHeight - 2;
+        baseBlock = 4;
+    } else if (treeType == 71) {
+        trunkHeight = 2 + (hash % 1);
+        baseBlock = 19;
+    }
+    if (chunk->getBlock(posX, groundY, posZ) != baseBlock) {
         return;
+    }
     for (int y = 1; y <= trunkHeight + 1; y++) {
         if (chunk->getBlock(posX, groundY + y, posZ) != 0) {
             return;
         }
     }
     for (int y = 0; y < trunkHeight; y++) {
-        chunk->setBlock(posX, groundY + y + 1, posZ, 21);
+        chunk->setBlock(posX, groundY + y + 1, posZ, treeType);
+    }
+
+    if (treeType == 71) {
+        return; // Cactus no necesita hojas
     }
     // Hojas
     for (int y = leafStart; y <= groundY + trunkHeight + 1; y++) {
@@ -407,13 +420,23 @@ void World::createChunk(int cx, int cz) {
 
             // Obtener altura del terreno en esta posición
             int groundY = getTerrainHeight(worldX, worldZ);
+            BiomeType biome = getBiome(worldX, worldZ, groundY);
+
             // Para hacerlo "aleatorio" multiplico por un primo de 9 digitos y despues mezclo bajos con altos (XOR).
             uint32_t hash = worldX * 475363961u + worldZ * 374761393u;
             hash = (hash ^ (hash >> 16)) * 1274126177u;
             float random = (hash & 0xFFFFFF) / float(0xFFFFFF);
 
             if (random < 0.002f) { // 0.2% probabilidad
-                generateTree(chunk, x, groundY, z, worldX, worldZ, hash, 0);
+                int treeType;
+                if (biome == plains) {
+                    treeType = 21;
+                } else if (biome == desert) {
+                    treeType = 71;
+                } else {
+                    treeType = 21;
+                }
+                generateTree(chunk, x, groundY, z, worldX, worldZ, hash, treeType);
             }
         }
     }
@@ -524,7 +547,7 @@ void World::insertChunks() {
 }
 void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
     ivec2 centerChunk = getChunkPos(cameraPos);
-    int renderDist = 32;
+    int renderDist = 12;
     int generateDist = renderDist + 3;
     int cantChunks = 0;
     int maxChunksPerFrame = 1;
