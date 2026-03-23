@@ -58,11 +58,12 @@ int main() {
         vec3 blockFace;
         bool colocar = false;
         if (detectBlock(screen, world, blockPos, blockFace, colocar)) {
-            //   // Renderizar outline del bloque a mirar
+            // Renderizar outline del bloque a mirar
             screen.renderBlockOutline(blockPos.x, blockPos.y, blockPos.z);
             if (screen.wasRightClicked() && colocar) {
                 int block = screen.getBlockSelected();
-                if (block < 512) {
+                int blockBase = world.getBlockSafe(blockPos.x, blockPos.y, blockPos.z);
+                if (block < 512 && (block != 71 || (block == 71 && (blockBase == 19 || blockBase == 71) && blockFace.y > blockPos.y))) {
                     world.setBlockSafe(blockFace.x, blockFace.y, blockFace.z, block);
                 }
             }

@@ -45,7 +45,6 @@ class Chunk {
     bool isEmpty() const;
     void setNroChunk(int, int);
     void generateMesh();
-    void generateMeshTest();
     int getNroChunkX() const {
         return nroChunkX;
     }

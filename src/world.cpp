@@ -653,7 +653,7 @@ void World::loopMesh() {
             chunk = getChunk(x, z);
         }
         if (chunk) {
-            chunk->generateMeshTest();
+            chunk->generateMesh();
             chunk->isUpdating = false;
         }
     }
