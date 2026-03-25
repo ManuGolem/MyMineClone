@@ -24,6 +24,8 @@ const unordered_map<string, int> BlockRegistry::blockTypes = {
     {"redstone_block", 27},
     {"oak_leaves", 53},
     {"cactus", 71},
+    {"spruce_log", 117},
+    {"spruce_leaves", 133},
     {"cyan_wool", 210},
     {"bookshelf", 36},
     {"oak_sign", 257},

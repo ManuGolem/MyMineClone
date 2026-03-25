@@ -186,6 +186,8 @@ UIShader::UIShader() {
     loadTexture("../textures/icons/oak_leaves.png", iconTexturesID[53]);
     loadTexture("../textures/icons/snow_block.png", iconTexturesID[67]);
     loadTexture("../textures/icons/cactus.png", iconTexturesID[71]);
+    loadTexture("../textures/icons/spruce_log.png", iconTexturesID[117]);
+    loadTexture("../textures/icons/spruce_leaves.png", iconTexturesID[133]);
 
     loadTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
     loadTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);

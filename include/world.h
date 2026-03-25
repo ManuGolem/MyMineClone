@@ -20,6 +20,7 @@ enum BiomeType {
     mountains,
     plains,
     desert,
+    forest,
 };
 struct Plane {
     vec3 normal;

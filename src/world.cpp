@@ -34,13 +34,19 @@ void World::generateTree(shared_ptr<Chunk> chunk, int posX, int groundY, int pos
     int leafRadius = 2;
     int baseBlock;
     int leafStart;
+    int leaf;
     if (treeType == 21) {
         trunkHeight = 4 + (hash % 3);
         leafStart = groundY + trunkHeight - 2;
         baseBlock = 4;
+        leaf = 53;
     } else if (treeType == 71) {
         trunkHeight = 2 + (hash % 1);
         baseBlock = 19;
+    } else if (treeType == 117) {
+        trunkHeight = 6 + (hash % 3);
+        baseBlock = 3;
+        leaf = 133;
     }
     if (chunk->getBlock(posX, groundY, posZ) != baseBlock) {
         return;
@@ -72,8 +78,6 @@ void World::generateTree(shared_ptr<Chunk> chunk, int posX, int groundY, int pos
                 if (dx == dz && dx == 0 && dy != 1) {
                     continue;
                 }
-                int leaf = 53;
-
                 int localX = posX + dx;
                 int localZ = posZ + dz;
                 if (localX < 0 || localX >= 16 || localZ < 0 || localZ >= 16) {
@@ -135,7 +139,7 @@ BiomeType World::getBiome(int worldX, int worldZ, int height) {
     }
     if (temp < 0.6f) {
         if (hum < 0.3f) {
-            return plains; // Aca seria taiga o algo asi
+            return forest; // Aca seria taiga o algo asi
         } else {
             return plains;
         }
@@ -193,7 +197,7 @@ void World::generateWorldWithPerlin() {
     detailNoise.SetFractalOctaves(2);
 
     temperatureNoise.SetSeed(newSeed + 3);
-    temperatureNoise.SetFrequency(0.001);
+    temperatureNoise.SetFrequency(0.002);
     temperatureNoise.SetFractalOctaves(1);
 
     humidityNoise.SetSeed(newSeed + 4);
@@ -372,6 +376,8 @@ void World::createChunk(int cx, int cz) {
                         block = BlockRegistry::getType("water");
                     } else if (biome == mountains) {
                         block = BlockRegistry::getType("snow_block");
+                    } else {
+                        block = BlockRegistry::getType("dirt");
                     }
                 } else if (y >= continentalHeight - 4) { // tierra debajo
                     if (biome == plains) {
@@ -382,6 +388,8 @@ void World::createChunk(int cx, int cz) {
                         block = BlockRegistry::getType("water");
                     } else if (biome == mountains) {
                         block = BlockRegistry::getType("snow_block");
+                    } else {
+                        block = BlockRegistry::getType("dirt");
                     }
                 } else if (y == 0) { // Bedrock
                     block = 18;
@@ -426,16 +434,22 @@ void World::createChunk(int cx, int cz) {
             uint32_t hash = worldX * 475363961u + worldZ * 374761393u;
             hash = (hash ^ (hash >> 16)) * 1274126177u;
             float random = (hash & 0xFFFFFF) / float(0xFFFFFF);
-
-            if (random < 0.002f) { // 0.2% probabilidad
-                int treeType;
-                if (biome == plains) {
-                    treeType = 21;
-                } else if (biome == desert) {
-                    treeType = 71;
-                } else {
-                    treeType = 21;
-                }
+            int treeType;
+            float probTree;
+            if (biome == plains) {
+                treeType = 21;
+                probTree = 0.002f;
+            } else if (biome == desert) {
+                treeType = 71;
+                probTree = 0.0005f;
+            } else if (biome == forest) {
+                treeType = 117;
+                probTree = 0.05f;
+            } else {
+                treeType = 21;
+                probTree = 0.002f;
+            }
+            if (random < probTree) {
                 generateTree(chunk, x, groundY, z, worldX, worldZ, hash, treeType);
             }
         }
