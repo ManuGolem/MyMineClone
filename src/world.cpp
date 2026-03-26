@@ -10,32 +10,24 @@
 World::World() {
     // Configurar ruidos para altura
     terrainNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    terrainNoise.SetFrequency(0.02f);
     terrainNoise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    terrainNoise.SetFractalOctaves(4);
-    terrainNoise.SetFractalGain(0.5f);
 
     erosionNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    erosionNoise.SetFrequency(0.002f);
-    erosionNoise.SetFractalOctaves(2);
 
     detailNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    detailNoise.SetFrequency(0.01f);
-    detailNoise.SetFractalOctaves(1);
 
     // Configurar ruidos para biomas
     temperatureNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    temperatureNoise.SetFrequency(0.0005f);
     humidityNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    humidityNoise.SetFrequency(0.0008f);
 }
 void World::generateTree(shared_ptr<Chunk> chunk, int posX, int groundY, int posZ, int worldX, int worldZ, uint32_t hash, int treeType) {
     int trunkHeight;
-    int leafRadius = 2;
+    int leafRadius;
     int baseBlock;
     int leafStart;
     int leaf;
     if (treeType == 21) {
+        leafRadius = 2;
         trunkHeight = 4 + (hash % 3);
         leafStart = groundY + trunkHeight - 2;
         baseBlock = 4;
@@ -44,8 +36,10 @@ void World::generateTree(shared_ptr<Chunk> chunk, int posX, int groundY, int pos
         trunkHeight = 2 + (hash % 1);
         baseBlock = 19;
     } else if (treeType == 117) {
+        leafRadius = 3;
         trunkHeight = 6 + (hash % 3);
         baseBlock = 3;
+        leafStart = groundY + trunkHeight - 6;
         leaf = 133;
     }
     if (chunk->getBlock(posX, groundY, posZ) != baseBlock) {
@@ -124,31 +118,23 @@ BiomeType World::getBiome(int worldX, int worldZ, int height) {
     float temp = (rawTemp + 1.0f) * 0.5f;
     float hum = (rawHumidity + 1.0f) * 0.5f;
 
-    // Aca diminuyo temperatura con la altura si esta suficientemente alto
-    if (height > 120) {
-        float heightFactor = (height - 120) / 392.0f;
-        temp -= heightFactor * 0.6f;
-        hum -= heightFactor * 0.2f;
-    }
+    float heightFactor = clamp((height - 64.0f) / 128.0f, 0.0f, 1.0f);
+    temp -= heightFactor * 0.2f;
+    hum -= heightFactor * 0.1f;
     // Valores totalmente de prueba
     if (height < 62) {
         return ocean;
     }
-    if (temp < 0.25f) {
+    if (temp < 0.25f && height > 85) {
         return mountains;
     }
-    if (temp < 0.6f) {
-        if (hum < 0.3f) {
-            return forest; // Aca seria taiga o algo asi
-        } else {
-            return plains;
-        }
-    }
-    if (hum < 0.2f) {
+    if (temp > 0.55f && hum < 0.4f && height < 90) {
         return desert;
-    } else {
-        return plains; // aca seria sabana
     }
+    if (hum > 0.55f && temp > 0.3f && temp < 0.7f && height < 100) {
+        return forest;
+    }
+    return plains;
 }
 int World::getTerrainHeight(int worldX, int worldZ) {
     float continent = (terrainNoise.GetNoise((float)worldX, (float)worldZ) + 1.0f) * 0.5f;
@@ -164,14 +150,14 @@ int World::getTerrainHeight(int worldX, int worldZ) {
         // Tierra baja (60-90)
         float t = (continent - 0.3f) / 0.3f;
         baseHeight = 60 + t * 30;
-    } else if (continent < 0.8f) {
+    } else if (continent < 0.7f) {
         // Colinas (90-150)
-        float t = (continent - 0.6f) / 0.2f;
+        float t = (continent - 0.6f) / 0.1f;
         baseHeight = 90 + t * 60;
     } else {
         // Montañas (150-450)
-        float t = (continent - 0.8f) / 0.2f;
-        t = t * t;
+        float t = (continent - 0.7f) / 0.3f;
+        t = t * t * t;
         baseHeight = 150 + t * 300;
     }
     // Valores totalmente de prueba
@@ -180,29 +166,30 @@ int World::getTerrainHeight(int worldX, int worldZ) {
     float height = baseHeight + erosionEffect + detailEffect;
     return (int)height;
 }
-void World::generateWorldWithPerlin() {
-    srand(time(NULL));
-    int newSeed = rand();
+void World::generateWorldWithPerlin(int newSeed) {
 
     terrainNoise.SetSeed(newSeed);
-    terrainNoise.SetFrequency(0.005);
-    terrainNoise.SetFractalOctaves(4);
+    terrainNoise.SetFrequency(0.003);
+    terrainNoise.SetFractalOctaves(5);
+    terrainNoise.SetFractalGain(0.5f);
 
     erosionNoise.SetSeed(newSeed + 1);
-    erosionNoise.SetFrequency(0.001f);
+    erosionNoise.SetFrequency(0.008f);
     erosionNoise.SetFractalOctaves(3);
 
     detailNoise.SetSeed(newSeed + 2);
-    detailNoise.SetFrequency(0.008f);
+    detailNoise.SetFrequency(0.02f);
     detailNoise.SetFractalOctaves(2);
 
     temperatureNoise.SetSeed(newSeed + 3);
-    temperatureNoise.SetFrequency(0.002);
-    temperatureNoise.SetFractalOctaves(1);
+    temperatureNoise.SetFrequency(0.0005);
+    temperatureNoise.SetFractalOctaves(3);
+    temperatureNoise.SetFractalGain(0.5f);
 
     humidityNoise.SetSeed(newSeed + 4);
-    humidityNoise.SetFrequency(0.001);
-    humidityNoise.SetFractalOctaves(1);
+    humidityNoise.SetFrequency(0.0005);
+    humidityNoise.SetFractalOctaves(3);
+    humidityNoise.SetFractalGain(0.5f);
 
     createChunk(0, 0);
 }
@@ -375,7 +362,7 @@ void World::createChunk(int cx, int cz) {
                     } else if (biome == ocean) {
                         block = BlockRegistry::getType("water");
                     } else if (biome == mountains) {
-                        block = BlockRegistry::getType("snow_block");
+                        block = BlockRegistry::getType("snowy_grass_block");
                     } else {
                         block = BlockRegistry::getType("dirt");
                     }
@@ -387,7 +374,7 @@ void World::createChunk(int cx, int cz) {
                     } else if (biome == ocean) {
                         block = BlockRegistry::getType("water");
                     } else if (biome == mountains) {
-                        block = BlockRegistry::getType("snow_block");
+                        block = BlockRegistry::getType("dirt");
                     } else {
                         block = BlockRegistry::getType("dirt");
                     }
@@ -441,7 +428,7 @@ void World::createChunk(int cx, int cz) {
                 probTree = 0.002f;
             } else if (biome == desert) {
                 treeType = 71;
-                probTree = 0.0005f;
+                probTree = 0.0008f;
             } else if (biome == forest) {
                 treeType = 117;
                 probTree = 0.05f;
@@ -562,6 +549,9 @@ void World::insertChunks() {
 void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection) {
     ivec2 centerChunk = getChunkPos(cameraPos);
     int renderDist = 12;
+    float maxDist = renderDist * 16.0f;
+    float maxDist2 = maxDist * maxDist;
+    vec2 camXZ = vec2(cameraPos.x, cameraPos.z);
     int generateDist = renderDist + 3;
     int cantChunks = 0;
     int maxChunksPerFrame = 1;
@@ -606,27 +596,35 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
             while (!end) {
                 int chunkX = centerChunk.x + x;
                 int chunkZ = centerChunk.y + z;
-                vec3 min(chunkX << 4, 0, chunkZ << 4);
-                vec3 max(min.x + 15, 512, min.z + 15);
-                if (isBoxVisible(planes, min, max)) {
-                    shared_ptr<Chunk> chunk;
-                    {
-                        lock_guard<mutex> lock(mapChunks);
-                        chunk = getChunk(chunkX, chunkZ);
-                    }
-                    if (nivel <= renderDist) {
-                        if (chunk) {
-                            chunk->render();
-                        } else if (cantChunks < maxChunksPerFrame) {
-                            lock_guard<mutex> lock(setChunkRequestMutex);
-                            if (requestedChunks.find({chunkX, chunkZ}) == requestedChunks.end()) {
-                                {
-                                    lock_guard<mutex> lock(mutexChunkRequest);
-                                    chunkRequestQueue.push({chunkX, chunkZ});
+                vec2 chunkCenter = vec2(chunkX * 16 + 8, chunkZ * 16 + 8);
+                vec2 diff = camXZ - chunkCenter;
+                float dist2 = glm::dot(diff, diff);
+                // Limito al circulo de vision desde el centro del chunk actual hasta el render.
+                // Es decir en vez de renderizar en un rectangulo (cuadrado) lo hago en un circulo
+                // Luego dentro del circulo recien pregunto por el frustrum.
+                if (dist2 <= maxDist2) {
+                    vec3 min(chunkX << 4, 0, chunkZ << 4);
+                    vec3 max(min.x + 15, 512, min.z + 15);
+                    if (isBoxVisible(planes, min, max)) {
+                        shared_ptr<Chunk> chunk;
+                        {
+                            lock_guard<mutex> lock(mapChunks);
+                            chunk = getChunk(chunkX, chunkZ);
+                        }
+                        if (nivel <= renderDist) {
+                            if (chunk) {
+                                chunk->render();
+                            } else if (cantChunks < maxChunksPerFrame) {
+                                lock_guard<mutex> lock(setChunkRequestMutex);
+                                if (requestedChunks.find({chunkX, chunkZ}) == requestedChunks.end()) {
+                                    {
+                                        lock_guard<mutex> lock(mutexChunkRequest);
+                                        chunkRequestQueue.push({chunkX, chunkZ});
+                                    }
+                                    requestedChunks.insert({chunkX, chunkZ});
+                                    RequestCV.notify_one();
+                                    cantChunks++;
                                 }
-                                requestedChunks.insert({chunkX, chunkZ});
-                                RequestCV.notify_one();
-                                cantChunks++;
                             }
                         }
                     }
