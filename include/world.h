@@ -62,7 +62,7 @@ class World {
     ivec2 getChunkPos(vec3 worldPos);
     shared_ptr<Chunk> getChunk(int chunkX, int chunkZ);
     void generateFlatWorld(int width, int depth);
-    void generateWorldWithPerlin();
+    void generateWorldWithPerlin(int seed);
     void insertChunks();
     void render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, mat4 renderProjection);
     int getTerrainHeight(int worldX, int worldZ);
