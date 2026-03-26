@@ -23,6 +23,7 @@ const unordered_map<string, int> BlockRegistry::blockTypes = {
     {"emerald_block", 26},
     {"redstone_block", 27},
     {"oak_leaves", 53},
+    {"snowy_grass_block", 69},
     {"cactus", 71},
     {"spruce_log", 117},
     {"spruce_leaves", 133},
@@ -57,7 +58,8 @@ const unordered_map<Category, std::vector<int>> BlockRegistry::categories = {
          vector<int> all;
          all.reserve(blockTypes.size());
          for (const auto& pair : blockTypes) {
-             all.push_back(pair.second);
+             if (pair.second != 69)
+                 all.push_back(pair.second);
          }
          sort(all.begin(), all.end());
          return all;
