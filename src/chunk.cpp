@@ -14,6 +14,7 @@ static int SPRUCE_LOG = BlockRegistry::getType("spruce_log");
 static int BOOKSHELF = BlockRegistry::getType("bookshelf");
 static int CACTUS = BlockRegistry::getType("cactus");
 static int SPRUCE_LEAVES = BlockRegistry::getType("spruce_leaves");
+static int SNOWY_GRASS_BLOCK = BlockRegistry::getType("snowy_grass_block");
 bool esTransparent(int16_t type) {
     return (type == 53 || type == 0 || type == 71 || type == 133);
 }
@@ -86,9 +87,9 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
         gcolor = 0.8f;
         bcolor = 0.3f;
     } else if (tipo_bloque == SPRUCE_LEAVES) {
-        rcolor = 0.157f;
-        gcolor = 0.247f;
-        bcolor = 0.157f;
+        rcolor = 0.3f;
+        gcolor = 0.5f;
+        bcolor = 0.3f;
     } else if (tipo_bloque == CACTUS) {
         sizeOffset = 0.4375f; // Si el bloque mide 1, cada pixel mide 1/16 => 0.5 - 1/16 (le quito un pixel de cada lado el cactus es 14*16*14)
     }
@@ -163,6 +164,17 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
             rcolor = 0.55f;
             gcolor = 0.4f;
             bcolor = 0.3f;
+        } else if (tipo_bloque == SNOWY_GRASS_BLOCK) {
+            if (direccion == 1) {
+                rcolor = 1.8f;
+                gcolor = 1.8f;
+                bcolor = 2.0f;
+                columna = 8;
+                fila = 4;
+            } else {
+                columna = 2;
+                fila = 0;
+            }
         }
         offsetU = columna * tileSize;
         offsetV = 1.0f - (fila + 1) * tileSize;
