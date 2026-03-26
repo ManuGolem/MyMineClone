@@ -31,7 +31,8 @@ bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFac
 int main() {
     Screen screen;
     World world;
-    world.generateWorldWithPerlin();
+    int seed = rand();
+    world.generateWorldWithPerlin(seed);
     world.startCreationThread();
     Uint32 lastFrame = SDL_GetTicks();
     int frameCount = 0;
@@ -71,10 +72,7 @@ int main() {
                 world.setBlockSafe(blockPos.x, blockPos.y, blockPos.z, 0);
             }
         }
-        if (screen.getRegenerate()) {
-            world.deleteWorld();
-            world.generateWorldWithPerlin();
-        }
+
         screen.clearRegenerate();
         screen.clearLeftClick();
         screen.clearRightClick();
