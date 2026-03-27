@@ -4,6 +4,7 @@
 #include <array>
 #include <chrono>
 #include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
 #include <iterator>
 #include <memory>
 #include <mutex>
@@ -15,8 +16,21 @@ static int BOOKSHELF = BlockRegistry::getType("bookshelf");
 static int CACTUS = BlockRegistry::getType("cactus");
 static int SPRUCE_LEAVES = BlockRegistry::getType("spruce_leaves");
 static int SNOWY_GRASS_BLOCK = BlockRegistry::getType("snowy_grass_block");
+static int TNT_BLOCK = BlockRegistry::getType("tnt");
+static int POPPY = BlockRegistry::getType("poppy");
+static int DANDELION = BlockRegistry::getType("dandelion");
+static int OAK_SAPLING = BlockRegistry::getType("oak_sapling");
+static int JUNGLE_SAPLING = BlockRegistry::getType("jungle_sapling");
+static int SPRUCE_SAPLING = BlockRegistry::getType("spruce_sapling");
+static int RED_MUSHROOM = BlockRegistry::getType("red_mushroom");
+static int SHORT_GRASS = BlockRegistry::getType("short_grass");
+static int BROWN_MUSHROOM = BlockRegistry::getType("brown_mushroom");
+bool isCrossBlock(int16_t type) {
+    return (type == POPPY || type == DANDELION || type == OAK_SAPLING || type == JUNGLE_SAPLING || type == SPRUCE_SAPLING || type == SHORT_GRASS ||
+            type == RED_MUSHROOM || type == BROWN_MUSHROOM);
+}
 bool esTransparent(int16_t type) {
-    return (type == 53 || type == 0 || type == 71 || type == 133);
+    return (type == 0 || type == OAK_LEAVES || type == CACTUS || type == SPRUCE_LEAVES || isCrossBlock(type));
 }
 template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(int16_t (&tipos)[FILAS][COLUMNAS]) {
     vector<Rectangulo> rectangulos;
@@ -25,15 +39,14 @@ template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(in
     for (int i = 0; i < FILAS; i++) {
         for (int j = 0; j < COLUMNAS; j++) {
             if (tipos[i][j] != 0 && !procesado[i][j]) {
-                int tipo_actual = tipos[i][j];
+                int16_t tipo_actual = tipos[i][j];
                 int ancho = 1;
-
+                int alto = 1;
                 // Expandir ancho mientras sea el MISMO tipo
                 while (i + ancho < FILAS && tipos[i + ancho][j] == tipo_actual && !procesado[i + ancho][j]) {
                     ancho++;
                 }
 
-                int alto = 1;
                 bool expandible = true;
 
                 // Expandir alto mientras TODA la fila sea del MISMO tipo
@@ -72,6 +85,85 @@ Chunk::Chunk() : world(nullptr), needsUpdate(true), isUpdating(false) {
     if (sharedShader == nullptr) {
         sharedShader = new Shader();
     }
+}
+void Chunk::cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipo_bloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount) {
+    int eje = 0;
+    int direccion = 1;
+    float base = vCount;
+    float offsetX = nroChunkX * 16.0f;
+    float offsetZ = nroChunkZ * 16.0f;
+    float rcolor = 1.0f;
+    float gcolor = 1.0f;
+    float bcolor = 1.0f;
+    if (tipo_bloque == SHORT_GRASS) {
+        rcolor = 0.5f;
+        gcolor = 0.9f;
+        bcolor = 0.5f;
+    }
+    // Calculo uv para el atlas (0,0) es abajo a la izquierda
+    float u_min, u_max, v_min, v_max;
+    float ancho = r.x2 - r.x1 + 1;
+    float alto = r.y2 - r.y1 + 1;
+    int columna = (tipo_bloque - 1) % 16;
+    int fila = (tipo_bloque - 1) / 16;
+    float tileSize = 1.0f / 16.0f;
+    float offsetU = columna * tileSize;
+    float offsetV = 1.0f - (fila + 1) * tileSize;
+    float xPos = offsetX + fijo + 0.5;
+    float y1 = r.y1 - 1.0f;
+    float y2 = r.y2;
+    float z1 = offsetZ + r.x1 - 0.5f;
+    float z2 = offsetZ + r.x2 + 0.5f;
+    // Cara diagonal 1
+    float vertex[40] = {// VERTEX 1
+                        xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+                        // VERTEX 2
+                        xPos - 1.0f, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+                        // VERTEX 3
+                        xPos - 1.0f, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+                        // VERTEX 4
+                        xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
+    vData.insert(vData.end(), std::begin(vertex), std::end(vertex));
+    // Cara mirando hacia +X
+    iData.push_back(base);     // Abajo derecha
+    iData.push_back(base + 3); // Arriba derecha
+    iData.push_back(base + 2); // Arriba izquierda
+    iData.push_back(base);     // Abajo derecha
+    iData.push_back(base + 2); // Arriba izquierda
+    iData.push_back(base + 1); // Abajo derecha
+    // Cara mirando -x
+    iData.push_back(base + 1); // Abajo derecha
+    iData.push_back(base + 2); // Arriba izquierda
+    iData.push_back(base);     // Abajo derecha
+    iData.push_back(base + 2); // Arriba izquierda
+    iData.push_back(base + 3); // Arriba derecha
+    iData.push_back(base);     // Abajo derecha
+    // La otra cara diagonal
+    float vertex2[40] = {// VERTEX 1
+                         xPos - 1.0f, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+                         // VERTEX 2
+                         xPos, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+                         // VERTEX 3
+                         xPos, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+                         // VERTEX 4
+                         xPos - 1.0f, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
+    vData.insert(vData.end(), std::begin(vertex2), std::end(vertex2));
+    base = base + 4;
+    // Cara mirando hacia +z
+    iData.push_back(base);     // Abajo derecha
+    iData.push_back(base + 3); // Arriba derecha
+    iData.push_back(base + 2); // Arriba izquierda
+    iData.push_back(base);     // Abajo derecha
+    iData.push_back(base + 2); // Arriba izquierda
+    iData.push_back(base + 1); // Abajo derecha
+    // Cara mirando -z
+    iData.push_back(base + 1); // Abajo derecha
+    iData.push_back(base + 2); // Arriba izquierda
+    iData.push_back(base);     // Abajo derecha
+    iData.push_back(base + 2); // Arriba izquierda
+    iData.push_back(base + 3); // Arriba derecha
+    iData.push_back(base);     // Abajo derecha
+    vCount += 8;
 }
 void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int16_t tipo_bloque, vector<float>& vData, vector<unsigned int>& iData,
                            unsigned int& vCount) {
@@ -175,6 +267,14 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
                 columna = 2;
                 fila = 0;
             }
+        } else if (tipo_bloque == TNT_BLOCK) {
+            if (direccion == 1) {
+                columna = 9;
+                fila = 0;
+            } else {
+                columna = 10;
+                fila = 0;
+            }
         }
         offsetU = columna * tileSize;
         offsetV = 1.0f - (fila + 1) * tileSize;
@@ -262,12 +362,22 @@ void Chunk::generateMesh() {
     blocksInZ[0] = world->getFaceInZSafe(nroChunkX, nroChunkZ - 1, 15);
     blocksInZ[1] = world->getFaceInZSafe(nroChunkX, nroChunkZ + 1, 0);
     lock_guard<mutex> lock(mutexBlocks);
+    struct CrossBlock {
+        int x, y, z;
+        int16_t tipo;
+    };
+    vector<CrossBlock> crossBlock;
     for (int x = 0; x < 16; x++) {
         int16_t capasIzquierdas[512][16] = {0};
         int16_t capasDerechas[512][16] = {0};
         for (int i = 0; i < 512; i++) {
             for (int j = 0; j < 16; j++) {
-                if (blocks[x][i][j] != 0) {
+                int16_t typeblock = blocks[x][i][j];
+                if (isCrossBlock(typeblock)) {
+                    crossBlock.push_back({x, i, j, typeblock});
+                    continue;
+                }
+                if (typeblock != 0) {
                     int globalX = x + baseX;
                     int globalZ = j + baseZ;
                     // Cara derecha (x+)
@@ -303,13 +413,17 @@ void Chunk::generateMesh() {
         int16_t capasInferiores[16][16] = {0};
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
-                if (blocks[i][y][j] != 0) {
+                int16_t typeblock = blocks[i][y][j];
+                if (isCrossBlock(typeblock)) {
+                    continue;
+                }
+                if (typeblock != 0) {
                     // Cara inferior (y-)
                     if ((y == 0) || esTransparent(blocks[i][y - 1][j])) {
                         capasInferiores[i][j] = blocks[i][y][j];
                     }
                     // Cara superior (y+)
-                    if ((y == 512) || esTransparent(blocks[i][y + 1][j])) {
+                    if ((y == 511) || esTransparent(blocks[i][y + 1][j])) {
                         capasSuperiores[i][j] = blocks[i][y][j];
                     }
                 }
@@ -331,7 +445,11 @@ void Chunk::generateMesh() {
 
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 512; j++) {
-                if (blocks[i][j][z] != 0) {
+                int16_t typeblock = blocks[i][j][z];
+                if (isCrossBlock(typeblock)) {
+                    continue;
+                }
+                if (typeblock != 0) {
                     int globalX = i + baseX;
                     int globalZ = z + baseZ;
                     // z+
@@ -362,7 +480,16 @@ void Chunk::generateMesh() {
             cargarVertices(r, 2, -1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
     }
-
+    int crosSize = crossBlock.size();
+    for (const auto& cb : crossBlock) {
+        Rectangulo r;
+        r.x1 = cb.z;
+        r.x2 = cb.z;
+        r.y1 = cb.y;
+        r.y2 = cb.y;
+        r.tipoBloque = cb.tipo;
+        cargarVerticesCross(r, cb.x, cb.tipo, newVertexData, newIndexData, newVertexCount);
+    }
     {
         std::lock_guard<std::mutex> lock(mutexVertex);
         vertexData.swap(newVertexData);
