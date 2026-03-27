@@ -10,25 +10,38 @@ const unordered_map<string, int> BlockRegistry::blockTypes = {
     {"smooth_stone", 7},
     {"bricks", 8},
     {"tnt", 9},
+    {"poppy", 13},
+    {"dandelion", 14},
     {"water", 15},
     {"oak_sapling", 16},
     {"cobblestone", 17},
     {"bedrock", 18},
     {"sand", 19},
-    {"snow_block", 67},
+    {"gravel", 20},
     {"oak_log", 21},
     {"iron_block", 23},
     {"gold_block", 24},
     {"diamond_block", 25},
     {"emerald_block", 26},
     {"redstone_block", 27},
+    {"red_mushroom", 29},
+    {"brown_mushroom", 30},
+    {"jungle_sapling", 31},
+    {"gold_ore", 33},
+    {"iron_ore", 34},
+    {"coal_ore", 35},
+    {"bookshelf", 36},
+    {"mossy_coblestone", 37},
+    {"obsidian", 38},
+    {"short_grass", 40},
     {"oak_leaves", 53},
+    {"spruce_sapling", 64},
+    {"snow_block", 67},
     {"snowy_grass_block", 69},
     {"cactus", 71},
     {"spruce_log", 117},
     {"spruce_leaves", 133},
     {"cyan_wool", 210},
-    {"bookshelf", 36},
     {"oak_sign", 257},
     {"redstone", 258},
     {"compass", 259},
@@ -53,6 +66,7 @@ const unordered_map<Category, std::vector<int>> BlockRegistry::categories = {
     {Category::FoodDrinks, {262}},
     {Category::Ingredients, {263}},
     {Category::SpawnEggs, {264}},
+    {Category::SavedHotbars, {}},
     {Category::All,
      []() {
          vector<int> all;
@@ -87,6 +101,8 @@ Category BlockRegistry::getCategory(int num) {
         return Category::NaturalBlocks;
     if (num == 4)
         return Category::FunctionalBlocks;
+    if (num == 6)
+        return Category::SavedHotbars;
     if (num == 5)
         return Category::RedstoneBlocks;
     if (num == 7)
