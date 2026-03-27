@@ -3,7 +3,20 @@
 #include <unordered_map>
 #include <vector>
 using namespace std;
-enum class Category { BuildingBlocks, ColoredBlocks, NaturalBlocks, FunctionalBlocks, RedstoneBlocks, ToolsUtilities, Combat, FoodDrinks, Ingredients, SpawnEggs, All };
+enum class Category {
+    BuildingBlocks,
+    ColoredBlocks,
+    NaturalBlocks,
+    FunctionalBlocks,
+    RedstoneBlocks,
+    SavedHotbars,
+    ToolsUtilities,
+    Combat,
+    FoodDrinks,
+    Ingredients,
+    SpawnEggs,
+    All
+};
 class BlockRegistry {
   private:
     static const unordered_map<string, int> blockTypes;
