@@ -9,7 +9,7 @@ unsigned int UIShader::crosshairVAO = 0;
 unsigned int UIShader::crosshairVBO = 0;
 UIShader::UIShader() {
     // Este shader usa texturas (para componentes ui)
-    const char *uiVertexSrc = R"(
+    const char* uiVertexSrc = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
     layout (location = 1) in vec2 aTexCoord;
@@ -26,7 +26,7 @@ UIShader::UIShader() {
     }
     )";
 
-    const char *uiFragmentSrc = R"(
+    const char* uiFragmentSrc = R"(
     #version 330 core
     out vec4 FragColor;
     
@@ -40,7 +40,7 @@ UIShader::UIShader() {
     }
     )";
     // Este shader solo es para lineas
-    const char *vertexSrc = R"(
+    const char* vertexSrc = R"(
             #version 330 core
             layout (location = 0) in vec3 aPos;
             
@@ -53,7 +53,7 @@ UIShader::UIShader() {
             }
         )";
 
-    const char *fragmentSrc = R"(
+    const char* fragmentSrc = R"(
             #version 330 core
             out vec4 FragColor;
             
@@ -89,8 +89,8 @@ UIShader::UIShader() {
     glGenVertexArrays(1, &axesVAO);
     glGenBuffers(1, &axesVBO);
     glBindVertexArray(axesVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glBindBuffer(GL_ARRAY_BUFFER, axesVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Outlines
@@ -98,7 +98,7 @@ UIShader::UIShader() {
     glGenBuffers(1, &outlinesVBO);
     glBindVertexArray(outlinesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Crosshair
@@ -106,7 +106,7 @@ UIShader::UIShader() {
     glGenBuffers(1, &crosshairVBO);
     glBindVertexArray(crosshairVAO);
     glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -153,9 +153,9 @@ UIShader::UIShader() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, uiEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uiIndices), uiIndices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -171,19 +171,32 @@ UIShader::UIShader() {
     loadTexture("../textures/icons/smooth_stone.png", iconTexturesID[7]);
     loadTexture("../textures/icons/bricks.png", iconTexturesID[8]);
     loadTexture("../textures/icons/tnt.png", iconTexturesID[9]);
+    loadTexture("../textures/icons/poppy.png", iconTexturesID[13]);
+    loadTexture("../textures/icons/dandelion.png", iconTexturesID[14]);
     loadTexture("../textures/icons/water_bucket.png", iconTexturesID[15]);
     loadTexture("../textures/icons/oak_sapling.png", iconTexturesID[16]);
     loadTexture("../textures/icons/cobblestone.png", iconTexturesID[17]);
     loadTexture("../textures/icons/bedrock.png", iconTexturesID[18]);
     loadTexture("../textures/icons/sand.png", iconTexturesID[19]);
+    loadTexture("../textures/icons/gravel.png", iconTexturesID[20]);
     loadTexture("../textures/icons/oak_log.png", iconTexturesID[21]);
     loadTexture("../textures/icons/iron_block.png", iconTexturesID[23]);
     loadTexture("../textures/icons/gold_block.png", iconTexturesID[24]);
     loadTexture("../textures/icons/diamond_block.png", iconTexturesID[25]);
     loadTexture("../textures/icons/emerald_block.png", iconTexturesID[26]);
     loadTexture("../textures/icons/redstone_block.png", iconTexturesID[27]);
+    loadTexture("../textures/icons/red_mushroom.png", iconTexturesID[29]);
+    loadTexture("../textures/icons/brown_mushroom.png", iconTexturesID[30]);
+    loadTexture("../textures/icons/jungle_sapling.png", iconTexturesID[31]);
+    loadTexture("../textures/icons/gold_ore.png", iconTexturesID[33]);
+    loadTexture("../textures/icons/iron_ore.png", iconTexturesID[34]);
+    loadTexture("../textures/icons/coal_ore.png", iconTexturesID[35]);
     loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
+    loadTexture("../textures/icons/obsidian.png", iconTexturesID[38]);
+    loadTexture("../textures/icons/short_grass.png", iconTexturesID[40]);
+    loadTexture("../textures/icons/mossy_cobblestone.png", iconTexturesID[37]);
     loadTexture("../textures/icons/oak_leaves.png", iconTexturesID[53]);
+    loadTexture("../textures/icons/spruce_sapling.png", iconTexturesID[64]);
     loadTexture("../textures/icons/snow_block.png", iconTexturesID[67]);
     loadTexture("../textures/icons/cactus.png", iconTexturesID[71]);
     loadTexture("../textures/icons/spruce_log.png", iconTexturesID[117]);
@@ -213,7 +226,7 @@ UIShader::UIShader() {
     loadTexture("../textures/creativeInventory/tab_top_selected_middle.png", tabTopSelectedMidTextureID);
     loadTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
 }
-void UIShader::drawDebugAxes(const glm::mat4 &view, const glm::mat4 &projection) {
+void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
     glUseProgram(shaderProgram);
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
@@ -248,7 +261,7 @@ void UIShader::drawDebugAxes(const glm::mat4 &view, const glm::mat4 &projection)
 
     glBindVertexArray(0);
 }
-void UIShader::drawOutline(int x, int y, int z, const glm::mat4 &view, const glm::mat4 &projection) {
+void UIShader::drawOutline(int x, int y, int z, const glm::mat4& view, const glm::mat4& projection) {
     glUseProgram(shaderProgram);
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
@@ -257,21 +270,19 @@ void UIShader::drawOutline(int x, int y, int z, const glm::mat4 &view, const glm
     setModelMatrix(glm::value_ptr(model));
     // 12 aristas del cubo (24 vértices)
     float vertices[] = {// Cara inferior
-                        x - 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f,
-                        x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f,
-                        x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z - 0.5f,
+                        x - 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y - 1.0f,
+                        z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y - 1.0f, z - 0.5f,
 
                         // Cara superior
-                        x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f,
-                        x + 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f,
-                        x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z - 0.5f,
+                        x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y + 0.0f,
+                        z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x - 0.5f, y + 0.0f, z - 0.5f,
 
                         // Aristas verticales
-                        x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f,
-                        x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f, y - 1.0f, z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f,
-                        x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f};
+                        x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f, y - 1.0f,
+                        z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f};
 
     glBindVertexArray(outlinesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     glLineWidth(1.0f);
@@ -279,10 +290,10 @@ void UIShader::drawOutline(int x, int y, int z, const glm::mat4 &view, const glm
     glDrawArrays(GL_LINES, 0, 24);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-void UIShader::loadTexture(const char *path, unsigned int &textureID) {
+void UIShader::loadTexture(const char* path, unsigned int& textureID) {
     // Cargar textura de la hotbar completa
     int width, height, channels;
-    unsigned char *data = stbi_load(path, &width, &height, &channels, 4);
+    unsigned char* data = stbi_load(path, &width, &height, &channels, 4);
     if (data) {
         glGenTextures(1, &textureID);
         glBindTexture(GL_TEXTURE_2D, textureID);
@@ -317,8 +328,7 @@ void UIShader::drawBlockClicked(int type, float posX, float posY, int screenWidt
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 }
-void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabSelected,
-                                     vector<int> blockInHotbar) {
+void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabSelected, vector<int> blockInHotbar) {
     glUseProgram(uiShaderProgram);
     glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
     glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -473,8 +483,9 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     // Draw items existentes
     if (tabSelected != 6 && tabSelected != 14) {
         int py = posY + 188;
-        auto &blocks = BlockRegistry::get(BlockRegistry::getCategory(tabSelected));
-        int cantElemnt = blocks.size();
+        auto& blocks = BlockRegistry::get(BlockRegistry::getCategory(tabSelected));
+        int cantblocks = blocks.size();
+        int cantElemnt = cantblocks > 45 ? 45 : cantblocks;
         int j = 0;
         for (int i = 0; i < cantElemnt; i++) {
             int blockType = blocks[i];
@@ -648,7 +659,7 @@ UIShader::~UIShader() {
     glDeleteTextures(1, &tabCreativeInventoryTextureID);
     glDeleteTextures(1, &tabItemSearchTextureID);
     // ELIMINAR TODAS LAS TEXTURAS DEL MAPA
-    for (auto &pair : iconTexturesID) {
+    for (auto& pair : iconTexturesID) {
         if (pair.second != 0) {
             glDeleteTextures(1, &pair.second);
         }
