@@ -31,6 +31,7 @@ class Chunk {
     atomic<bool> needsBufferUpdate{true};
     void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int16_t tipoBloque, vector<float>& vData, vector<unsigned int>& iData,
                         unsigned int& vCount);
+    void cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipoBloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount);
 
   public:
     unique_ptr<ChunkBuffer> chunkBuffer;
