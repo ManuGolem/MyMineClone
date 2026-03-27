@@ -157,7 +157,7 @@ int World::getTerrainHeight(int worldX, int worldZ) {
     } else {
         // Montañas (150-450)
         float t = (continent - 0.7f) / 0.3f;
-        t = t * t * t;
+        t = t * t;
         baseHeight = 150 + t * 300;
     }
     // Valores totalmente de prueba
@@ -407,7 +407,6 @@ void World::createChunk(int cx, int cz) {
         if (chunk->getBlock(leaf.x, leaf.y, leaf.z) == 0)
             chunk->setBlock(leaf.x, leaf.y, leaf.z, leaf.block);
     }
-    // Generar arboles.
     for (int x = 0; x < 16; x++) {
         for (int z = 0; z < 16; z++) {
             int worldX = cx * 16 + x;
@@ -426,6 +425,7 @@ void World::createChunk(int cx, int cz) {
             if (biome == plains) {
                 treeType = 21;
                 probTree = 0.002f;
+
             } else if (biome == desert) {
                 treeType = 71;
                 probTree = 0.0008f;
@@ -436,8 +436,16 @@ void World::createChunk(int cx, int cz) {
                 treeType = 21;
                 probTree = 0.002f;
             }
+            // Generar arboles .
             if (random < probTree) {
                 generateTree(chunk, x, groundY, z, worldX, worldZ, hash, treeType);
+            }
+            if (random < 0.1f && biome == plains) {
+                if (chunk->getBlock(x, groundY, z) == BlockRegistry::getType("grass_block")) {
+                    if (chunk->getBlock(x, groundY + 1, z) == 0) {
+                        chunk->setBlock(x, groundY + 1, z, BlockRegistry::getType("short_grass"));
+                    }
+                }
             }
         }
     }
@@ -713,5 +721,17 @@ World::~World() {
     }
     if (meshThread4.joinable()) {
         meshThread4.join();
+    }
+    if (meshThread5.joinable()) {
+        meshThread5.join();
+    }
+    if (meshThread6.joinable()) {
+        meshThread6.join();
+    }
+    if (meshThread7.joinable()) {
+        meshThread7.join();
+    }
+    if (meshThread8.joinable()) {
+        meshThread8.join();
     }
 }
