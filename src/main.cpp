@@ -31,7 +31,7 @@ bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFac
 int main() {
     Screen screen;
     World world;
-    int seed = 123;
+    int seed = rand();
     world.generateWorldWithPerlin(seed);
     world.startCreationThread();
     Uint32 lastFrame = SDL_GetTicks();
