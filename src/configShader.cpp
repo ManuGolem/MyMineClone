@@ -1,15 +1,16 @@
 #include "../include/configShader.h"
 #include "../include/stb_image.h"
 #include <iostream>
+#include <iterator>
 using namespace std;
-unsigned int cargarTextura(const char* ruta) {
+unsigned int cargarTextura(const char *ruta) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
     // Configurar parámetros de la textura
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load(ruta, &width, &height, &nrChannels, 4);
+    unsigned char *data = stbi_load(ruta, &width, &height, &nrChannels, 4);
 
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -64,26 +65,18 @@ Shader::Shader() {
     glFrontFace(GL_CCW);
     useTextureLoc = glGetUniformLocation(shaderProgram, "useTexture");
 }
-Shader::~Shader() {
-    glDeleteProgram(shaderProgram);
-}
+Shader::~Shader() { glDeleteProgram(shaderProgram); }
 void Shader::use() {
     glUseProgram(shaderProgram);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, getTextureID());
     setUseTexture(true);
 }
-void Shader::setModelMatrix(const float* matrix) {
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix);
-}
+void Shader::setModelMatrix(const float *matrix) { glUniformMatrix4fv(modelLoc, 1, GL_FALSE, matrix); }
 
-void Shader::setViewMatrix(const float* matrix) {
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, matrix);
-}
+void Shader::setViewMatrix(const float *matrix) { glUniformMatrix4fv(viewLoc, 1, GL_FALSE, matrix); }
 
-void Shader::setProjectionMatrix(const float* matrix) {
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix);
-}
+void Shader::setProjectionMatrix(const float *matrix) { glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix); }
 
 ChunkBuffer::ChunkBuffer() : indexCount(0) {
     glGenVertexArrays(1, &VAO);
@@ -95,20 +88,24 @@ ChunkBuffer::ChunkBuffer() : indexCount(0) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
     // Posición
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
     // Color
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     // Textura
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void *)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
     // Offset
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(8 * sizeof(float)));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void *)(8 * sizeof(float)));
     glEnableVertexAttribArray(3);
+
+    // Ao
+    glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void *)(10 * sizeof(float)));
+    glEnableVertexAttribArray(4);
 
     glBindVertexArray(0);
 }
@@ -117,7 +114,7 @@ ChunkBuffer::~ChunkBuffer() {
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 }
-void ChunkBuffer::uploadData(const std::vector<float>& vertices, const std::vector<unsigned int>& indices) {
+void ChunkBuffer::uploadData(const std::vector<float> &vertices, const std::vector<unsigned int> &indices) {
     indexCount = indices.size();
     glBindVertexArray(VAO);
     // VBO - datos de vértices

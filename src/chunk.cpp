@@ -2,7 +2,6 @@
 #include "../include/blocksRegistry.h"
 #include "../include/world.h"
 #include <array>
-#include <chrono>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <iterator>
@@ -26,8 +25,8 @@ static int RED_MUSHROOM = BlockRegistry::getType("red_mushroom");
 static int SHORT_GRASS = BlockRegistry::getType("short_grass");
 static int BROWN_MUSHROOM = BlockRegistry::getType("brown_mushroom");
 bool isCrossBlock(int16_t type) {
-    return (type == POPPY || type == DANDELION || type == OAK_SAPLING || type == JUNGLE_SAPLING || type == SPRUCE_SAPLING || type == SHORT_GRASS ||
-            type == RED_MUSHROOM || type == BROWN_MUSHROOM);
+    return (type == POPPY || type == DANDELION || type == OAK_SAPLING || type == JUNGLE_SAPLING ||
+            type == SPRUCE_SAPLING || type == SHORT_GRASS || type == RED_MUSHROOM || type == BROWN_MUSHROOM);
 }
 bool esTransparent(int16_t type) {
     return (type == 0 || type == OAK_LEAVES || type == CACTUS || type == SPRUCE_LEAVES || isCrossBlock(type));
@@ -79,15 +78,20 @@ template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(in
     return rectangulos;
 }
 
-Shader* Chunk::sharedShader = nullptr;
+Shader *Chunk::sharedShader = nullptr;
 Chunk::Chunk() : world(nullptr), needsUpdate(true), isUpdating(false) {
     memset(blocks, 0, sizeof(blocks));
     if (sharedShader == nullptr) {
         sharedShader = new Shader();
     }
 }
-void Chunk::cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipo_bloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount) {
-    int eje = 0;
+float Chunk::calcularAO(int x, int y, int z, int dx1, int dy1, int dz1, int dx2, int dy2, int dz2) {
+    //Crear funcion
+}
+void Chunk::cargarVerticesCross(const Rectangulo &r, int fijo, int16_t tipo_bloque, vector<float> &vData,
+                                vector<unsigned int> &iData, unsigned int &vCount) {
+    //El ao en esta funcion lo dejo fijo en 1, es decir que todo bloque cross no tiene AO
+                                    int eje = 0;
     int direccion = 1;
     float base = vCount;
     float offsetX = nroChunkX * 16.0f;
@@ -114,15 +118,14 @@ void Chunk::cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipo_bloq
     float y2 = r.y2;
     float z1 = offsetZ + r.x1 - 0.5f;
     float z2 = offsetZ + r.x2 + 0.5f;
-    // Cara diagonal 1
-    float vertex[40] = {// VERTEX 1
-                        xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+    float vertex[44] = {// VERTEX 1
+                        xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV, 1,
                         // VERTEX 2
-                        xPos - 1.0f, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+                        xPos - 1.0f, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV, 1,
                         // VERTEX 3
-                        xPos - 1.0f, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+                        xPos - 1.0f, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV, 1,
                         // VERTEX 4
-                        xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
+                        xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV, 1};
     vData.insert(vData.end(), std::begin(vertex), std::end(vertex));
     // Cara mirando hacia +X
     iData.push_back(base);     // Abajo derecha
@@ -139,14 +142,14 @@ void Chunk::cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipo_bloq
     iData.push_back(base + 3); // Arriba derecha
     iData.push_back(base);     // Abajo derecha
     // La otra cara diagonal
-    float vertex2[40] = {// VERTEX 1
-                         xPos - 1.0f, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+    float vertex2[44] = {// VERTEX 1
+                         xPos - 1.0f, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV, 1,
                          // VERTEX 2
-                         xPos, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+                         xPos, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV, 1,
                          // VERTEX 3
-                         xPos, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+                         xPos, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV, 1,
                          // VERTEX 4
-                         xPos - 1.0f, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
+                         xPos - 1.0f, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV, 1};
     vData.insert(vData.end(), std::begin(vertex2), std::end(vertex2));
     base = base + 4;
     // Cara mirando hacia +z
@@ -165,8 +168,8 @@ void Chunk::cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipo_bloq
     iData.push_back(base);     // Abajo derecha
     vCount += 8;
 }
-void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int16_t tipo_bloque, vector<float>& vData, vector<unsigned int>& iData,
-                           unsigned int& vCount) {
+void Chunk::cargarVertices(const Rectangulo &r, int eje, int direccion, int fijo, int16_t tipo_bloque,
+                           vector<float> &vData, vector<unsigned int> &iData, unsigned int &vCount) {
     float base = vCount;
     float sizeOffset = 0.5f;
     float offsetX = nroChunkX * 16.0f;
@@ -183,7 +186,8 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
         gcolor = 0.5f;
         bcolor = 0.3f;
     } else if (tipo_bloque == CACTUS) {
-        sizeOffset = 0.4375f; // Si el bloque mide 1, cada pixel mide 1/16 => 0.5 - 1/16 (le quito un pixel de cada lado el cactus es 14*16*14)
+        sizeOffset = 0.4375f; // Si el bloque mide 1, cada pixel mide 1/16 => 0.5 - 1/16 (le
+                              // quito un pixel de cada lado el cactus es 14*16*14)
     }
 
     // Calculo uv para el atlas (0,0) es abajo a la izquierda
@@ -195,20 +199,25 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     float tileSize = 1.0f / 16.0f;
     float offsetU = columna * tileSize;
     float offsetV = 1.0f - (fila + 1) * tileSize;
+
+    float ao0 = 1.0f;
+    float ao1 = 1.0f;
+    float ao2 = 1.0f;
+    float ao3 = 1.0f;
     if (eje == 0) {
         float xPos = offsetX + fijo + (direccion == 1 ? sizeOffset : -sizeOffset);
         float y1 = r.y1 - 1.0f;
         float y2 = r.y2;
         float z1 = offsetZ + r.x1 - 0.5f;
         float z2 = offsetZ + r.x2 + 0.5f;
-        float vertex[40] = {// VERTEX 1
-                            xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
+        float vertex[44] = {// VERTEX 1
+                            xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV, ao0,
                             // VERTEX 2
-                            xPos, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
+                            xPos, y1, z2, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV, ao1,
                             // VERTEX 3
-                            xPos, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
+                            xPos, y2, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV, ao2,
                             // VERTEX 4
-                            xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
+                            xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV, ao3};
         vData.insert(vData.end(), std::begin(vertex), std::end(vertex));
         if (direccion == 1) {
             // Cara mirando hacia +X
@@ -284,15 +293,10 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
         float x2 = offsetX + r.y2 + 0.5f;
         float z1 = offsetZ + r.x1 - 0.5f;
         float z2 = offsetZ + r.x2 + 0.5f;
-        float vertex[40] = {// VERTEX 1
-                            x1, yPos, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
-                            // VERTEX 2
-                            x2, yPos, z1, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV,
-                            // VERTEX 3
-                            x2, yPos, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV,
-                            // VERTEX 4
-                            x1, yPos, z2, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV};
-
+        float vertex[44] = {x1, yPos, z1, rcolor, gcolor, bcolor, 0.0f,  0.0f, offsetU, offsetV, ao0,
+                            x2, yPos, z1, rcolor, gcolor, bcolor, ancho, 0.0f, offsetU, offsetV, ao1,
+                            x2, yPos, z2, rcolor, gcolor, bcolor, ancho, alto, offsetU, offsetV, ao2,
+                            x1, yPos, z2, rcolor, gcolor, bcolor, 0.0f,  alto, offsetU, offsetV, ao3};
         vData.insert(vData.end(), std::begin(vertex), std::end(vertex));
 
         if (direccion == 1) {
@@ -318,15 +322,11 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
         float y2 = r.x2;
         float x1 = offsetX + r.y1 - 0.5f;
         float x2 = offsetX + r.y2 + 0.5f;
-        float vertex[40] = {// VERTEX 1
-                            x1, y1, zPos, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV,
-                            // VERTEX 2
-                            x2, y1, zPos, rcolor, gcolor, bcolor, alto, 0.0f, offsetU, offsetV,
-                            // VERTEX 3
-                            x2, y2, zPos, rcolor, gcolor, bcolor, alto, ancho, offsetU, offsetV,
-                            // VERTEX 4
-                            x1, y2, zPos, rcolor, gcolor, bcolor, 0.0f, ancho, offsetU, offsetV};
 
+        float vertex[44] = {x1, y1, zPos, rcolor, gcolor, bcolor, 0.0f, 0.0f,  offsetU, offsetV, ao0,
+                            x2, y1, zPos, rcolor, gcolor, bcolor, alto, 0.0f,  offsetU, offsetV, ao1,
+                            x2, y2, zPos, rcolor, gcolor, bcolor, alto, ancho, offsetU, offsetV, ao2,
+                            x1, y2, zPos, rcolor, gcolor, bcolor, 0.0f, ancho, offsetU, offsetV, ao3};
         vData.insert(vData.end(), std::begin(vertex), std::end(vertex));
 
         if (direccion == -1) {
@@ -399,12 +399,12 @@ void Chunk::generateMesh() {
             }
         }
         vector<Rectangulo> rectsDer = formarRectangulos(capasDerechas);
-        for (const Rectangulo& r : rectsDer) {
+        for (const Rectangulo &r : rectsDer) {
             cargarVertices(r, 0, 1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
         vector<Rectangulo> rectsIzq = formarRectangulos(capasIzquierdas);
 
-        for (const Rectangulo& r : rectsIzq) {
+        for (const Rectangulo &r : rectsIzq) {
             cargarVertices(r, 0, -1, x, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
     }
@@ -430,12 +430,12 @@ void Chunk::generateMesh() {
             }
         }
         vector<Rectangulo> rectsInf = formarRectangulos(capasInferiores);
-        for (const Rectangulo& r : rectsInf) {
+        for (const Rectangulo &r : rectsInf) {
             cargarVertices(r, 1, -1, y, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
         vector<Rectangulo> rectsSup = formarRectangulos(capasSuperiores);
 
-        for (const Rectangulo& r : rectsSup) {
+        for (const Rectangulo &r : rectsSup) {
             cargarVertices(r, 1, 1, y, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
     }
@@ -471,17 +471,17 @@ void Chunk::generateMesh() {
         }
 
         vector<Rectangulo> rectsFrontal = formarRectangulos(capasFrontal);
-        for (const Rectangulo& r : rectsFrontal) {
+        for (const Rectangulo &r : rectsFrontal) {
             cargarVertices(r, 2, 1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
 
         vector<Rectangulo> rectsTrasera = formarRectangulos(capasTrasera);
-        for (const Rectangulo& r : rectsTrasera) {
+        for (const Rectangulo &r : rectsTrasera) {
             cargarVertices(r, 2, -1, z, r.tipoBloque, newVertexData, newIndexData, newVertexCount);
         }
     }
     int crosSize = crossBlock.size();
-    for (const auto& cb : crossBlock) {
+    for (const auto &cb : crossBlock) {
         Rectangulo r;
         r.x1 = cb.z;
         r.x2 = cb.z;
@@ -499,7 +499,7 @@ void Chunk::generateMesh() {
     needsUpdate = false;
     needsBufferUpdate = true;
 }
-void Chunk::setBlock(int x, int y, int z, const int16_t& block) {
+void Chunk::setBlock(int x, int y, int z, const int16_t &block) {
     lock_guard<mutex> lock(mutexBlocks);
     blocks[x][y][z] = block;
     needsUpdate = true;
@@ -510,9 +510,7 @@ int16_t Chunk::getBlock(int x, int y, int z) const {
     }
     return blocks[x][y][z];
 }
-bool Chunk::isEmpty() const {
-    return vertexData.empty();
-}
+bool Chunk::isEmpty() const { return vertexData.empty(); }
 void Chunk::setNroChunk(int chunkx, int chunkz) {
     nroChunkX = chunkx;
     nroChunkZ = chunkz;
