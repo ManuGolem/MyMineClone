@@ -391,7 +391,7 @@ void Screen::renderBlockOutline(int x, int y, int z) {
         glUseProgram(previousProgram);
     }
 }
-void Screen::renderMenu() { // Todo era para probar la biblioteca, la tengo que
+void Screen::renderMenu() { // Todo era para probar la biblioteca(generado por ia,mas precisamente deepseek), la tengo que
                             // eliminar ya que prefiero implementar de 0 las
                             // funciones que me dan imgui.
     if (!openMenu)
