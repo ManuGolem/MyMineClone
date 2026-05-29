@@ -1,6 +1,6 @@
 #include "../include/screen.h"
 #include "../include/world.h"
-#include <glm/fwd.hpp>
+#include <cstdlib>
 #include <sys/types.h>
 bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFace, bool& colocar) {
     vec3 pos = screen.getCamera().getPosition();
@@ -29,6 +29,7 @@ bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFac
     return encontreBloque;
 }
 int main() {
+    srand(time(NULL));
     Screen screen;
     World world;
     int seed = rand();

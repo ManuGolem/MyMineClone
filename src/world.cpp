@@ -167,7 +167,7 @@ int World::getTerrainHeight(int worldX, int worldZ) {
     return (int)height;
 }
 void World::generateWorldWithPerlin(int newSeed) {
-
+    worldSeed = newSeed;
     terrainNoise.SetSeed(newSeed);
     terrainNoise.SetFrequency(0.003);
     terrainNoise.SetFractalOctaves(5);
@@ -417,7 +417,9 @@ void World::createChunk(int cx, int cz) {
             BiomeType biome = getBiome(worldX, worldZ, groundY);
 
             // Para hacerlo "aleatorio" multiplico por un primo de 9 digitos y despues mezclo bajos con altos (XOR).
-            uint32_t hash = worldX * 475363961u + worldZ * 374761393u;
+            // Tambien agrego la seed del world para mas aleatoriedad(?)
+            uint32_t hash = worldSeed;
+            hash = hash * 475363961u + worldX * 374761393u + worldZ * 298347829u;
             hash = (hash ^ (hash >> 16)) * 1274126177u;
             float random = (hash & 0xFFFFFF) / float(0xFFFFFF);
             int treeType;
@@ -562,7 +564,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
     vec2 camXZ = vec2(cameraPos.x, cameraPos.z);
     int generateDist = renderDist + 3;
     int cantChunks = 0;
-    int maxChunksPerFrame = 1;
+    int maxChunksPerFrame = 2;
     Chunk::sharedShader->use();
     Chunk::sharedShader->setProjectionMatrix(value_ptr(renderProjection));
     Chunk::sharedShader->setViewMatrix(glm::value_ptr(renderView));

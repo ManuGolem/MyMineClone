@@ -46,6 +46,7 @@ class World {
     thread meshThread7;
     thread meshThread8;
     atomic<bool> threadRunning = true;
+    int worldSeed;
 
   public:
     // Para el thread secundario (mejorar despues)
