@@ -85,9 +85,6 @@ Chunk::Chunk() : world(nullptr), needsUpdate(true), isUpdating(false) {
         sharedShader = new Shader();
     }
 }
-float Chunk::calcularAO(int x, int y, int z, int dx1, int dy1, int dz1, int dx2, int dy2, int dz2) {
-    // Crear funcion
-}
 void Chunk::cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipo_bloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount) {
     // El ao en esta funcion lo dejo fijo en 1, es decir que todo bloque cross no tiene AO
     int eje = 0;
@@ -209,6 +206,7 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
         float y2 = r.y2;
         float z1 = offsetZ + r.x1 - 0.5f;
         float z2 = offsetZ + r.x2 + 0.5f;
+
         float vertex[44] = {// VERTEX 1
                             xPos, y1, z1, rcolor, gcolor, bcolor, 0.0f, 0.0f, offsetU, offsetV, ao0,
                             // VERTEX 2
@@ -218,23 +216,7 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
                             // VERTEX 4
                             xPos, y2, z1, rcolor, gcolor, bcolor, 0.0f, alto, offsetU, offsetV, ao3};
         vData.insert(vData.end(), std::begin(vertex), std::end(vertex));
-        if (direccion == 1) {
-            // Cara mirando hacia +X
-            iData.push_back(base);     // 0: Inf izq
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base);     // 0: Inf izq
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base + 1); // 1: Inf der
-        } else {
-            // Cara mirando hacia -X
-            iData.push_back(base + 1); // 1: Inf der
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base + 1); // 1: Inf der
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base);     // 0: Inf izq
-        }
+
     } else if (eje == 1) { // CARAS EN Y
         alto = r.x2 - r.x1 + 1;
         ancho = r.y2 - r.y1 + 1;
@@ -292,28 +274,12 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
         float x2 = offsetX + r.y2 + 0.5f;
         float z1 = offsetZ + r.x1 - 0.5f;
         float z2 = offsetZ + r.x2 + 0.5f;
+
         float vertex[44] = {x1,      yPos,    z1,    rcolor, gcolor,  bcolor,  0.0f,   0.0f,   offsetU, offsetV, ao0,    x2,      yPos,    z1,    rcolor,
                             gcolor,  bcolor,  ancho, 0.0f,   offsetU, offsetV, ao1,    x2,     yPos,    z2,      rcolor, gcolor,  bcolor,  ancho, alto,
                             offsetU, offsetV, ao2,   x1,     yPos,    z2,      rcolor, gcolor, bcolor,  0.0f,    alto,   offsetU, offsetV, ao3};
         vData.insert(vData.end(), std::begin(vertex), std::end(vertex));
 
-        if (direccion == 1) {
-            // Cara mirando hacia +Y
-            iData.push_back(base);     // 0: Inf izq
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base);     // 0: Inf izq
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base + 1); // 1: Inf der
-        } else {
-            // Cara mirando hacia -Y
-            iData.push_back(base + 1); // 1: Inf der
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base + 1); // 1: Inf der
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base);     // 0: Inf izq
-        }
     } else if (eje == 2) { // CARAS EN Z
         float zPos = offsetZ + fijo + (direccion == 1 ? sizeOffset : -sizeOffset);
         float y1 = r.x1 - 1.0f;
@@ -325,24 +291,23 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
                             gcolor,  bcolor,  alto, 0.0f,   offsetU, offsetV, ao1,    x2,     y2,      zPos,    rcolor, gcolor,  bcolor,  alto, ancho,
                             offsetU, offsetV, ao2,  x1,     y2,      zPos,    rcolor, gcolor, bcolor,  0.0f,    ancho,  offsetU, offsetV, ao3};
         vData.insert(vData.end(), std::begin(vertex), std::end(vertex));
-
-        if (direccion == -1) {
-            // Cara mirando hacia -Z
-            iData.push_back(base);     // 0: Inf izq
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base);     // 0: Inf izq
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base + 1); // 1: Inf der
-        } else {
-            // Cara mirando hacia +Z
-            iData.push_back(base + 1); // 1: Inf der
-            iData.push_back(base + 2); // 2: Sup der
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base + 1); // 1: Inf der
-            iData.push_back(base + 3); // 3: Sup izq
-            iData.push_back(base);     // 0: Inf izq
-        }
+    }
+    if (eje == 2)
+        direccion *= -1;
+    if (direccion == 1) {
+        iData.push_back(base);     // 0
+        iData.push_back(base + 3); // 3
+        iData.push_back(base + 2); // 2
+        iData.push_back(base);     // 0
+        iData.push_back(base + 2); // 2
+        iData.push_back(base + 1); // 1
+    } else {
+        iData.push_back(base + 1); // 1
+        iData.push_back(base + 2); // 2
+        iData.push_back(base + 3); // 3
+        iData.push_back(base + 1); // 1
+        iData.push_back(base + 3); // 3
+        iData.push_back(base);     // 0
     }
     vCount += 4;
 }
