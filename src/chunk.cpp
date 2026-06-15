@@ -31,27 +31,43 @@ bool isCrossBlock(int16_t type) {
 bool esTransparent(int16_t type) {
     return (type == 0 || type == OAK_LEAVES || type == CACTUS || type == SPRUCE_LEAVES || isCrossBlock(type));
 }
-template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(int16_t (&tipos)[FILAS][COLUMNAS]) {
+/*
+bool mismoAOBordeHorizontal(const faceAO& izq, const faceAO& der) {
+    const float eps = 1e-5f;
+    return fabsf(izq.ao1 - der.ao0) < eps && fabsf(izq.ao2 - der.ao3) < eps;
+}
+bool mismoAOBordeVertical(const faceAO& arriba, const faceAO& abajo) {
+    const float eps = 1e-5f;
+    return fabsf(arriba.ao3 - abajo.ao0) < eps && fabsf(arriba.ao2 - abajo.ao1) < eps;
+}
+*/
+
+bool mismoAO(const faceAO& a, const faceAO& b) {
+    return a.ao0 == b.ao0 && a.ao1 == b.ao1 && a.ao2 == b.ao2 && a.ao3 == b.ao3;
+}
+template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(bloqueCapa (&capa)[FILAS][COLUMNAS]) {
     vector<Rectangulo> rectangulos;
     bool procesado[FILAS][COLUMNAS] = {false};
-
     for (int i = 0; i < FILAS; i++) {
         for (int j = 0; j < COLUMNAS; j++) {
-            if (tipos[i][j] != 0 && !procesado[i][j]) {
-                int16_t tipo_actual = tipos[i][j];
+            if (capa[i][j].tipo != 0 && !procesado[i][j]) {
+                int16_t tipo_actual = capa[i][j].tipo;
+                faceAO ao_actual = capa[i][j].ao;
                 int ancho = 1;
                 int alto = 1;
                 // Expandir ancho mientras sea el MISMO tipo
-                while (i + ancho < FILAS && tipos[i + ancho][j] == tipo_actual && !procesado[i + ancho][j]) {
+                // Tambien debo comprobar si la cara tiene el mismo ao (no se como hacer esto aun)
+                while (i + ancho < FILAS && capa[i + ancho][j].tipo == tipo_actual && !procesado[i + ancho][j] && mismoAO(ao_actual, capa[i + ancho][j].ao)) {
                     ancho++;
                 }
 
                 bool expandible = true;
 
                 // Expandir alto mientras TODA la fila sea del MISMO tipo
+                // Comprobar AO
                 while (j + alto < COLUMNAS && expandible) {
                     for (int dj = 0; dj < ancho; dj++) {
-                        if (tipos[i + dj][j + alto] != tipo_actual || procesado[i + dj][j + alto]) {
+                        if (capa[i + dj][j + alto].tipo != tipo_actual || procesado[i + dj][j + alto] || !mismoAO(ao_actual, capa[i + dj][j + alto].ao)) {
                             expandible = false;
                             break;
                         }
@@ -71,6 +87,7 @@ template <size_t FILAS, size_t COLUMNAS> vector<Rectangulo> formarRectangulos(in
                 r.y2 = i + ancho - 1;
                 r.x2 = j + alto - 1;
                 r.tipoBloque = tipo_actual;
+                r.face = ao_actual;
                 rectangulos.push_back(r);
             }
         }
@@ -84,6 +101,24 @@ Chunk::Chunk() : world(nullptr), needsUpdate(true), isUpdating(false) {
     if (sharedShader == nullptr) {
         sharedShader = new Shader();
     }
+}
+faceAO Chunk::calcularAO(int globalX, int globalY, int globalZ, int eje, int direccion) {
+    faceAO ao;
+
+    ao.ao0 = calcularAOVertex(globalX, globalY, globalZ, eje, direccion, 0);
+    ao.ao1 = calcularAOVertex(globalX, globalY, globalZ, eje, direccion, 1);
+    ao.ao2 = calcularAOVertex(globalX, globalY, globalZ, eje, direccion, 2);
+    ao.ao3 = calcularAOVertex(globalX, globalY, globalZ, eje, direccion, 3);
+
+    return ao;
+}
+
+float Chunk::calcularAOVertex(int globalX, int globalY, int globalZ, int eje, int direccion, int vertice) {
+    // Solo falta esta func
+    float side1, side2, corner;
+    if (side1 && side2)
+        return 0.0f;
+    return (3.0f - (side1 + side2 + corner)) / 3.0f;
 }
 void Chunk::cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipo_bloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount) {
     // El ao en esta funcion lo dejo fijo en 1, es decir que todo bloque cross no tiene AO
@@ -196,10 +231,10 @@ void Chunk::cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo
     float offsetU = columna * tileSize;
     float offsetV = 1.0f - (fila + 1) * tileSize;
 
-    float ao0 = 1.0f;
-    float ao1 = 1.0f;
-    float ao2 = 1.0f;
-    float ao3 = 1.0f;
+    float ao0 = r.face.ao0;
+    float ao1 = r.face.ao1;
+    float ao2 = r.face.ao2;
+    float ao3 = r.face.ao3;
     if (eje == 0) {
         float xPos = offsetX + fijo + (direccion == 1 ? sizeOffset : -sizeOffset);
         float y1 = r.y1 - 1.0f;
@@ -330,8 +365,8 @@ void Chunk::generateMesh() {
     };
     vector<CrossBlock> crossBlock;
     for (int x = 0; x < 16; x++) {
-        int16_t capasIzquierdas[512][16] = {0};
-        int16_t capasDerechas[512][16] = {0};
+        bloqueCapa capasIzquierdas[512][16] = {};
+        bloqueCapa capasDerechas[512][16] = {};
         for (int i = 0; i < 512; i++) {
             for (int j = 0; j < 16; j++) {
                 int16_t typeblock = blocks[x][i][j];
@@ -344,18 +379,24 @@ void Chunk::generateMesh() {
                     int globalZ = j + baseZ;
                     // Cara derecha (x+)
                     if (x == 15) {
-                        if (esTransparent(blocksInX[1][i][j]))
-                            capasDerechas[i][j] = blocks[x][i][j];
+                        if (esTransparent(blocksInX[1][i][j])) {
+                            capasDerechas[i][j].tipo = blocks[x][i][j];
+                            capasDerechas[i][j].ao = calcularAO(globalX, i, globalZ, 0, 1);
+                        }
                     } else if (esTransparent(blocks[x + 1][i][j])) {
-                        capasDerechas[i][j] = blocks[x][i][j];
+                        capasDerechas[i][j].tipo = blocks[x][i][j];
+                        capasDerechas[i][j].ao = calcularAO(globalX, i, globalZ, 0, 1);
                     }
                     // Cara izquierda (x-)
                     if (x == 0) {
-                        if (esTransparent(blocksInX[0][i][j]))
-                            capasIzquierdas[i][j] = blocks[x][i][j];
+                        if (esTransparent(blocksInX[0][i][j])) {
+                            capasIzquierdas[i][j].tipo = blocks[x][i][j];
+                            capasIzquierdas[i][j].ao = calcularAO(globalX, i, globalZ, 0, -1);
+                        }
 
                     } else if (esTransparent(blocks[x - 1][i][j])) {
-                        capasIzquierdas[i][j] = blocks[x][i][j];
+                        capasIzquierdas[i][j].tipo = blocks[x][i][j];
+                        capasIzquierdas[i][j].ao = calcularAO(globalX, i, globalZ, 0, -1);
                     }
                 }
             }
@@ -371,8 +412,8 @@ void Chunk::generateMesh() {
         }
     }
     for (int y = 0; y < 512; y++) {
-        int16_t capasSuperiores[16][16] = {0};
-        int16_t capasInferiores[16][16] = {0};
+        bloqueCapa capasSuperiores[16][16] = {};
+        bloqueCapa capasInferiores[16][16] = {};
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 int16_t typeblock = blocks[i][y][j];
@@ -382,11 +423,13 @@ void Chunk::generateMesh() {
                 if (typeblock != 0) {
                     // Cara inferior (y-)
                     if ((y == 0) || esTransparent(blocks[i][y - 1][j])) {
-                        capasInferiores[i][j] = blocks[i][y][j];
+                        capasInferiores[i][j].tipo = blocks[i][y][j];
+                        capasInferiores[i][j].ao = calcularAO(i + baseX, y, j + baseZ, 1, -1);
                     }
                     // Cara superior (y+)
                     if ((y == 511) || esTransparent(blocks[i][y + 1][j])) {
-                        capasSuperiores[i][j] = blocks[i][y][j];
+                        capasSuperiores[i][j].tipo = blocks[i][y][j];
+                        capasSuperiores[i][j].ao = calcularAO(i + baseX, y, j + baseZ, 1, 1);
                     }
                 }
             }
@@ -402,8 +445,8 @@ void Chunk::generateMesh() {
         }
     }
     for (int z = 0; z < 16; z++) {
-        int16_t capasFrontal[16][512] = {0};
-        int16_t capasTrasera[16][512] = {0};
+        bloqueCapa capasFrontal[16][512] = {};
+        bloqueCapa capasTrasera[16][512] = {};
 
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 512; j++) {
@@ -416,17 +459,23 @@ void Chunk::generateMesh() {
                     int globalZ = z + baseZ;
                     // z+
                     if (z == 15) {
-                        if (esTransparent(blocksInZ[1][i][j]))
-                            capasFrontal[i][j] = blocks[i][j][z];
+                        if (esTransparent(blocksInZ[1][i][j])) {
+                            capasFrontal[i][j].tipo = blocks[i][j][z];
+                            capasFrontal[i][j].ao = calcularAO(globalX, j, globalZ, 2, 1);
+                        }
                     } else if (esTransparent(blocks[i][j][z + 1])) {
-                        capasFrontal[i][j] = blocks[i][j][z];
+                        capasFrontal[i][j].tipo = blocks[i][j][z];
+                        capasFrontal[i][j].ao = calcularAO(globalX, j, globalZ, 2, 1);
                     }
                     // Cara izquierda (Z-)
                     if (z == 0) {
-                        if (esTransparent(blocksInZ[0][i][j]))
-                            capasTrasera[i][j] = blocks[i][j][z];
+                        if (esTransparent(blocksInZ[0][i][j])) {
+                            capasTrasera[i][j].tipo = blocks[i][j][z];
+                            capasTrasera[i][j].ao = calcularAO(globalX, j, globalZ, 2, -1);
+                        }
                     } else if (esTransparent(blocks[i][j][z - 1])) {
-                        capasTrasera[i][j] = blocks[i][j][z];
+                        capasTrasera[i][j].tipo = blocks[i][j][z];
+                        capasTrasera[i][j].ao = calcularAO(globalX, j, globalZ, 2, -1);
                     }
                 }
             }

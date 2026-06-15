@@ -1,23 +1,27 @@
 #pragma once
 #include "configShader.h"
 #include <atomic>
-#include <cmath>
 #include <cstdint>
-#include <filesystem>
 #include <glm/ext/vector_int2.hpp>
 #include <glm/fwd.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
 #include <memory>
 #include <mutex>
 using namespace std;
 using namespace glm;
 class World;
+struct faceAO {
+    float ao0, ao1, ao2, ao3;
+};
 struct Rectangulo {
     int x1, x2, y1, y2;
     int tipoBloque = 0;
+    faceAO face;
 };
-
+struct bloqueCapa {
+    int16_t tipo;
+    faceAO ao;
+};
 class Chunk {
   private:
     World* world;
@@ -32,6 +36,8 @@ class Chunk {
     void cargarVertices(const Rectangulo& r, int eje, int direccion, int fijo, int16_t tipoBloque, vector<float>& vData, vector<unsigned int>& iData,
                         unsigned int& vCount);
     void cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipoBloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount);
+    faceAO calcularAO(int globalX, int globalY, int globalZ, int eje, int direccion);
+    float calcularAOVertex(int globalX, int globalY, int globalZ, int eje, int direccion, int vertice);
 
   public:
     unique_ptr<ChunkBuffer> chunkBuffer;

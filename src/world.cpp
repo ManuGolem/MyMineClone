@@ -562,9 +562,9 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
     float maxDist = renderDist * 16.0f;
     float maxDist2 = maxDist * maxDist;
     vec2 camXZ = vec2(cameraPos.x, cameraPos.z);
-    int generateDist = renderDist + 3;
+    int generateDist = renderDist + 2;
     int cantChunks = 0;
-    int maxChunksPerFrame = 2;
+    int maxChunksPerFrame = 1;
     Chunk::sharedShader->use();
     Chunk::sharedShader->setProjectionMatrix(value_ptr(renderProjection));
     Chunk::sharedShader->setViewMatrix(glm::value_ptr(renderView));
