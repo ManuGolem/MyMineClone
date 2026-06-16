@@ -31,7 +31,8 @@ bool isCrossBlock(int16_t type) {
 bool esTransparent(int16_t type) {
     return (type == 0 || type == OAK_LEAVES || type == CACTUS || type == SPRUCE_LEAVES || isCrossBlock(type));
 }
-/*
+/* -> aca seria para comprobar solo los vertices adyacentes de la cara pero no me convencio ya que al formar el rectangulo se difuminaba y no quedaba bien.
+ * -> pero deberia pensar algo similar ya que es mas optimo asi.[Creo menos rectangulos por ende menos triangulos]
 bool mismoAOBordeHorizontal(const faceAO& izq, const faceAO& der) {
     const float eps = 1e-5f;
     return fabsf(izq.ao1 - der.ao0) < eps && fabsf(izq.ao2 - der.ao3) < eps;
@@ -114,11 +115,97 @@ faceAO Chunk::calcularAO(int globalX, int globalY, int globalZ, int eje, int dir
 }
 
 float Chunk::calcularAOVertex(int globalX, int globalY, int globalZ, int eje, int direccion, int vertice) {
-    // Solo falta esta func
-    float side1, side2, corner;
+    // Ver que bloque vecino tiene dependiendo del vertice (el 0 es abajo a la izquierda, luego el 1 es abajo a la derecha , el 2 es arriba a la derecha y el 3 es arriba
+    // a la izquierda).
+    // => vértice 0: (-1, -1), 1: (+1, -1), 2: (+1, +1), 3: (-1, +1)
+    int signU, signV;
+    if (vertice == 0) {
+        signU = -1;
+        signV = -1;
+    } else if (vertice == 1) {
+        signU = 1;
+        signV = -1;
+    } else if (vertice == 2) {
+        signU = 1;
+        signV = 1;
+    } else {
+        signU = -1;
+        signV = 1;
+    }
+
+    int offX_side1 = 0, offY_side1 = 0, offZ_side1 = 0;
+    int offX_side2 = 0, offY_side2 = 0, offZ_side2 = 0;
+    int offX_corner = 0, offY_corner = 0, offZ_corner = 0;
+
+    // desplazamiento de la normal de la cara, o sea los bloques que le hacen sombra tiene que estar mas "adelante" que el bloque sombreado(?)
+    int normX = 0, normY = 0, normZ = 0;
+    if (eje == 0)
+        normX = direccion;
+    else if (eje == 1)
+        normY = direccion;
+    else if (eje == 2)
+        normZ = direccion;
+
+    // Creo que puedo eliminar este if ya que la altura de los bloques las hago depender de la direccion,
+    // o sea llamar normY=0 si esta en eje==2 o eje ==0 , no se me ocurre bien aun,
+    if (eje == 0) { // cara perpendicular a X, ejes tangentes: U = Z, V = Y
+        offX_side1 = normX;
+        offY_side1 = 0;
+        offZ_side1 = signU;
+        offX_side2 = normX;
+        offY_side2 = signV;
+        offZ_side2 = 0;
+        offX_corner = normX;
+        offY_corner = signV;
+        offZ_corner = signU;
+    } else if (eje == 1) { // cara perpendicular a Y, ejes tangentes: U = X, V = Z
+        offX_side1 = signU;
+        offY_side1 = normY;
+        offZ_side1 = 0;
+        offX_side2 = 0;
+        offY_side2 = normY;
+        offZ_side2 = signV;
+        offX_corner = signU;
+        offY_corner = normY;
+        offZ_corner = signV;
+    } else if (eje == 2) { // cara perpendicular a Z, ejes tangentes: U = X, V = Y
+        offX_side1 = signU;
+        offY_side1 = 0;
+        offZ_side1 = normZ;
+        offX_side2 = 0;
+        offY_side2 = signV;
+        offZ_side2 = normZ;
+        offX_corner = signU;
+        offY_corner = signV;
+        offZ_corner = normZ;
+    }
+    // Adyacente 1
+    int wx1 = globalX + offX_side1;
+    int wy1 = globalY + offY_side1;
+    int wz1 = globalZ + offZ_side1;
+    // Adyacente 2
+    int wx2 = globalX + offX_side2;
+    int wy2 = globalY + offY_side2;
+    int wz2 = globalZ + offZ_side2;
+    // Diagonal
+    int wxc = globalX + offX_corner;
+    int wyc = globalY + offY_corner;
+    int wzc = globalZ + offZ_corner;
+    // Creo que voy a tener que hacer un buffer con los bloques a consultar, al igual que al generar mesh.
+    int16_t type1 = world->getBlockSafe(wx1, wy1, wz1);
+    int16_t type2 = world->getBlockSafe(wx2, wy2, wz2);
+    int16_t typeC = world->getBlockSafe(wxc, wyc, wzc);
+
+    bool side1 = !esTransparent(type1);
+    bool side2 = !esTransparent(type2);
+    bool corner = !esTransparent(typeC);
+
     if (side1 && side2)
-        return 0.0f;
-    return (3.0f - (side1 + side2 + corner)) / 3.0f;
+        return 0.1f;
+    float ao = (3.0f - (side1 + side2 + corner)) / 3.0f;
+    if (ao < 0.1f)
+        ao = 0.1f;
+    return ao;
 }
 void Chunk::cargarVerticesCross(const Rectangulo& r, int fijo, int16_t tipo_bloque, vector<float>& vData, vector<unsigned int>& iData, unsigned int& vCount) {
     // El ao en esta funcion lo dejo fijo en 1, es decir que todo bloque cross no tiene AO
