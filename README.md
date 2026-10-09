@@ -52,6 +52,7 @@ Controls are currently hardcoded.The default bindings are:
 | E           | Open / close inventory  |
 | ESC         | Toggle menu             |
 | Key / Input | Action                  |
+| V           | Change resolution       |
 
 ### Debug Camera
 
