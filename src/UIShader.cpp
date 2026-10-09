@@ -160,6 +160,7 @@ UIShader::UIShader() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     // Cargar texturas
+    // Esta forma queda facil de ir agregando nuevos pero deberia busacar una mejor forma.
     loadTexture("../textures/Hotbar.png", hotbarTextureID);
     loadTexture("../textures/Hotbar_selector.png", selectorTextureID);
 
@@ -227,6 +228,7 @@ UIShader::UIShader() {
     loadTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
 }
 void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
+    //TODO: Esta funcion anda bastante mal, tengo que mejorarla.
     glUseProgram(shaderProgram);
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
@@ -304,6 +306,7 @@ void UIShader::loadTexture(const char* path, unsigned int& textureID) {
     }
 }
 void UIShader::drawBlockClicked(int type, float posX, float posY, int screenWidth, int screenHeight) {
+    //TODO: Esto funciona bien, pero deberia hacer algun helper porque lo repito en varias.
     glUseProgram(uiShaderProgram);
     glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
     glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -329,6 +332,7 @@ void UIShader::drawBlockClicked(int type, float posX, float posY, int screenWidt
     glDisable(GL_BLEND);
 }
 void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabSelected, vector<int> blockInHotbar) {
+    //TODO: Esta funcion me esta quedando muy compleja, tengo que separar un poco el codigo.
     glUseProgram(uiShaderProgram);
     glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
     glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
