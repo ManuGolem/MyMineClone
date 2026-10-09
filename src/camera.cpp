@@ -7,6 +7,7 @@ Camera::Camera() {
     yaw = -90.0f;
     pitch = 45.0f;
     updateCameraVectors();
+    //TODO: Ver si puedo poner fov
 }
 void Camera::updateCameraVectors() {
     // esta funcion no la entiendo mucho
