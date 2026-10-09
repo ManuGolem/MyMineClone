@@ -24,6 +24,8 @@ static int SPRUCE_SAPLING = BlockRegistry::getType("spruce_sapling");
 static int RED_MUSHROOM = BlockRegistry::getType("red_mushroom");
 static int SHORT_GRASS = BlockRegistry::getType("short_grass");
 static int BROWN_MUSHROOM = BlockRegistry::getType("brown_mushroom");
+// TODO: Buscar alternativa para hacer esto.
+// Quizas con un struct donde ya tenga cada cara del bloque.PENSAR
 bool isCrossBlock(int16_t type) {
     return (type == POPPY || type == DANDELION || type == OAK_SAPLING || type == JUNGLE_SAPLING || type == SPRUCE_SAPLING || type == SHORT_GRASS ||
             type == RED_MUSHROOM || type == BROWN_MUSHROOM);

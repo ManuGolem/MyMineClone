@@ -10,26 +10,13 @@ Screen::Screen() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    window = SDL_CreateWindow("Prueba", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("MyMineClone", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     context = SDL_GL_CreateContext(window);
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         std::cout << "GLAD failed\n";
     }
     uiShader = new UIShader();
     makeClickeableAreas(windowWidth, windowHeight);
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    ImGui::StyleColorsDark();
-    ImGui::GetStyle().WindowRounding = 0.0f;
-    ImGui::GetStyle().ChildRounding = 0.0f;
-    ImGui::GetStyle().FrameRounding = 0.0f;
-    ImGui::GetStyle().GrabRounding = 0.0f;
-    ImGui::GetStyle().PopupRounding = 0.0f;
-    ImGui::GetStyle().ScrollbarRounding = 0.0f;
-    ImGui_ImplSDL2_InitForOpenGL(window, context);
-    ImGui_ImplOpenGL3_Init("#version 130");
     glEnable(GL_DEPTH_TEST);
     teclado = SDL_GetKeyboardState(NULL);
     SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -194,6 +181,11 @@ void Screen::poll(float deltaTime) {
                     inventoryOpen = !inventoryOpen;
                     SDL_SetRelativeMouseMode(inventoryOpen ? SDL_FALSE : SDL_TRUE);
                 }
+            }
+            if(e.key.keysym.sym=SDLK_v){ //Cambia a ventana mas chica.
+                windowWidth=1280;
+                windowWidth=720;
+                resize();
             }
         }
         // Mouse
@@ -405,92 +397,9 @@ void Screen::renderBlockOutline(int x, int y, int z) {
         glUseProgram(previousProgram);
     }
 }
-void Screen::renderMenu() { // Todo era para probar la biblioteca(generado por ia,mas precisamente deepseek), la tengo que
-                            // eliminar ya que prefiero implementar de 0 las
-                            // funciones que me dan imgui.
-    if (!openMenu)
-        return;
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui::NewFrame();
-    int display_w, display_h;
-    SDL_GetWindowSize(window, &display_w, &display_h);
-
-    // Configurar ventana del menú (centrada)
-    ImGui::SetNextWindowPos(ImVec2(display_w * 0.5f, display_h * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(400, 500));
-
-    // Estilo Minecraft
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.95f));
-    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-
-    ImGui::Begin("PAUSA", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-
-    // Título
-    ImGui::SetWindowFontScale(2.0f);
-    ImGui::Text("MENU DE PAUSA");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::Dummy(ImVec2(0.0f, 30.0f)); // Espaciado
-
-    // Botones
-    float anchoBoton = 250.0f;
-    float alturaBoton = 50.0f;
-
-    // Centrar botones
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - anchoBoton) * 0.5f);
-    if (ImGui::Button("Continuar", ImVec2(anchoBoton, alturaBoton))) {
-        // openMenu = false;
-        // juegoEnPausa = false;
-        SDL_SetRelativeMouseMode(SDL_TRUE); // Volver a capturar mouse
-    }
-
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - anchoBoton) * 0.5f);
-    if (ImGui::Button("Configuracion", ImVec2(anchoBoton, alturaBoton))) {
-        // Aquí puedes abrir otro menú de configuración
-        // Por ahora solo mostraremos un mensaje
-        std::cout << "Abrir configuración" << std::endl;
-    }
-
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - anchoBoton) * 0.5f);
-    if (ImGui::Button("Salir al menu principal", ImVec2(anchoBoton, alturaBoton))) {
-        // Aquí pondrías la lógica para volver al menú principal
-        std::cout << "Volver al menú principal" << std::endl;
-    }
-
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - anchoBoton) * 0.5f);
-    if (ImGui::Button("Salir del juego", ImVec2(anchoBoton, alturaBoton))) {
-        running = false; // Cerrar el juego
-    }
-
-    // Mostrar información adicional
-    ImGui::Dummy(ImVec2(0.0f, 30.0f));
-    ImGui::Separator();
-    ImGui::Dummy(ImVec2(0.0f, 10.0f));
-
-    ImGui::Text("Posicion: %.1f, %.1f, %.1f", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
-
-    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-
-    ImGui::End();
-
-    // Restaurar estilos
-    ImGui::PopStyleColor(5);
-
-    // Renderizar ImGui
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
 Screen::~Screen() {
     delete uiShader;
-    // Limpiar ImGui
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
-
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
