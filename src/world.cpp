@@ -571,6 +571,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
     mat4 vp = projection * view;
     Plane planes[6];
     extractFrustumPlanes(planes, vp);
+    // Medir el tiempo de insert despues
     insertChunks();
     for (int nivel = 0; nivel <= generateDist; nivel++) {
         if (nivel == 0) {
@@ -669,6 +670,8 @@ void World::startCreationThread() {
     meshThread2 = thread(&World::loopMesh, this);
     meshThread3 = thread(&World::loopMesh, this);
     meshThread4 = thread(&World::loopMesh, this);
+    //Probar con menos threads despues.
+    //Tambien asignar diferentes partes para los threads
 }
 void World::loopCreation() {
     while (threadRunning) {
@@ -723,17 +726,5 @@ World::~World() {
     }
     if (meshThread4.joinable()) {
         meshThread4.join();
-    }
-    if (meshThread5.joinable()) {
-        meshThread5.join();
-    }
-    if (meshThread6.joinable()) {
-        meshThread6.join();
-    }
-    if (meshThread7.joinable()) {
-        meshThread7.join();
-    }
-    if (meshThread8.joinable()) {
-        meshThread8.join();
     }
 }
