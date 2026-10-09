@@ -59,6 +59,7 @@ int main() {
         vec3 blockPos;
         vec3 blockFace;
         bool colocar = false;
+        //TODO: Calcular tiempo de detectBlock() y de renderBlockOutline()
         if (detectBlock(screen, world, blockPos, blockFace, colocar)) {
             // Renderizar outline del bloque a mirar
             screen.renderBlockOutline(blockPos.x, blockPos.y, blockPos.z);
@@ -74,15 +75,16 @@ int main() {
             }
         }
 
-        screen.clearRegenerate();
+        //screen.clearRegenerate();
         screen.clearLeftClick();
         screen.clearRightClick();
         // Update logicas
-        world.update();
+        //world.update();
 
         // Matriz de la camara
         glm::mat4 view = screen.getCamera().getViewMatrix();
         // Dibujar mundo
+        //TODO: Calcular tiempo que se pierde aca.
         if (screen.isDebugMode()) {
             world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getDebugCamera().getViewMatrix(),
                          screen.getDebugCamera().getProjectionMatrix());
@@ -91,6 +93,7 @@ int main() {
                          screen.getCamera().getProjectionMatrix());
         }
         // Renderizar menu
+        // TODO: Calcular tiempo que se pierde aca
         screen.renderMenu();
         screen.renderUI();
         // Cambiar los back/front frames
