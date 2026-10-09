@@ -163,7 +163,6 @@ int Screen::isHotbarItemClicked(int x, int y) {
 void Screen::poll(float deltaTime) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
-        ImGui_ImplSDL2_ProcessEvent(&e);
         if (e.type == SDL_QUIT) {
             running = false;
         }
@@ -182,9 +181,9 @@ void Screen::poll(float deltaTime) {
                     SDL_SetRelativeMouseMode(inventoryOpen ? SDL_FALSE : SDL_TRUE);
                 }
             }
-            if(e.key.keysym.sym=SDLK_v){ //Cambia a ventana mas chica.
-                windowWidth=1280;
-                windowWidth=720;
+            if (e.key.keysym.sym == SDLK_v) { // Cambia a ventana mas chica.
+                windowWidth = 1280;
+                windowWidth = 720;
                 resize();
             }
         }

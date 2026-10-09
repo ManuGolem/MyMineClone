@@ -33,8 +33,8 @@ class Screen {
     bool rightClicked = false;
     bool leftClicked = false;
     bool regenerateWorld = false;
-    int windowWidth = 1280;
-    int windowHeight = 720;
+    int windowWidth = 1920;
+    int windowHeight = 1080;
     bool crosshairVisible = true;
     bool hotbarVisible = true;
     int hotbarNumSelected = 1;
@@ -66,7 +66,6 @@ class Screen {
     void clear();
     void swap();
     void resize();
-    void renderMenu();
     void renderUI();
     int isTabTopClicked(int x, int y);
     int isHotbarItemClicked(int x, int y);

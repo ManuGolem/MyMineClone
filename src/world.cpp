@@ -350,10 +350,9 @@ void World::createChunk(int cx, int cz) {
             int continentalHeight = getTerrainHeight(worldX, worldZ);
             BiomeType biome = getBiome(worldX, worldZ, continentalHeight);
             // Generar columna de bloques
-            bool hayCueva=false;
+            bool hayCueva = false;
             for (int y = 0; y <= continentalHeight; y++) {
-                if(!hayCueva)//Deberia usar ruido 3D para poder generar las cuevas pero la idea es esa.
-                    int block;
+                int block;
                 // Asignar tipos de bloque según altura
                 if (y == continentalHeight) {
                     if (biome == plains) {
@@ -364,10 +363,10 @@ void World::createChunk(int cx, int cz) {
                         block = BlockRegistry::getType("water");
                     } else if (biome == mountains) {
                         block = BlockRegistry::getType("snowy_grass_block");
-                    } else if (biome==forest){
-                        block= BlockRegistry::getType("grass_block"); //TODO: Por ahora le dejo pasto normal despues le tengo que poner el oscuro.
-                    }else {
-                        block = BlockRegistry::getType("dirt"); 
+                    } else if (biome == forest) {
+                        block = BlockRegistry::getType("grass_block"); // TODO: Por ahora le dejo pasto normal despues le tengo que poner el oscuro.
+                    } else {
+                        block = BlockRegistry::getType("dirt");
                     }
                 } else if (y >= continentalHeight - 4) { // tierra debajo
                     if (biome == plains) {
@@ -378,14 +377,15 @@ void World::createChunk(int cx, int cz) {
                         block = BlockRegistry::getType("water");
                     } else if (biome == mountains) {
                         block = BlockRegistry::getType("dirt");
-                    }else if(biome==forest){
-                        block= BlockRegistry::getType("dirt");
+                    } else if (biome == forest) {
+                        block = BlockRegistry::getType("dirt");
                     } else {
                         block = BlockRegistry::getType("dirt");
                     }
                 } else if (y == 0) { // Bedrock
                     block = 18;
                 } else { // Stone
+                    // TODO: Si hay cueva el block es 0
                     block = 2;
                 }
 
@@ -427,7 +427,7 @@ void World::createChunk(int cx, int cz) {
             hash = hash * 475363961u + worldX * 374761393u + worldZ * 298347829u;
             hash = (hash ^ (hash >> 16)) * 1274126177u;
             float random = (hash & 0xFFFFFF) / float(0xFFFFFF);
-            //TODO: Ver si no estoy complejizando esto al pedo(?)
+            // TODO: Ver si no estoy complejizando esto al pedo(?)
             int treeType;
             float probTree;
             if (biome == plains) {
@@ -443,10 +443,10 @@ void World::createChunk(int cx, int cz) {
             } else {
                 treeType = 21;
                 probTree = 0.002f;
-            } //TODO: Mas tipos de arboles, en el forest agregar variedades de arboles
+            } // TODO: Mas tipos de arboles, en el forest agregar variedades de arboles
             // Generar arboles .
             if (random < probTree) {
-                //TODO: Probar tiempo que pierdo generando arboles
+                // TODO: Probar tiempo que pierdo generando arboles
                 generateTree(chunk, x, groundY, z, worldX, worldZ, hash, treeType);
             }
             if (random < 0.1f && biome == plains) {
@@ -577,7 +577,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
     Chunk::sharedShader->setViewMatrix(glm::value_ptr(renderView));
     mat4 vp = projection * view;
     Plane planes[6];
-    //TODO: Medir el tiempo de todo esto.
+    // TODO: Medir el tiempo de todo esto.
     extractFrustumPlanes(planes, vp);
     insertChunks();
     for (int nivel = 0; nivel <= generateDist; nivel++) {
@@ -677,8 +677,8 @@ void World::startCreationThread() {
     meshThread2 = thread(&World::loopMesh, this);
     meshThread3 = thread(&World::loopMesh, this);
     meshThread4 = thread(&World::loopMesh, this);
-    //Probar con menos threads despues.
-    //Tambien asignar diferentes partes para los threads
+    // Probar con menos threads despues.
+    // Tambien asignar diferentes partes para los threads
 }
 void World::loopCreation() {
     while (threadRunning) {
