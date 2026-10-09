@@ -328,7 +328,8 @@ void UIShader::drawBlockClicked(int type, float posX, float posY, int screenWidt
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 }
-void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabSelected, vector<int> blockInHotbar) {
+void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<int> itemsInInventory, int tabSelected, vector<int> blockInHotbar, int scrollInv,
+                                     int cantMaxScroll) {
     glUseProgram(uiShaderProgram);
     glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight);
     glUniformMatrix4fv(uiProjLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -392,12 +393,15 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     // Dibujar scroll bar
+    if (cantMaxScroll == 0)
+        cantMaxScroll = 1;
+    float percentScroll = scrollInv / cantMaxScroll;
     if (tabSelected != 14) {
         int scrollWidth = 24;
         int scrollHeight = 30;
         glBindTexture(GL_TEXTURE_2D, scrollerTextureID);
         int px = posX + 350;
-        int py = posY + 236 - scrollHeight;
+        int py = posY + 236 - scrollHeight - percentScroll * (236 - scrollHeight - 14);
         model = glm::translate(glm::mat4(1.0f), glm::vec3(px, py, 0.0f));
         model = glm::scale(model, glm::vec3(scrollWidth, scrollHeight, 1.0f));
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -485,8 +489,12 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
         int py = posY + 188;
         auto& blocks = BlockRegistry::get(BlockRegistry::getCategory(tabSelected));
         int cantblocks = blocks.size();
-        int cantElemnt = cantblocks > 45 ? 45 : cantblocks;
+        int cantElemnt = cantblocks;
+        // int cantElemnt = cantblocks > 45 ? 45 : cantblocks;
         int j = 0;
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(posX, posY + 45, itemTabWidth, 36 * 5 - 3.0f);
+        py += scrollInv * 36;
         for (int i = 0; i < cantElemnt; i++) {
             int blockType = blocks[i];
             if (iconTexturesID[blockType] == 0)
@@ -504,6 +512,7 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
             glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(iconModel));
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
+        glDisable(GL_SCISSOR_TEST);
     }
     // Draw items in inv
     if (tabSelected == 14) {

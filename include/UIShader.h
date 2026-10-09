@@ -61,7 +61,8 @@ class UIShader {
     void drawCrosshair(int screenWidth, int screenHeight, int size = 10, float r = 1.0f, float g = 1.0f, float b = 1.0f);
     void drawHotbar(int windowWidth, int windowHeight, int hotbarNumSelected, vector<int> blockTypes);
     void drawBlockClicked(int type, float posX, float posY, int width, int height);
-    void drawCreativeInventory(int windowWidth, int windowHeight, vector<int> itemsInInventory, int tabTopSelected, vector<int> blocksInHotbar);
+    void drawCreativeInventory(int windowWidth, int windowHeight, vector<int> itemsInInventory, int tabTopSelected, vector<int> blocksInHotbar, int scrollInv,
+                               int cantMaxScroll);
     void loadTexture(const char* path, unsigned int& textureID);
     void setColor(float r, float g, float b) {
         glUniform3f(colorLoc, r, g, b);

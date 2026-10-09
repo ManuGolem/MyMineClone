@@ -254,7 +254,7 @@ void Screen::poll(float deltaTime) {
                             Category categoria = BlockRegistry::getCategory(tabSelected);
                             vector<int> elems = BlockRegistry::get(categoria);
                             if (categoryInvItemClicked < elems.size()) {
-                                itemClicked = elems[categoryInvItemClicked];
+                                itemClicked = elems[categoryInvItemClicked + scrollInventory * 9];
                             }
                         }
                     }
@@ -267,13 +267,27 @@ void Screen::poll(float deltaTime) {
         }
         if (e.type == SDL_MOUSEWHEEL) {
             if (e.wheel.y > 0) {
-                hotbarNumSelected--;
-                if (hotbarNumSelected < 1)
-                    hotbarNumSelected = 9;
+                if (inventoryOpen) {
+                    if (scrollInventory > 0)
+                        scrollInventory--;
+                } else {
+                    hotbarNumSelected--;
+                    if (hotbarNumSelected < 1)
+                        hotbarNumSelected = 9;
+                }
             } else if (e.wheel.y < 0) {
-                hotbarNumSelected++;
-                if (hotbarNumSelected > 9)
-                    hotbarNumSelected = 1;
+                if (inventoryOpen) {
+                    Category categoria = BlockRegistry::getCategory(tabSelected);
+                    vector<int> elems = BlockRegistry::get(categoria);
+                    cantMaxScroll = (elems.size() / 9) - 5;
+                    if (!(cantMaxScroll < scrollInventory)) {
+                        scrollInventory++;
+                    }
+                } else {
+                    hotbarNumSelected++;
+                    if (hotbarNumSelected > 9)
+                        hotbarNumSelected = 1;
+                }
             }
         }
     }
@@ -367,7 +381,7 @@ void Screen::renderUI() {
         uiShader->drawHotbar(windowWidth, windowHeight, hotbarNumSelected, blocksInHotbar);
     }
     if (inventoryOpen) {
-        uiShader->drawCreativeInventory(windowWidth, windowHeight, itemsInInventory, tabSelected, blocksInHotbar);
+        uiShader->drawCreativeInventory(windowWidth, windowHeight, itemsInInventory, tabSelected, blocksInHotbar, scrollInventory, cantMaxScroll);
         if (itemClicked != 0) {
             SDL_GetMouseState(&mouseX, &mouseY);
             uiShader->drawBlockClicked(itemClicked, mouseX, windowHeight - mouseY, windowWidth, windowHeight);
