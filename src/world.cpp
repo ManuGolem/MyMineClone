@@ -1,9 +1,11 @@
 #include "../include/world.h"
 #include "../include/blocksRegistry.h"
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -446,7 +448,6 @@ void World::createChunk(int cx, int cz) {
             } // TODO: Mas tipos de arboles, en el forest agregar variedades de arboles
             // Generar arboles .
             if (random < probTree) {
-                // TODO: Probar tiempo que pierdo generando arboles
                 generateTree(chunk, x, groundY, z, worldX, worldZ, hash, treeType);
             }
             if (random < 0.1f && biome == plains) {
@@ -577,7 +578,6 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
     Chunk::sharedShader->setViewMatrix(glm::value_ptr(renderView));
     mat4 vp = projection * view;
     Plane planes[6];
-    // TODO: Medir el tiempo de todo esto.
     extractFrustumPlanes(planes, vp);
     insertChunks();
     for (int nivel = 0; nivel <= generateDist; nivel++) {
@@ -611,6 +611,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
             bool segunda = true;
             bool tercera = true;
             bool cuarta = true;
+
             while (!end) {
                 int chunkX = centerChunk.x + x;
                 int chunkZ = centerChunk.y + z;
@@ -708,7 +709,14 @@ void World::loopMesh() {
             chunk = getChunk(x, z);
         }
         if (chunk) {
+            auto inicio = std::chrono::high_resolution_clock::now();
+
             chunk->generateMesh();
+            auto fin = std::chrono::high_resolution_clock::now();
+            auto duracion = std::chrono::duration_cast<std::chrono::microseconds>(fin - inicio);
+            if (duracion > std::chrono::microseconds(500)) {
+                std::cout << "Duración: " << duracion.count() << " us\n";
+            }
             chunk->isUpdating = false;
         }
     }
