@@ -182,9 +182,12 @@ void Screen::poll(float deltaTime) {
                 }
             }
             if (e.key.keysym.sym == SDLK_v) { // Cambia a ventana mas chica.
+                // TODO: Revisar esto ya que no cambia el tamaño de la ventana, solo estira el render.
                 windowWidth = 1280;
                 windowWidth = 720;
                 resize();
+            }
+            if (e.key.keysym.sym == SDLK_g) {
             }
         }
         // Mouse
@@ -378,6 +381,9 @@ void Screen::renderUI() {
             uiShader->drawBlockClicked(itemClicked, mouseX, windowHeight - mouseY, windowWidth, windowHeight);
         }
     } // Aca me falta renderizar menu
+    if (debug_axes) {
+        uiShader->drawDebugAxes(camera.getViewMatrix(), camera.getProjectionMatrix());
+    }
     // Restaurar depth test
     if (depthTest)
         glEnable(GL_DEPTH_TEST);
