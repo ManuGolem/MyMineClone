@@ -580,6 +580,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
     Plane planes[6];
     extractFrustumPlanes(planes, vp);
     insertChunks();
+    vector<pair<int, int>> chunksToRequest;
     for (int nivel = 0; nivel <= generateDist; nivel++) {
         if (nivel == 0) {
             int chunkX = centerChunk.x;
@@ -593,15 +594,7 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
                 chunk->render();
 
             } else {
-                lock_guard<mutex> lock(setChunkRequestMutex);
-                if (requestedChunks.find({chunkX, chunkZ}) == requestedChunks.end()) {
-                    {
-                        lock_guard<mutex> lock(mutexChunkRequest);
-                        chunkRequestQueue.push({chunkX, chunkZ});
-                    }
-                    requestedChunks.insert({chunkX, chunkZ});
-                    RequestCV.notify_one();
-                }
+                chunksToRequest.push_back({chunkX, chunkZ});
             }
         } else {
             int x = nivel;
@@ -611,65 +604,59 @@ void World::render(vec3 cameraPos, mat4 view, mat4 projection, mat4 renderView, 
             bool segunda = true;
             bool tercera = true;
             bool cuarta = true;
+            for (int x = -nivel; x <= nivel; x++) {
+                for (int z = -nivel; z <= nivel; z++) {
+                    // Esto es basicamente lo que ya tenia con el while !end pero mucho mas facil de entender
+                    // Voy haciendo lo mismo de ir extendiendo desde el centro el render.
+                    if (abs(x) != nivel && abs(z) != nivel)
+                        continue;
 
-            while (!end) {
-                int chunkX = centerChunk.x + x;
-                int chunkZ = centerChunk.y + z;
-                vec2 chunkCenter = vec2(chunkX * 16 + 8, chunkZ * 16 + 8);
-                vec2 diff = camXZ - chunkCenter;
-                float dist2 = glm::dot(diff, diff);
-                // Limito al circulo de vision desde el centro del chunk actual hasta el render.
-                // Es decir en vez de renderizar en un rectangulo (cuadrado) lo hago en un circulo
-                // Luego dentro del circulo recien pregunto por el frustrum.
-                if (dist2 <= maxDist2) {
-                    vec3 min(chunkX << 4, 0, chunkZ << 4);
-                    vec3 max(min.x + 15, 512, min.z + 15);
-                    if (isBoxVisible(planes, min, max)) {
-                        shared_ptr<Chunk> chunk;
-                        {
-                            lock_guard<mutex> lock(mapChunks);
-                            chunk = getChunk(chunkX, chunkZ);
-                        }
-                        if (nivel <= renderDist) {
+                    int chunkX = centerChunk.x + x;
+                    int chunkZ = centerChunk.y + z;
+                    vec2 chunkCenter = vec2(chunkX * 16 + 8, chunkZ * 16 + 8);
+                    vec2 diff = camXZ - chunkCenter;
+                    float dist2 = glm::dot(diff, diff);
+                    // Limito al circulo de vision desde el centro del chunk actual hasta el render.
+                    // Es decir en vez de renderizar en un rectangulo (cuadrado) lo hago en un circulo
+                    // Luego dentro del circulo recien pregunto por el frustrum.
+                    if (dist2 <= maxDist2) {
+                        vec3 min(chunkX << 4, 0, chunkZ << 4);
+                        vec3 max(min.x + 15, 512, min.z + 15);
+                        if (isBoxVisible(planes, min, max)) {
+                            shared_ptr<Chunk> chunk;
+                            // Si esta en el circulo &&
+                            // esta dentro del frustrum &&
+                            // Ahi pido el mutex.
+                            {
+                                lock_guard<mutex> lock(mapChunks);
+                                chunk = getChunk(chunkX, chunkZ);
+                            }
                             if (chunk) {
                                 chunk->render();
                             } else if (cantChunks < maxChunksPerFrame) {
-                                lock_guard<mutex> lock(setChunkRequestMutex);
-                                if (requestedChunks.find({chunkX, chunkZ}) == requestedChunks.end()) {
-                                    {
-                                        lock_guard<mutex> lock(mutexChunkRequest);
-                                        chunkRequestQueue.push({chunkX, chunkZ});
-                                    }
-                                    requestedChunks.insert({chunkX, chunkZ});
-                                    RequestCV.notify_one();
-                                    cantChunks++;
-                                }
+                                chunksToRequest.push_back({chunkX, chunkZ});
+                                cantChunks++;
                             }
                         }
                     }
                 }
-                if (z >= -nivel && primera) {
-                    z--;
-                    if (z == -nivel)
-                        primera = false;
-                } else if (x >= -nivel && segunda) {
-                    x--;
-                    if (x == -nivel)
-                        segunda = false;
-                } else if (z <= nivel && tercera) {
-                    z++;
-                    if (z == nivel)
-                        tercera = false;
-                } else if (x <= nivel && cuarta) {
-                    x++;
-                    if (x == nivel - 1)
-                        cuarta = false;
-                } else {
-                    end = true;
-                }
             }
         }
+        lock_guard<mutex> lock(setChunkRequestMutex);
+        std::vector<std::pair<int, int>> aEncolar;
+        for (auto& [cx, cz] : chunksToRequest) {
+            if (requestedChunks.find({cx, cz}) == requestedChunks.end()) {
+                requestedChunks.insert({cx, cz});
+                aEncolar.push_back({cx, cz});
+            }
+        }
+        {
+            lock_guard<mutex> lock2(mutexChunkRequest);
+            for (auto& p : aEncolar)
+                chunkRequestQueue.push(p);
+        }
     }
+    RequestCV.notify_all();
 }
 
 void World::startCreationThread() {
@@ -678,6 +665,7 @@ void World::startCreationThread() {
     meshThread2 = thread(&World::loopMesh, this);
     meshThread3 = thread(&World::loopMesh, this);
     meshThread4 = thread(&World::loopMesh, this);
+    meshThread5 = thread(&World::loopMesh, this);
     // Probar con menos threads despues.
     // Tambien asignar diferentes partes para los threads
 }
@@ -709,14 +697,14 @@ void World::loopMesh() {
             chunk = getChunk(x, z);
         }
         if (chunk) {
-            auto inicio = std::chrono::high_resolution_clock::now();
+            // auto inicio = std::chrono::high_resolution_clock::now();
 
             chunk->generateMesh();
-            auto fin = std::chrono::high_resolution_clock::now();
-            auto duracion = std::chrono::duration_cast<std::chrono::microseconds>(fin - inicio);
-            if (duracion > std::chrono::microseconds(500)) {
-                std::cout << "Duración: " << duracion.count() << " us\n";
-            }
+            // auto fin = std::chrono::high_resolution_clock::now();
+            // auto duracion = std::chrono::duration_cast<std::chrono::microseconds>(fin - inicio);
+            // if (duracion > std::chrono::microseconds(500)) {
+            //     std::cout << "Duración: " << duracion.count() << " us\n";
+            // }
             chunk->isUpdating = false;
         }
     }
@@ -741,5 +729,8 @@ World::~World() {
     }
     if (meshThread4.joinable()) {
         meshThread4.join();
+    }
+    if (meshThread5.joinable()) {
+        meshThread5.join();
     }
 }
