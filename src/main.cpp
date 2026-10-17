@@ -92,7 +92,6 @@ int main() {
             world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getCamera().getViewMatrix(),
                          screen.getCamera().getProjectionMatrix());
         }
-        // Renderizar menu
         // TODO: Calcular tiempo que se pierde aca
         screen.renderUI();
         // Cambiar los back/front frames
