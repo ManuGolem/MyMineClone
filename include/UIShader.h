@@ -15,6 +15,8 @@ class UIShader {
     unsigned int colorLoc;
     static unsigned int axesVAO;
     static unsigned int axesVBO;
+    static unsigned int chunkVAO;
+    static unsigned int chunkVBO;
     static unsigned int outlinesVAO;
     static unsigned int outlinesVBO;
     static unsigned int crosshairVAO;
@@ -43,6 +45,9 @@ class UIShader {
     unsigned int tabTopSelectedMidTextureID;
     unsigned int scrollerTextureID;
 
+    //
+    int alturaVieja = 0;
+
   public:
     UIShader();
     void setModelMatrix(const float* matrix) {
@@ -56,7 +61,8 @@ class UIShader {
     void setProjectionMatrix(const float* matrix) {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, matrix);
     }
-    void drawDebugAxes(const glm::mat4& view, const glm::mat4& projection);
+    void drawDebugAxes(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition);
+    void drawChunk(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition);
     void drawOutline(int x, int y, int z, const glm::mat4& view, const glm::mat4& projection);
     void drawCrosshair(int screenWidth, int screenHeight, int size = 10, float r = 1.0f, float g = 1.0f, float b = 1.0f);
     void drawHotbar(int windowWidth, int windowHeight, int hotbarNumSelected, vector<int> blockTypes);
