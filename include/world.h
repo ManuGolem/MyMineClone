@@ -41,6 +41,7 @@ class World {
     thread meshThread2;
     thread meshThread3;
     thread meshThread4;
+    thread meshThread5;
     atomic<bool> threadRunning = true;
     int worldSeed;
 
