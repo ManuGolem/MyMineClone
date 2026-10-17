@@ -25,7 +25,10 @@ Screen::Screen() {
     resize();
 }
 void Screen::resize() {
+    SDL_SetWindowSize(window, windowWidth, windowHeight);
+    glViewport(0, 0, windowWidth, windowHeight);
     camera.setAspectRatio(windowWidth, windowHeight);
+    makeClickeableAreas(windowWidth, windowHeight); // TODO: Fijarme si todas las boxes dependen de (w,h)
 }
 
 Camera& Screen::getCamera() {
@@ -167,6 +170,13 @@ void Screen::poll(float deltaTime) {
             running = false;
         }
         // Teclas
+        if (e.type == SDL_WINDOWEVENT) {
+            if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED || e.window.event == SDL_WINDOWEVENT_RESIZED) {
+                windowWidth = e.window.data1;
+                windowHeight = e.window.data2;
+                resize();
+            }
+        }
         if (e.type == SDL_KEYDOWN) {
             if (e.key.keysym.sym == SDLK_ESCAPE) {
                 if (inventoryOpen)
@@ -181,13 +191,9 @@ void Screen::poll(float deltaTime) {
                     SDL_SetRelativeMouseMode(inventoryOpen ? SDL_FALSE : SDL_TRUE);
                 }
             }
-            if (e.key.keysym.sym == SDLK_v) { // Cambia a ventana mas chica.
-                // TODO: Revisar esto ya que no cambia el tamaño de la ventana, solo estira el render.
-                windowWidth = 1280;
-                windowWidth = 720;
-                resize();
-            }
             if (e.key.keysym.sym == SDLK_g) {
+                debug_axes = !debug_axes;
+                crosshairVisible = !crosshairVisible;
             }
         }
         // Mouse
@@ -366,6 +372,10 @@ void Screen::renderUI() {
     GLboolean depthTest;
     glGetBooleanv(GL_DEPTH_TEST, &depthTest);
     glDisable(GL_DEPTH_TEST);
+    if (debug_axes) {
+        uiShader->drawChunk(camera.getViewMatrix(), camera.getProjectionMatrix(), camera.getPosition());
+        uiShader->drawDebugAxes(camera.getViewMatrix(), camera.getProjectionMatrix(), camera.getPosition());
+    }
     if (crosshairVisible) {
         // Render Crosshair
         uiShader->drawCrosshair(windowWidth, windowHeight, crosshairSize, crosshairColor[0], crosshairColor[1], crosshairColor[2]);
@@ -381,9 +391,6 @@ void Screen::renderUI() {
             uiShader->drawBlockClicked(itemClicked, mouseX, windowHeight - mouseY, windowWidth, windowHeight);
         }
     } // Aca me falta renderizar menu
-    if (debug_axes) {
-        uiShader->drawDebugAxes(camera.getViewMatrix(), camera.getProjectionMatrix());
-    }
     // Restaurar depth test
     if (depthTest)
         glEnable(GL_DEPTH_TEST);
