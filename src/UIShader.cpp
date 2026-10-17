@@ -1,8 +1,11 @@
 #include "../include/UIShader.h"
 #include "../include/blocksRegistry.h"
 #include "../include/stb_image.h"
+#include <glm/ext/matrix_float4x4.hpp>
 unsigned int UIShader::axesVAO = 0;
 unsigned int UIShader::axesVBO = 0;
+unsigned int UIShader::chunkVBO = 0;
+unsigned int UIShader::chunkVAO = 0;
 unsigned int UIShader::outlinesVAO = 0;
 unsigned int UIShader::outlinesVBO = 0;
 unsigned int UIShader::crosshairVAO = 0;
@@ -85,14 +88,20 @@ UIShader::UIShader() {
     viewLoc = glGetUniformLocation(shaderProgram, "view");
     projLoc = glGetUniformLocation(shaderProgram, "projection");
     colorLoc = glGetUniformLocation(shaderProgram, "lineColor");
-    // Debug axes for chunk
+    // Debug axes
     glGenVertexArrays(1, &axesVAO);
     glGenBuffers(1, &axesVBO);
     glBindVertexArray(axesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, axesVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
+    // Debug chunk
+    glGenVertexArrays(1, &chunkVAO);
+    glGenBuffers(1, &chunkVBO);
+    glBindVertexArray(chunkVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, chunkVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
     // Outlines
     glGenVertexArrays(1, &outlinesVAO);
     glGenBuffers(1, &outlinesVBO);
@@ -227,37 +236,122 @@ UIShader::UIShader() {
     loadTexture("../textures/creativeInventory/tab_top_selected_middle.png", tabTopSelectedMidTextureID);
     loadTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
 }
-void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection) {
+void UIShader::drawChunk(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition) {
     // TODO: Esta funcion anda bastante mal, tengo que mejorarla.
     glUseProgram(shaderProgram);
+    glEnable(GL_DEPTH_TEST);
+    setViewMatrix(glm::value_ptr(view));
+    setProjectionMatrix(glm::value_ptr(projection));
+
+    int chunkX = (int)floor(cameraPosition.x / 16.0f);
+    int chunkZ = (int)floor(cameraPosition.z / 16.0f);
+    int altura = cameraPosition.y;
+
+    glm::mat4 model(1.0f);
+    setModelMatrix(glm::value_ptr(model));
+
+    glBindVertexArray(chunkVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, chunkVBO);
+    if (altura > alturaVieja + 8.0f) {
+        alturaVieja = altura;
+    } else if (altura < alturaVieja - 8.0f) {
+        alturaVieja = altura;
+    }
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 8; j++) {
+            float x;
+            float z;
+            float inicioChunkX;
+            float inicioChunkZ;
+            float xi, xf, zi, zf;
+            if (i == 0) {
+                inicioChunkX = chunkX * 16;
+                inicioChunkZ = chunkZ * 16;
+                x = inicioChunkX + j * 2;
+                z = inicioChunkZ;
+                xi = inicioChunkX;
+                zi = inicioChunkZ;
+                xf = inicioChunkX + 16.0f;
+                zf = zi;
+            } else if (i == 1) {
+                inicioChunkX = chunkX * 16;
+                inicioChunkZ = chunkZ * 16;
+                x = inicioChunkX + 2.0f + j * 2;
+                z = inicioChunkZ + 16.0f;
+                xi = inicioChunkX;
+                zi = z;
+                xf = inicioChunkX + 16.0f;
+                zf = zi;
+
+            } else if (i == 2) {
+                inicioChunkX = chunkX * 16;
+                inicioChunkZ = chunkZ * 16;
+                x = inicioChunkX;
+                z = inicioChunkZ + 2.0f + j * 2;
+                xi = x;
+                zi = inicioChunkZ;
+                xf = xi;
+                zf = inicioChunkZ + 16.0f;
+
+            } else {
+                inicioChunkX = chunkX * 16;
+                inicioChunkZ = chunkZ * 16;
+                x = inicioChunkX + 16;
+                z = inicioChunkZ + j * 2;
+                xi = x;
+                zi = inicioChunkZ;
+                xf = xi;
+                zf = inicioChunkZ + 16.0f;
+            }
+            float vertices[] = {x, altura - 10.0f * 16, z, x, altura + 10.0f * 16, z, xi, alturaVieja + 2.0f * j - 8.0f, zi, xf, alturaVieja + 2.0f * j - 8.0f, zf};
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            setColor(0.0f, 1.0f, 0.0f);
+            glDrawArrays(GL_LINES, 0, 2);
+            setColor(1.0f, 0.0f, 0.0f);
+            glDrawArrays(GL_LINES, 2, 4);
+        }
+    }
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(0);
+}
+void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition) {
+    glUseProgram(shaderProgram);
+
     setViewMatrix(glm::value_ptr(view));
     setProjectionMatrix(glm::value_ptr(projection));
 
     glm::mat4 model(1.0f);
     setModelMatrix(glm::value_ptr(model));
 
-    float vertices[] = {// Eje X (rojo)
-                        0.0f, 0.0f, 0.0f, 100.0f, 0.0f, 0.0f,
-
-                        // Eje Y (verde)
-                        0.0f, 0.0f, 0.0f, 0.0f, 100.0f, 0.0f,
-
-                        // Eje Z (azul)
-                        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 100.0f};
-
     glBindVertexArray(axesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, axesVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // Eje X (rojo)
+    float distance = 4.0f;
+    // Magia, calcula a donde esta mirando. (1,0,0) seria para +x etc.
+    glm::vec3 forward = glm::normalize(glm::vec3(-view[0][2], -view[1][2], -view[2][2]));
+    glm::vec3 origin = cameraPosition + forward * distance;
+
+    float len = 0.2f;
+
+    float vertices[] = {// Eje X
+                        origin.x, origin.y, origin.z, origin.x + len, origin.y, origin.z,
+
+                        // Eje Y
+                        origin.x, origin.y, origin.z, origin.x, origin.y + len, origin.z,
+
+                        // Eje Z
+                        origin.x, origin.y, origin.z, origin.x, origin.y, origin.z + len};
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+
+    glLineWidth(2.0f);
+
     setColor(1.0f, 0.0f, 0.0f);
     glDrawArrays(GL_LINES, 0, 2);
 
-    // Eje Y (verde)
     setColor(0.0f, 1.0f, 0.0f);
     glDrawArrays(GL_LINES, 2, 2);
 
-    // Eje Z (azul)
     setColor(0.0f, 0.0f, 1.0f);
     glDrawArrays(GL_LINES, 4, 2);
 
@@ -341,7 +435,6 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     glUniformMatrix4fv(uiViewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
     float iconSize = 32;
     float itemTabWidth = 195.0f * 2.0f;
@@ -542,7 +635,6 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     }
     //    Restaurar estado
     glBindVertexArray(0);
-    glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 }
 void UIShader::drawHotbar(int screenWidth, int screenHeight, int selected, vector<int> blockTypes) {
@@ -557,7 +649,6 @@ void UIShader::drawHotbar(int screenWidth, int screenHeight, int selected, vecto
     // Configurar blending
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_DEPTH_TEST);
 
     // Dimensiones
     float hotbarWidth = 364.0f;
@@ -616,7 +707,6 @@ void UIShader::drawHotbar(int screenWidth, int screenHeight, int selected, vecto
     }
     // Restaurar estado
     glBindVertexArray(0);
-    glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 }
 void UIShader::drawCrosshair(int screenWidth, int screenHeight, int size, float r, float g, float b) {
