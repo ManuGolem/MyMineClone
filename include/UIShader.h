@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -69,7 +69,7 @@ class UIShader {
     void drawBlockClicked(int type, float posX, float posY, int width, int height);
     void drawCreativeInventory(int windowWidth, int windowHeight, vector<int> itemsInInventory, int tabTopSelected, vector<int> blocksInHotbar, int scrollInv,
                                int cantMaxScroll);
-    void loadTexture(const char* path, unsigned int& textureID);
+    void loadTexture(const string& path, unsigned int& textureID);
     void setColor(float r, float g, float b) {
         glUniform3f(colorLoc, r, g, b);
     }

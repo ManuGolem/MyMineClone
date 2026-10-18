@@ -40,6 +40,10 @@ bool Screen::isRunning() {
 }
 void Screen::makeClickeableAreas(int width, int height) {
     // TabItems;
+    tabTopItemsClickeables.clear();
+    hotbarItemsClickeables.clear();
+    categoryInvItemsClickeables.clear();
+    invItemsClickeables.clear();
     float itemTabWidth = 194.0f * 2.0f;
     float itemTabHeight = 136.0f * 2.0f;
     float posX = (width - itemTabWidth) / 2.0f;
@@ -147,6 +151,7 @@ int Screen::isCategoryInvItemClicked(int x, int y) {
 int Screen::isTabTopClicked(int x, int y) {
     for (int i = 0; i < tabTopItemsClickeables.size(); i++) {
         if (tabTopItemsClickeables[i].isClickIn(x, y)) {
+            scrollInventory = 0;
             if (i != 12)
                 return i + 1;
             else
@@ -253,9 +258,8 @@ void Screen::poll(float deltaTime) {
                         if (categoryInvItemClicked != -1) {
                             Category categoria = BlockRegistry::getCategory(tabSelected);
                             vector<int> elems = BlockRegistry::get(categoria);
-                            if (categoryInvItemClicked < elems.size()) {
+                            if (categoryInvItemClicked + scrollInventory * 9 < elems.size())
                                 itemClicked = elems[categoryInvItemClicked + scrollInventory * 9];
-                            }
                         }
                     }
 
@@ -279,8 +283,10 @@ void Screen::poll(float deltaTime) {
                 if (inventoryOpen) {
                     Category categoria = BlockRegistry::getCategory(tabSelected);
                     vector<int> elems = BlockRegistry::get(categoria);
-                    cantMaxScroll = (elems.size() / 9) - 5;
-                    if (!(cantMaxScroll < scrollInventory)) {
+                    cantMaxScroll = ceil((elems.size() / 9.0f) - 5);
+                    if (cantMaxScroll < 0)
+                        cantMaxScroll = 0;
+                    if (cantMaxScroll > scrollInventory) {
                         scrollInventory++;
                     }
                 } else {

@@ -54,7 +54,7 @@ class Screen {
     vector<elemClickeable> invItemsClickeables;
     elemClickeable tabItemClickeable;
     int scrollInventory = 0;
-    int cantMaxScroll = 5;
+    int cantMaxScroll = 1;
 
     // Debug UI
     bool debug_axes = false;
