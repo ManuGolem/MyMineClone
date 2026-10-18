@@ -31,12 +31,22 @@ const unordered_map<string, int> BlockRegistry::blockTypes = {
     {"iron_ore", 34},
     {"coal_ore", 35},
     {"bookshelf", 36},
-    {"mossy_coblestone", 37},
+    {"mossy_cobblestone", 37},
     {"obsidian", 38},
     {"short_grass", 40},
+    {"beacon", 42},
+    {"crafting_table", 44},
+    {"furnace", 45},
+    {"sponge", 49},
+    {"glass", 50},
+    {"diamond_ore", 51},
+    {"redstone_ore", 52},
     {"oak_leaves", 53},
+    {"stone_bricks", 55},
     {"spruce_sapling", 64},
+    {"white_wool", 65},
     {"snow_block", 67},
+    {"ice", 68},
     {"snowy_grass_block", 69},
     {"cactus", 71},
     {"spruce_log", 117},
@@ -50,7 +60,8 @@ const unordered_map<string, int> BlockRegistry::blockTypes = {
     {"golden_apple", 262},
     {"iron_ingot", 263},
     {"creeper_spawn_egg", 264},
-    {"chest", 265}
+    {"chest", 265},
+    {"water_bucket", 266}
 
 };
 
@@ -72,7 +83,7 @@ const unordered_map<Category, std::vector<int>> BlockRegistry::categories = {
          vector<int> all;
          all.reserve(blockTypes.size());
          for (const auto& pair : blockTypes) {
-             if (pair.second != 69)
+             if (pair.second != 69 and pair.second != 15)
                  all.push_back(pair.second);
          }
          sort(all.begin(), all.end());

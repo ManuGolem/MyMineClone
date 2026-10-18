@@ -24,6 +24,7 @@ static int SPRUCE_SAPLING = BlockRegistry::getType("spruce_sapling");
 static int RED_MUSHROOM = BlockRegistry::getType("red_mushroom");
 static int SHORT_GRASS = BlockRegistry::getType("short_grass");
 static int BROWN_MUSHROOM = BlockRegistry::getType("brown_mushroom");
+static int GLASS_BLOCK = BlockRegistry::getType("glass");
 // TODO: Buscar alternativa para hacer esto.
 // Quizas con un struct donde ya tenga cada cara del bloque.PENSAR
 bool isCrossBlock(int16_t type) {
@@ -31,7 +32,7 @@ bool isCrossBlock(int16_t type) {
             type == RED_MUSHROOM || type == BROWN_MUSHROOM);
 }
 bool esTransparent(int16_t type) {
-    return (type == 0 || type == OAK_LEAVES || type == CACTUS || type == SPRUCE_LEAVES || isCrossBlock(type));
+    return (type == 0 || type == OAK_LEAVES || type == GLASS_BLOCK || type == CACTUS || type == SPRUCE_LEAVES || isCrossBlock(type));
 }
 /* -> aca seria para comprobar solo los vertices adyacentes de la cara pero no me convencio ya que al formar el rectangulo se difuminaba y no quedaba bien.
  * -> pero deberia pensar algo similar ya que es mas optimo asi.[Creo menos rectangulos por ende menos triangulos]
