@@ -26,4 +26,7 @@ class BlockRegistry {
     static const vector<int>& get(Category category);
     static int getType(const string& blockName);
     static Category getCategory(int num);
+    static const unordered_map<string, int>& getAllBlockTypes() {
+        return blockTypes;
+    }
 };
