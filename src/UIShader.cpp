@@ -2,6 +2,8 @@
 #include "../include/blocksRegistry.h"
 #include "../include/stb_image.h"
 #include <glm/ext/matrix_float4x4.hpp>
+#include <iostream>
+#include <string.h>
 unsigned int UIShader::axesVAO = 0;
 unsigned int UIShader::axesVBO = 0;
 unsigned int UIShader::chunkVBO = 0;
@@ -169,60 +171,14 @@ UIShader::UIShader() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     // Cargar texturas
-    // Esta forma queda facil de ir agregando nuevos pero deberia busacar una mejor forma.
     loadTexture("../textures/Hotbar.png", hotbarTextureID);
     loadTexture("../textures/Hotbar_selector.png", selectorTextureID);
-
-    loadTexture("../textures/icons/stone.png", iconTexturesID[2]);
-    loadTexture("../textures/icons/dirt.png", iconTexturesID[3]);
-    loadTexture("../textures/icons/grass_block.png", iconTexturesID[4]);
-    loadTexture("../textures/icons/oak_planks.png", iconTexturesID[5]);
-    loadTexture("../textures/icons/smooth_stone_slab.png", iconTexturesID[6]);
-    loadTexture("../textures/icons/smooth_stone.png", iconTexturesID[7]);
-    loadTexture("../textures/icons/bricks.png", iconTexturesID[8]);
-    loadTexture("../textures/icons/tnt.png", iconTexturesID[9]);
-    loadTexture("../textures/icons/poppy.png", iconTexturesID[13]);
-    loadTexture("../textures/icons/dandelion.png", iconTexturesID[14]);
-    loadTexture("../textures/icons/water_bucket.png", iconTexturesID[15]);
-    loadTexture("../textures/icons/oak_sapling.png", iconTexturesID[16]);
-    loadTexture("../textures/icons/cobblestone.png", iconTexturesID[17]);
-    loadTexture("../textures/icons/bedrock.png", iconTexturesID[18]);
-    loadTexture("../textures/icons/sand.png", iconTexturesID[19]);
-    loadTexture("../textures/icons/gravel.png", iconTexturesID[20]);
-    loadTexture("../textures/icons/oak_log.png", iconTexturesID[21]);
-    loadTexture("../textures/icons/iron_block.png", iconTexturesID[23]);
-    loadTexture("../textures/icons/gold_block.png", iconTexturesID[24]);
-    loadTexture("../textures/icons/diamond_block.png", iconTexturesID[25]);
-    loadTexture("../textures/icons/emerald_block.png", iconTexturesID[26]);
-    loadTexture("../textures/icons/redstone_block.png", iconTexturesID[27]);
-    loadTexture("../textures/icons/red_mushroom.png", iconTexturesID[29]);
-    loadTexture("../textures/icons/brown_mushroom.png", iconTexturesID[30]);
-    loadTexture("../textures/icons/jungle_sapling.png", iconTexturesID[31]);
-    loadTexture("../textures/icons/gold_ore.png", iconTexturesID[33]);
-    loadTexture("../textures/icons/iron_ore.png", iconTexturesID[34]);
-    loadTexture("../textures/icons/coal_ore.png", iconTexturesID[35]);
-    loadTexture("../textures/icons/bookshelf.png", iconTexturesID[36]);
-    loadTexture("../textures/icons/obsidian.png", iconTexturesID[38]);
-    loadTexture("../textures/icons/short_grass.png", iconTexturesID[40]);
-    loadTexture("../textures/icons/mossy_cobblestone.png", iconTexturesID[37]);
-    loadTexture("../textures/icons/oak_leaves.png", iconTexturesID[53]);
-    loadTexture("../textures/icons/spruce_sapling.png", iconTexturesID[64]);
-    loadTexture("../textures/icons/snow_block.png", iconTexturesID[67]);
-    loadTexture("../textures/icons/cactus.png", iconTexturesID[71]);
-    loadTexture("../textures/icons/spruce_log.png", iconTexturesID[117]);
-    loadTexture("../textures/icons/spruce_leaves.png", iconTexturesID[133]);
-
-    loadTexture("../textures/icons/cyan_wool.png", iconTexturesID[210]);
-    loadTexture("../textures/icons/oak_sign.png", iconTexturesID[257]);
-    loadTexture("../textures/icons/redstone.png", iconTexturesID[258]);
-    loadTexture("../textures/icons/compass.png", iconTexturesID[259]);
-    loadTexture("../textures/icons/diamond_pickaxe.png", iconTexturesID[260]);
-    loadTexture("../textures/icons/netherite_sword.png", iconTexturesID[261]);
-    loadTexture("../textures/icons/golden_apple.png", iconTexturesID[262]);
-    loadTexture("../textures/icons/iron_ingot.png", iconTexturesID[263]);
-    loadTexture("../textures/icons/creeper_spawn_egg.png", iconTexturesID[264]);
-    loadTexture("../textures/icons/chest.png", iconTexturesID[265]);
-
+    // Todos los bloques
+    for (const auto& [name, id] : BlockRegistry::getAllBlockTypes()) {
+        if (id == 69 || id == 15)
+            continue;
+        loadTexture("../textures/icons/" + name + ".png", iconTexturesID[id]);
+    }
     loadTexture("../textures/creativeInventory/tab_items.png", tabItemsTextureID);
     loadTexture("../textures/creativeInventory/tab_inventory.png", tabCreativeInventoryTextureID);
     loadTexture("../textures/creativeInventory/tab_item_search.png", tabItemSearchTextureID);
@@ -381,15 +337,15 @@ void UIShader::drawOutline(int x, int y, int z, const glm::mat4& view, const glm
     glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
-    glLineWidth(1.0f);
+    glLineWidth(2.0f);
     setColor(0.0f, 0.0f, 0.0f);
     glDrawArrays(GL_LINES, 0, 24);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-void UIShader::loadTexture(const char* path, unsigned int& textureID) {
+void UIShader::loadTexture(const string& path, unsigned int& textureID) {
     // Cargar textura de la hotbar completa
     int width, height, channels;
-    unsigned char* data = stbi_load(path, &width, &height, &channels, 4);
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 4);
     if (data) {
         glGenTextures(1, &textureID);
         glBindTexture(GL_TEXTURE_2D, textureID);
@@ -492,13 +448,14 @@ void UIShader::drawCreativeInventory(int screenWidth, int screenHeight, vector<i
     // Dibujar scroll bar
     if (cantMaxScroll == 0)
         cantMaxScroll = 1;
-    float percentScroll = scrollInv / cantMaxScroll;
+    float percentScroll = float(scrollInv) / cantMaxScroll;
+
     if (tabSelected != 14) {
         int scrollWidth = 24;
         int scrollHeight = 30;
         glBindTexture(GL_TEXTURE_2D, scrollerTextureID);
         int px = posX + 350;
-        int py = posY + 236 - scrollHeight - percentScroll * (236 - scrollHeight - 14);
+        int py = posY + 236 - scrollHeight - percentScroll * (220 - scrollHeight);
         model = glm::translate(glm::mat4(1.0f), glm::vec3(px, py, 0.0f));
         model = glm::scale(model, glm::vec3(scrollWidth, scrollHeight, 1.0f));
         glUniformMatrix4fv(uiModelLoc, 1, GL_FALSE, glm::value_ptr(model));
