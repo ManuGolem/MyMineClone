@@ -356,7 +356,7 @@ void World::createChunk(int cx, int cz) {
             for (int y = 0; y <= continentalHeight; y++) {
                 int block;
                 // Asignar tipos de bloque según altura
-                if (y == continentalHeight) {
+                if (y == continentalHeight) { // TODO:Deberia pasar todo esto a un switch xD
                     if (biome == plains) {
                         block = BlockRegistry::getType("grass_block");
                     } else if (biome == desert) {
@@ -697,14 +697,7 @@ void World::loopMesh() {
             chunk = getChunk(x, z);
         }
         if (chunk) {
-            // auto inicio = std::chrono::high_resolution_clock::now();
-
             chunk->generateMesh();
-            // auto fin = std::chrono::high_resolution_clock::now();
-            // auto duracion = std::chrono::duration_cast<std::chrono::microseconds>(fin - inicio);
-            // if (duracion > std::chrono::microseconds(500)) {
-            //     std::cout << "Duración: " << duracion.count() << " us\n";
-            // }
             chunk->isUpdating = false;
         }
     }
