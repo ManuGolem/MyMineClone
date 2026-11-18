@@ -23,7 +23,6 @@ class Screen {
     bool running;
     Camera camera;
     Camera debugCamera;
-    bool debugMode = false;
     bool ceroPressed = false;
     const Uint8* teclado;
     Uint32 mouse;
@@ -58,6 +57,9 @@ class Screen {
 
     // Debug UI
     bool debug_axes = false;
+    bool debug_chunk = false;
+    bool debug_menu = false;
+    bool debug_camera = false;
 
   public:
     Screen();
@@ -99,10 +101,7 @@ class Screen {
     Camera& getDebugCamera() {
         return debugCamera;
     }
-    bool isDebugMode() const {
-        return debugMode;
-    }
-    void clearDebugMode() {
-        debugMode = false;
+    bool isDebugCamera() const {
+        return debug_camera;
     }
 };
