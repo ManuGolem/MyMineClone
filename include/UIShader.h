@@ -13,14 +13,8 @@ class UIShader {
     unsigned int shaderProgram;
     unsigned int modelLoc, viewLoc, projLoc;
     unsigned int colorLoc;
-    static unsigned int axesVAO;
-    static unsigned int axesVBO;
-    static unsigned int chunkVAO;
-    static unsigned int chunkVBO;
-    static unsigned int outlinesVAO;
-    static unsigned int outlinesVBO;
-    static unsigned int crosshairVAO;
-    static unsigned int crosshairVBO;
+    static unsigned int linesVAO;
+    static unsigned int linesVBO;
     // Shader para UI
     unsigned int uiShaderProgram;
     unsigned int uiModelLoc, uiViewLoc, uiProjLoc;
@@ -63,6 +57,7 @@ class UIShader {
     }
     void drawDebugAxes(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition);
     void drawChunk(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition);
+    void drawDebugMenu(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition);
     void drawOutline(int x, int y, int z, const glm::mat4& view, const glm::mat4& projection);
     void drawCrosshair(int screenWidth, int screenHeight, int size = 10, float r = 1.0f, float g = 1.0f, float b = 1.0f);
     void drawHotbar(int windowWidth, int windowHeight, int hotbarNumSelected, vector<int> blockTypes);
