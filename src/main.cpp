@@ -84,8 +84,7 @@ int main() {
         // Matriz de la camara
         glm::mat4 view = screen.getCamera().getViewMatrix();
         // Dibujar mundo
-        // TODO: Calcular tiempo que se pierde aca.
-        if (screen.isDebugMode()) {
+        if (screen.isDebugCamera()) {
             world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getDebugCamera().getViewMatrix(),
                          screen.getDebugCamera().getProjectionMatrix());
         } else {
@@ -93,7 +92,13 @@ int main() {
                          screen.getCamera().getProjectionMatrix());
         }
         // TODO: Calcular tiempo que se pierde aca
+        auto inicio = std::chrono::high_resolution_clock::now();
         screen.renderUI();
+        auto fin = std::chrono::high_resolution_clock::now();
+        auto duracion = std::chrono::duration_cast<std::chrono::microseconds>(fin - inicio);
+        if (duracion > std::chrono::microseconds(500)) {
+            std::cout << "Duración: " << duracion.count() << " us\n";
+        }
         // Cambiar los back/front frames
         screen.swap();
     }
