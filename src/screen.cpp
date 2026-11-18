@@ -174,7 +174,7 @@ void Screen::poll(float deltaTime) {
         if (e.type == SDL_QUIT) {
             running = false;
         }
-        // Teclas
+        // Cambio en el tamaño de ventana
         if (e.type == SDL_WINDOWEVENT) {
             if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED || e.window.event == SDL_WINDOWEVENT_RESIZED) {
                 windowWidth = e.window.data1;
@@ -182,6 +182,7 @@ void Screen::poll(float deltaTime) {
                 resize();
             }
         }
+        // Teclas
         if (e.type == SDL_KEYDOWN) {
             if (e.key.keysym.sym == SDLK_ESCAPE) {
                 if (inventoryOpen)
@@ -196,14 +197,16 @@ void Screen::poll(float deltaTime) {
                     SDL_SetRelativeMouseMode(inventoryOpen ? SDL_FALSE : SDL_TRUE);
                 }
             }
-            if (e.key.keysym.sym == SDLK_g) {
+            if (e.key.keysym.sym == SDLK_h) {
+                debug_menu = !debug_menu;
+                debug_chunk = !debug_chunk;
                 debug_axes = !debug_axes;
                 crosshairVisible = !crosshairVisible;
             }
         }
         // Mouse
         if (e.type == SDL_MOUSEBUTTONDOWN) {
-            if (!openMenu && !debugMode && !inventoryOpen) {
+            if (!openMenu && !debug_menu && !inventoryOpen) {
                 SDL_SetRelativeMouseMode(SDL_TRUE);
 
                 if (e.button.button == SDL_BUTTON_RIGHT) {
@@ -297,14 +300,11 @@ void Screen::poll(float deltaTime) {
             }
         }
     }
-    if (teclado[SDL_SCANCODE_P]) {
-        debugMode = true;
-        debugCamera = camera;
-    }
+
     int rel_x, rel_y;
     SDL_GetRelativeMouseState(&rel_x, &rel_y);
     if (!openMenu && !inventoryOpen) {
-        if (debugMode) {
+        if (debug_camera) {
             if (rel_x != 0 || rel_y != 0) {
                 debugCamera.processMouse((float)rel_x, (float)-rel_y);
             }
@@ -324,8 +324,6 @@ void Screen::poll(float deltaTime) {
                 debugCamera.moveUp(velocidad);
             if (teclado[SDL_SCANCODE_RSHIFT])
                 debugCamera.moveDown(velocidad);
-            if (teclado[SDL_SCANCODE_O])
-                debugMode = false;
         } else {
             if (rel_x != 0 || rel_y != 0) {
                 camera.processMouse((float)rel_x, (float)-rel_y);
@@ -371,16 +369,22 @@ void Screen::swap() {
 void Screen::renderUI() {
     GLint previousProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &previousProgram);
-    if (debugMode) {
-        return;
-    }
     // Guardar estado del depth test
     GLboolean depthTest;
     glGetBooleanv(GL_DEPTH_TEST, &depthTest);
     glDisable(GL_DEPTH_TEST);
     if (debug_axes) {
-        uiShader->drawChunk(camera.getViewMatrix(), camera.getProjectionMatrix(), camera.getPosition());
         uiShader->drawDebugAxes(camera.getViewMatrix(), camera.getProjectionMatrix(), camera.getPosition());
+    }
+    if (debug_chunk) {
+        uiShader->drawChunk(camera.getViewMatrix(), camera.getProjectionMatrix(), camera.getPosition());
+    }
+    if (debug_menu) {
+        if (debug_camera) {
+            uiShader->drawDebugMenu(debugCamera.getViewMatrix(), debugCamera.getProjectionMatrix(), debugCamera.getPosition());
+        } else {
+            uiShader->drawDebugMenu(camera.getViewMatrix(), camera.getProjectionMatrix(), camera.getPosition());
+        }
     }
     if (crosshairVisible) {
         // Render Crosshair
