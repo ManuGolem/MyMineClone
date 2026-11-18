@@ -4,14 +4,9 @@
 #include <glm/ext/matrix_float4x4.hpp>
 #include <iostream>
 #include <string.h>
-unsigned int UIShader::axesVAO = 0;
-unsigned int UIShader::axesVBO = 0;
-unsigned int UIShader::chunkVBO = 0;
-unsigned int UIShader::chunkVAO = 0;
-unsigned int UIShader::outlinesVAO = 0;
-unsigned int UIShader::outlinesVBO = 0;
-unsigned int UIShader::crosshairVAO = 0;
-unsigned int UIShader::crosshairVBO = 0;
+unsigned int UIShader::linesVAO = 0;
+unsigned int UIShader::linesVBO = 0;
+
 UIShader::UIShader() {
     // Este shader usa texturas (para componentes ui)
     const char* uiVertexSrc = R"(
@@ -90,35 +85,14 @@ UIShader::UIShader() {
     viewLoc = glGetUniformLocation(shaderProgram, "view");
     projLoc = glGetUniformLocation(shaderProgram, "projection");
     colorLoc = glGetUniformLocation(shaderProgram, "lineColor");
-    // Debug axes
-    glGenVertexArrays(1, &axesVAO);
-    glGenBuffers(1, &axesVBO);
-    glBindVertexArray(axesVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, axesVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // Debug chunk
-    glGenVertexArrays(1, &chunkVAO);
-    glGenBuffers(1, &chunkVBO);
-    glBindVertexArray(chunkVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, chunkVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // Outlines
-    glGenVertexArrays(1, &outlinesVAO);
-    glGenBuffers(1, &outlinesVBO);
-    glBindVertexArray(outlinesVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
+    // Lines
+    glGenVertexArrays(1, &linesVAO);
+    glGenBuffers(1, &linesVBO);
+    glBindVertexArray(linesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, linesVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Crosshair
-    glGenVertexArrays(1, &crosshairVAO);
-    glGenBuffers(1, &crosshairVBO);
-    glBindVertexArray(crosshairVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     // Compilar shader para UI items
@@ -192,6 +166,8 @@ UIShader::UIShader() {
     loadTexture("../textures/creativeInventory/tab_top_selected_middle.png", tabTopSelectedMidTextureID);
     loadTexture("../textures/creativeInventory/scroller.png", scrollerTextureID);
 }
+void UIShader::drawDebugMenu(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition) {
+}
 void UIShader::drawChunk(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPosition) {
     // TODO: Esta funcion anda bastante mal, tengo que mejorarla.
     glUseProgram(shaderProgram);
@@ -206,8 +182,8 @@ void UIShader::drawChunk(const glm::mat4& view, const glm::mat4& projection, con
     glm::mat4 model(1.0f);
     setModelMatrix(glm::value_ptr(model));
 
-    glBindVertexArray(chunkVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, chunkVBO);
+    glBindVertexArray(linesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, linesVBO);
     if (altura > alturaVieja + 8.0f) {
         alturaVieja = altura;
     } else if (altura < alturaVieja - 8.0f) {
@@ -279,8 +255,8 @@ void UIShader::drawDebugAxes(const glm::mat4& view, const glm::mat4& projection,
     glm::mat4 model(1.0f);
     setModelMatrix(glm::value_ptr(model));
 
-    glBindVertexArray(axesVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, axesVBO);
+    glBindVertexArray(linesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, linesVBO);
 
     float distance = 4.0f;
     // Magia, calcula a donde esta mirando. (1,0,0) seria para +x etc.
@@ -333,8 +309,8 @@ void UIShader::drawOutline(int x, int y, int z, const glm::mat4& view, const glm
                         x - 0.5f, y - 1.0f, z - 0.5f, x - 0.5f, y + 0.0f, z - 0.5f, x + 0.5f, y - 1.0f, z - 0.5f, x + 0.5f, y + 0.0f, z - 0.5f, x - 0.5f, y - 1.0f,
                         z + 0.5f, x - 0.5f, y + 0.0f, z + 0.5f, x + 0.5f, y - 1.0f, z + 0.5f, x + 0.5f, y + 0.0f, z + 0.5f};
 
-    glBindVertexArray(outlinesVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, outlinesVBO);
+    glBindVertexArray(linesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, linesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     glLineWidth(2.0f);
@@ -682,8 +658,8 @@ void UIShader::drawCrosshair(int screenWidth, int screenHeight, int size, float 
                         (float)centerX, (float)centerY - size, 0.0f, (float)centerX, (float)centerY + size, 0.0f,
                         // Punto central
                         (float)centerX, (float)centerY, 0.0f};
-    glBindVertexArray(crosshairVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, crosshairVBO);
+    glBindVertexArray(linesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, linesVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
     // Dibujar líneas
     setColor(r, g, b);
@@ -694,12 +670,8 @@ UIShader::~UIShader() {
     glDeleteProgram(shaderProgram);
     glDeleteProgram(uiShaderProgram);
 
-    glDeleteVertexArrays(1, &axesVAO);
-    glDeleteBuffers(1, &axesVBO);
-    glDeleteVertexArrays(1, &outlinesVAO);
-    glDeleteBuffers(1, &outlinesVBO);
-    glDeleteVertexArrays(1, &crosshairVAO);
-    glDeleteBuffers(1, &crosshairVBO);
+    glDeleteVertexArrays(1, &linesVAO);
+    glDeleteBuffers(1, &linesVBO);
     glDeleteVertexArrays(1, &uiVAO);
     glDeleteBuffers(1, &uiVBO);
     glDeleteBuffers(1, &uiEBO);
