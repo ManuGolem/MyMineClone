@@ -1,5 +1,6 @@
 #include "../include/screen.h"
 #include "../include/world.h"
+#include <chrono>
 #include <cstdlib>
 #include <sys/types.h>
 bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFace, bool& colocar) {
@@ -11,7 +12,7 @@ bool detectBlock(Screen& screen, World& mundo, vec3& blockSelect, vec3& blockFac
         int prevx = round(pos.x + front.x * x);
         int prevy = ceil(pos.y + front.y * x);
         int prevz = round(pos.z + front.z * x);
-        x += 0.1f;
+        x += 0.2f;
         int px = round(pos.x + front.x * x);
         int py = ceil(pos.y + front.y * x);
         int pz = round(pos.z + front.z * x);
@@ -36,30 +37,54 @@ int main() {
     world.generateWorldWithPerlin(seed);
     world.startCreationThread();
     Uint32 lastFrame = SDL_GetTicks();
+    // Distintos medidores, los dejo en Us o sea mircosegundos.
+    double timeInputUs = 0.0;
+    double timeDetectUs = 0.0;
+    double timeUpdateUs = 0.0; // Todavia no uso esto
+    double timeRenderUs = 0.0;
+    double timeRenderUIUs = 0.0;
+    double timeSwapUs = 0.0;
+    double timeClearUs = 0.0;
     int frameCount = 0;
     float fpsTimer = 0.0f;
     while (screen.isRunning()) {
         // Limpiar frame anterior
+        auto iClear = std::chrono::high_resolution_clock::now();
         screen.clear();
+        auto fClear = std::chrono::high_resolution_clock::now();
+        timeClearUs = std::chrono::duration_cast<std::chrono::microseconds>(fClear - iClear).count();
         // FPS y deltatime
         Uint32 currentFrame = SDL_GetTicks();
         float deltaTime = (currentFrame - lastFrame) / 1000.0f;
         lastFrame = currentFrame;
         frameCount++;
         fpsTimer += deltaTime;
-        if (fpsTimer >= 1.0f) {
+        if (fpsTimer >= 1.0f) { // Esto sacar a interfaz despues
             float FPS = frameCount / fpsTimer;
-            std::cout << "FPS: " << FPS << "\r";
+            std::cout << "FPS reales: " << FPS << " | Render: " << (timeRenderUs / 1000.0) << "ms"
+                      << " | Input: " << (timeInputUs / 1000.0) << "ms"
+                      << " | Detect: " << (timeDetectUs / 1000.0) << "ms"
+                      << " | Update: " << (timeUpdateUs / 1000.0) << "ms"
+                      << " | UI: " << (timeRenderUIUs / 1000.0) << "ms"
+                      << " | Swap: " << (timeSwapUs / 1000.0) << "ms"
+                      << " | Clear: " << (timeClearUs / 1000.0) << "ms"
+                      << "        \r";
             std::cout.flush();
             frameCount = 0;
             fpsTimer = 0;
         }
         // Inputs
+
+        auto iInput = std::chrono::high_resolution_clock::now();
         screen.poll(deltaTime);
+        auto fInput = std::chrono::high_resolution_clock::now();
+        timeInputUs = std::chrono::duration_cast<std::chrono::microseconds>(fInput - iInput).count();
+
+        // Detectar el bloque
+        auto iDetect = std::chrono::high_resolution_clock::now();
         vec3 blockPos;
         vec3 blockFace;
         bool colocar = false;
-        // TODO: Calcular tiempo de detectBlock() y de renderBlockOutline()
         if (detectBlock(screen, world, blockPos, blockFace, colocar)) {
             // Renderizar outline del bloque a mirar
             screen.renderBlockOutline(blockPos.x, blockPos.y, blockPos.z);
@@ -74,6 +99,8 @@ int main() {
                 world.setBlockSafe(blockPos.x, blockPos.y, blockPos.z, 0);
             }
         }
+        auto fDetect = std::chrono::high_resolution_clock::now();
+        timeDetectUs = std::chrono::duration_cast<std::chrono::microseconds>(fDetect - iDetect).count();
 
         // screen.clearRegenerate();
         screen.clearLeftClick();
@@ -81,9 +108,9 @@ int main() {
         // Update logicas
         // world.update();
 
-        // Matriz de la camara
+        // Render Mundo
+        auto iRender = std::chrono::high_resolution_clock::now();
         glm::mat4 view = screen.getCamera().getViewMatrix();
-        // Dibujar mundo
         if (screen.isDebugCamera()) {
             world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getDebugCamera().getViewMatrix(),
                          screen.getDebugCamera().getProjectionMatrix());
@@ -91,16 +118,19 @@ int main() {
             world.render(screen.getCamera().getPosition(), view, screen.getCamera().getProjectionMatrix(), screen.getCamera().getViewMatrix(),
                          screen.getCamera().getProjectionMatrix());
         }
-        // TODO: Calcular tiempo que se pierde aca
-        auto inicio = std::chrono::high_resolution_clock::now();
+        auto fRender = std::chrono::high_resolution_clock::now();
+        timeRenderUs = std::chrono::duration_cast<std::chrono::microseconds>(fRender - iRender).count();
+
+        // Render UI
+        auto iUI = std::chrono::high_resolution_clock::now();
         screen.renderUI();
-        auto fin = std::chrono::high_resolution_clock::now();
-        auto duracion = std::chrono::duration_cast<std::chrono::microseconds>(fin - inicio);
-        if (duracion > std::chrono::microseconds(500)) {
-            std::cout << "Duración: " << duracion.count() << " us\n";
-        }
+        auto fUI = std::chrono::high_resolution_clock::now();
+        timeRenderUIUs = std::chrono::duration_cast<std::chrono::microseconds>(fUI - iUI).count();
         // Cambiar los back/front frames
+        auto iSwap = std::chrono::high_resolution_clock::now();
         screen.swap();
+        auto fSwap = std::chrono::high_resolution_clock::now();
+        timeSwapUs = std::chrono::duration_cast<std::chrono::microseconds>(fSwap - iSwap).count();
     }
     return 0;
 }
